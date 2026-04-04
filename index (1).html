@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>GymLog — Enzo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#0A0A0A;
+  --surface:#141414;
+  --surface2:#1C1C1C;
+  --border:#2A2A2A;
+  --accent:#C8FF00;
+  --accent2:#7B61FF;
+  --text:#F0F0F0;
+  --muted:#666;
+  --red:#FF4D4D;
+  --orange:#FF9500;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;max-width:430px;margin:0 auto;position:relative;overflow-x:hidden}
+button{font-family:'DM Sans',sans-serif;cursor:pointer;border:none;outline:none}
+input,select,textarea{font-family:'DM Sans',sans-serif;outline:none}
+
+/* Header */
+.header{padding:20px 20px 12px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:100;border-bottom:1px solid var(--border)}
+.logo{font-size:18px;font-weight:600;letter-spacing:-0.5px}
+.logo span{color:var(--accent)}
+.header-date{font-size:12px;color:var(--muted);font-family:'DM Mono',monospace}
+
+/* Nav */
+.nav{display:flex;background:var(--surface);border-top:1px solid var(--border);position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;z-index:100}
+.nav-btn{flex:1;padding:12px 4px 16px;display:flex;flex-direction:column;align-items:center;gap:4px;background:none;color:var(--muted);font-size:10px;letter-spacing:0.3px;transition:color .2s}
+.nav-btn.active{color:var(--accent)}
+.nav-icon{font-size:20px;line-height:1}
+.nav-btn.active .nav-icon{transform:scale(1.1)}
+
+/* Screens */
+.screen{display:none;padding:16px 16px 90px;flex-direction:column;gap:14px;animation:fadeIn .2s ease}
+.screen.active{display:flex}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+/* Cards */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px;overflow:hidden}
+.card-sm{padding:12px}
+
+/* Section titles */
+.section-title{font-size:11px;font-weight:500;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
+
+/* Next session card */
+.next-card{background:var(--accent);border-radius:16px;padding:18px;position:relative;overflow:hidden}
+.next-card::before{content:'';position:absolute;right:-20px;top:-20px;width:100px;height:100px;background:rgba(0,0,0,.08);border-radius:50%}
+.next-label{font-size:11px;font-weight:600;color:rgba(0,0,0,.5);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
+.next-title{font-size:24px;font-weight:600;color:#000;margin-bottom:6px}
+.next-tip{font-size:13px;color:rgba(0,0,0,.65);line-height:1.4}
+.next-badge{display:inline-block;background:rgba(0,0,0,.12);color:#000;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;margin-top:10px}
+
+/* Exo list */
+.exo-item{display:flex;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)}
+.exo-item:last-child{border-bottom:none;padding-bottom:0}
+.exo-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);margin-right:12px;flex-shrink:0}
+.exo-name{flex:1;font-size:14px;color:var(--text)}
+.exo-weight{font-size:14px;font-weight:600;color:var(--accent);font-family:'DM Mono',monospace;margin-right:8px}
+.exo-sets{font-size:11px;color:var(--muted);background:var(--surface2);padding:2px 8px;border-radius:10px}
+
+/* Tags */
+.tag{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.tag-pec{background:#1A2800;color:#C8FF00}
+.tag-dos{background:#1A1030;color:#7B61FF}
+.tag-bras{background:#2A1500;color:#FF9500}
+.tag-jambes{background:#2A0000;color:#FF4D4D}
+.tag-cardio{background:#001A1A;color:#00E5E5}
+
+/* Stats grid */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat-box{background:var(--surface2);border-radius:12px;padding:14px}
+.stat-val{font-size:26px;font-weight:600;color:var(--text);font-family:'DM Mono',monospace;line-height:1}
+.stat-label{font-size:11px;color:var(--muted);margin-top:4px}
+.stat-delta{font-size:11px;color:var(--accent);font-weight:600;margin-top:2px}
+
+/* Progress bars */
+.prog-item{padding:10px 0;border-bottom:1px solid var(--border)}
+.prog-item:last-child{border-bottom:none}
+.prog-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.prog-name{font-size:13px;color:var(--text)}
+.prog-val{font-size:13px;font-weight:600;color:var(--accent);font-family:'DM Mono',monospace}
+.prog-bar-bg{height:4px;background:var(--surface2);border-radius:2px;overflow:hidden}
+.prog-bar-fill{height:100%;border-radius:2px;background:var(--accent);transition:width .5s ease}
+
+/* History */
+.hist-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s}
+.hist-item:last-child{border-bottom:none}
+.hist-line{width:3px;height:36px;border-radius:2px;flex-shrink:0}
+.hist-info{flex:1}
+.hist-type{font-size:14px;font-weight:500;color:var(--text)}
+.hist-date{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:2px}
+.hist-count{font-size:11px;color:var(--muted)}
+
+/* Form */
+.form-field{margin-bottom:12px}
+.form-label{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px;display:block}
+.form-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);font-size:14px;transition:border .2s}
+.form-input:focus{border-color:var(--accent)}
+.form-select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);font-size:14px;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23666' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* Exo log list */
+.exo-log-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.exo-log-item{background:var(--surface2);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px}
+.exo-log-name{flex:1;font-size:13px;color:var(--text)}
+.exo-log-detail{font-size:12px;color:var(--muted);font-family:'DM Mono',monospace}
+.exo-log-del{width:22px;height:22px;border-radius:50%;background:var(--surface);color:var(--red);font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+
+/* Buttons */
+.btn{padding:13px 20px;border-radius:12px;font-size:15px;font-weight:600;transition:all .15s;width:100%}
+.btn-primary{background:var(--accent);color:#000}
+.btn-primary:active{transform:scale(0.98);background:#b8ef00}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+.btn-secondary:active{transform:scale(0.98)}
+.btn-sm{padding:8px 16px;font-size:13px;width:auto;border-radius:8px}
+
+/* Modal overlay */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:flex-end;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:20px 20px 0 0;padding:20px;width:100%;max-width:430px;max-height:80vh;overflow-y:auto}
+.modal-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 18px}
+.modal-title{font-size:16px;font-weight:600;margin-bottom:16px}
+
+/* Detail modal */
+.detail-exo{padding:12px 0;border-bottom:1px solid var(--border)}
+.detail-exo:last-child{border-bottom:none}
+.detail-exo-name{font-size:14px;font-weight:500;color:var(--text);margin-bottom:4px}
+.detail-exo-val{font-size:13px;color:var(--muted);font-family:'DM Mono',monospace}
+
+/* Streak */
+.streak-row{display:flex;gap:6px;margin-top:10px}
+.streak-dot{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600}
+.streak-active{background:var(--accent);color:#000}
+.streak-inactive{background:var(--surface2);color:var(--muted)}
+
+/* Suggestion dropdown */
+.suggestion-item{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border)}
+.suggestion-item:last-child{border-bottom:none}
+.suggestion-item:hover,.suggestion-item:active{background:var(--surface)}
+
+/* Empty state */
+.empty{text-align:center;padding:40px 20px;color:var(--muted);font-size:14px}
+.empty-icon{font-size:36px;margin-bottom:10px}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">Gym<span>Log</span></div>
+  <div class="header-date" id="headerDate"></div>
+</div>
+
+<!-- Screens -->
+<div id="screen-home" class="screen active">
+  <div id="nextCard"></div>
+  <div id="lastSessionCard"></div>
+  <div>
+    <div class="section-title">Activité cette semaine</div>
+    <div class="card card-sm">
+      <div class="streak-row" id="streakRow"></div>
+    </div>
+  </div>
+</div>
+
+<div id="screen-log" class="screen">
+  <div class="card">
+    <div class="section-title">Nouvelle séance</div>
+    <div class="form-field">
+      <label class="form-label">Type de séance</label>
+      <select class="form-select" id="sessionType">
+        <option value="pec">Pec / Poitrine</option>
+        <option value="dos">Dos</option>
+        <option value="bras">Bras / Épaules</option>
+        <option value="jambes">Jambes</option>
+        <option value="cardio">Cardio</option>
+      </select>
+    </div>
+    <div class="form-field">
+      <label class="form-label">Date</label>
+      <input type="date" class="form-input" id="sessionDate"/>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">Exercices</div>
+    <div class="exo-log-list" id="exoLogList"></div>
+    <div class="form-field" style="position:relative">
+      <label class="form-label">Exercice</label>
+      <input type="text" class="form-input" id="exoInput" placeholder="Tape un exercice…" autocomplete="off" oninput="filterSuggestions()" onkeydown="handleExoKey(event)"/>
+      <div id="suggestionBox" style="display:none;position:absolute;left:0;right:0;background:var(--surface2);border:1px solid var(--border);border-radius:10px;z-index:50;overflow:hidden;margin-top:2px"></div>
+    </div>
+    <div class="form-grid" style="margin-bottom:10px">
+      <div>
+        <label class="form-label">Charge (kg)</label>
+        <input type="number" class="form-input" id="exoWeight" placeholder="ex: 32" step="0.5"/>
+      </div>
+      <div>
+        <label class="form-label">Séries × Reps</label>
+        <input type="text" class="form-input" id="exoSeriesReps" placeholder="ex: 4×8"/>
+      </div>
+    </div>
+    <button class="btn btn-secondary btn-sm" onclick="addExoToLog()" style="width:100%;margin-bottom:4px">+ Ajouter l'exercice</button>
+  </div>
+
+  <div class="form-field">
+    <label class="form-label">Notes</label>
+    <textarea class="form-input" id="sessionNotes" rows="3" placeholder="Ressenti, douleurs, objectifs..." style="resize:none;line-height:1.5"></textarea>
+  </div>
+
+  <button class="btn btn-primary" onclick="saveSession()">Enregistrer la séance</button>
+</div>
+
+<div id="screen-prog" class="screen">
+  <div class="stats-grid" id="statsGrid"></div>
+  <div class="card">
+    <div class="section-title">Records par exercice</div>
+    <div id="progressList"></div>
+  </div>
+</div>
+
+<div id="screen-history" class="screen">
+  <div class="card" id="historyList"></div>
+</div>
+
+<!-- Nav -->
+<nav class="nav">
+  <button class="nav-btn active" onclick="showScreen('home',this)">
+    <span class="nav-icon">⚡</span>
+    <span>Accueil</span>
+  </button>
+  <button class="nav-btn" onclick="showScreen('log',this)">
+    <span class="nav-icon">＋</span>
+    <span>Séance</span>
+  </button>
+  <button class="nav-btn" onclick="showScreen('prog',this)">
+    <span class="nav-icon">📈</span>
+    <span>Progrès</span>
+  </button>
+  <button class="nav-btn" onclick="showScreen('history',this)">
+    <span class="nav-icon">📋</span>
+    <span>Historique</span>
+  </button>
+</nav>
+
+<!-- Detail modal -->
+<div class="modal-overlay" id="detailModal" onclick="closeModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modalTitle"></div>
+    <div id="modalBody"></div>
+    <button class="btn btn-secondary" style="margin-top:16px" onclick="closeModal()">Fermer</button>
+  </div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────
+const TAG_CLASS = {pec:'tag-pec',dos:'tag-dos',bras:'tag-bras',jambes:'tag-jambes',cardio:'tag-cardio'};
+const TYPE_LABEL = {pec:'Pec / Poitrine',dos:'Dos',bras:'Bras / Épaules',jambes:'Jambes',cardio:'Cardio'};
+const TAG_COLOR = {pec:'#C8FF00',dos:'#7B61FF',bras:'#FF9500',jambes:'#FF4D4D',cardio:'#00E5E5'};
+
+// Pre-loaded historical data from Enzo's notes
+const INITIAL_DATA = [
+  {id:1,date:'2026-03-18',type:'bras',notes:'Reprise après pause',exos:[{name:'Curl marteau',weight:12,series:4,reps:10},{name:'Triceps poulie tresse',weight:18,series:4,reps:10},{name:'Épaule middle',weight:10,series:4,reps:12}]},
+  {id:2,date:'2026-03-25',type:'bras',notes:'',exos:[{name:'Curl marteau',weight:12,series:4,reps:10},{name:'Triceps poulie tresse',weight:20.3,series:4,reps:10}]},
+  {id:3,date:'2026-03-31',type:'dos',notes:'',exos:[{name:'Lat pulldown',weight:52,series:4,reps:8},{name:'Bûcheron',weight:24,series:4,reps:10},{name:'Rear delt',weight:52,series:4,reps:10}]},
+  {id:4,date:'2026-04-02',type:'dos',notes:'',exos:[{name:'Traction',series:3,reps:8,weight:0},{name:'Bûcheron',weight:30,series:4,reps:10},{name:'2ème exos dos',weight:70,series:4,reps:8},{name:'Poulie à genou',weight:32,series:4,reps:10},{name:'Lat pulldown',weight:52,series:4,reps:8},{name:'Diverging seated row',weight:41,series:4,reps:10},{name:'Bas du dos',weight:20,series:3,reps:15}]},
+  {id:5,date:'2026-04-06',type:'jambes',notes:'Rameur 1157m / 2:06',exos:[{name:'Rameur',weight:0,series:1,reps:1},{name:'Press jambes',weight:300,series:4,reps:8},{name:'Leg extension',weight:73,series:4,reps:10},{name:'Squat',weight:95,series:4,reps:8},{name:'Seated leg curl',weight:57,series:4,reps:10}]},
+  {id:6,date:'2026-04-07',type:'bras',notes:'',exos:[{name:'Curl marteau',weight:18,series:4,reps:10},{name:'Barre poulie biceps',weight:24.8,series:4,reps:10},{name:'Triceps barre',weight:31.5,series:4,reps:8},{name:'Rear delt',weight:66,series:4,reps:10},{name:'Trapèze haltères',weight:28,series:4,reps:12}]},
+];
+
+function loadData(){
+  const raw = localStorage.getItem('gymlog_sessions');
+  if(raw) return JSON.parse(raw);
+  localStorage.setItem('gymlog_sessions', JSON.stringify(INITIAL_DATA));
+  return INITIAL_DATA;
+}
+function saveData(sessions){
+  localStorage.setItem('gymlog_sessions', JSON.stringify(sessions));
+}
+
+let sessions = loadData();
+let currentExos = [];
+let currentSessionId = null;
+
+// ── UTILS ─────────────────────────────────────────────────────
+function fmtDate(d){
+  const dt = new Date(d+'T12:00:00');
+  return dt.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'});
+}
+function fmtDateShort(d){
+  const dt = new Date(d+'T12:00:00');
+  return dt.toLocaleDateString('fr-FR',{day:'2-digit',month:'short'});
+}
+function today(){return new Date().toISOString().slice(0,10)}
+function nextId(){return sessions.length ? Math.max(...sessions.map(s=>s.id))+1 : 1}
+
+function getLastByType(type){
+  return sessions.filter(s=>s.type===type).sort((a,b)=>b.date.localeCompare(a.date))[0]||null;
+}
+function getBestWeight(exoName){
+  let best=0;
+  sessions.forEach(s=>s.exos.forEach(e=>{if(e.name===exoName&&e.weight>best)best=e.weight}));
+  return best;
+}
+function getNextType(){
+  const order=['pec','dos','bras','jambes'];
+  const last = sessions.sort((a,b)=>b.date.localeCompare(a.date))[0];
+  if(!last) return 'pec';
+  const idx = order.indexOf(last.type);
+  return order[(idx+1)%order.length];
+}
+function getTip(type){
+  const last=getLastByType(type);
+  if(!last) return 'Première séance '+TYPE_LABEL[type]+' — donne tout !';
+  const mainExo = last.exos[0];
+  if(!mainExo) return 'Reprends depuis ta dernière séance.';
+  const suggestion = mainExo.weight>0 ? `Essaie ${(mainExo.weight+2).toFixed(1).replace('.0','')}kg sur ${mainExo.name}.` : 'Augmente le nombre de reps.';
+  return `Dernière séance : ${fmtDate(last.date)} — ${suggestion}`;
+}
+
+// ── SCREENS ───────────────────────────────────────────────────
+function showScreen(id, btn){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  if(id==='prog') renderProg();
+  if(id==='history') renderHistory();
+  if(id==='log') initLog();
+  if(id==='home') renderHome();
+}
+
+// ── HOME ──────────────────────────────────────────────────────
+function renderHome(){
+  const nextType = getNextType();
+  const last = sessions.sort((a,b)=>b.date.localeCompare(a.date))[0];
+
+  document.getElementById('nextCard').innerHTML = `
+    <div class="next-card">
+      <div class="next-label">Prochaine séance</div>
+      <div class="next-title">${TYPE_LABEL[nextType]}</div>
+      <div class="next-tip">${getTip(nextType)}</div>
+      <div class="next-badge">${sessions.length} séances enregistrées</div>
+    </div>`;
+
+  if(last){
+    const exoHtml = last.exos.slice(0,4).map(e=>`
+      <div class="exo-item">
+        <div class="exo-dot"></div>
+        <div class="exo-name">${e.name}</div>
+        ${e.weight>0?`<div class="exo-weight">${e.weight}kg</div>`:''}
+        <div class="exo-sets">${e.series}×${e.reps}</div>
+      </div>`).join('');
+    document.getElementById('lastSessionCard').innerHTML = `
+      <div>
+        <div class="section-title">Dernière séance</div>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <span class="tag ${TAG_CLASS[last.type]}">${TYPE_LABEL[last.type]}</span>
+            <span style="font-size:12px;color:var(--muted);font-family:'DM Mono',monospace">${fmtDate(last.date)}</span>
+          </div>
+          ${exoHtml}
+          ${last.exos.length>4?`<div style="font-size:12px;color:var(--muted);padding-top:8px">+${last.exos.length-4} exercices…</div>`:''}
+        </div>
+      </div>`;
+  }
+
+  // Streak — last 7 days
+  const days=['L','M','M','J','V','S','D'];
+  const now=new Date();
+  const row=document.getElementById('streakRow');
+  row.innerHTML='';
+  for(let i=6;i>=0;i--){
+    const d=new Date(now);d.setDate(d.getDate()-i);
+    const ds=d.toISOString().slice(0,10);
+    const hasSession=sessions.some(s=>s.date===ds);
+    const dayIdx=(d.getDay()+6)%7;
+    row.innerHTML+=`<div class="streak-dot ${hasSession?'streak-active':'streak-inactive'}">${days[dayIdx]}</div>`;
+  }
+}
+
+// ── LOG ───────────────────────────────────────────────────────
+function getAllKnownExos(){
+  const set=new Set();
+  sessions.forEach(s=>s.exos.forEach(e=>set.add(e.name)));
+  return [...set].sort();
+}
+
+function filterSuggestions(){
+  const val=document.getElementById('exoInput').value.trim().toLowerCase();
+  const box=document.getElementById('suggestionBox');
+  if(!val){box.style.display='none';return;}
+  const all=getAllKnownExos();
+  const matches=all.filter(e=>e.toLowerCase().includes(val)).slice(0,6);
+  if(!matches.length){box.style.display='none';return;}
+  box.style.display='block';
+  box.innerHTML=matches.map(m=>`<div class="suggestion-item" onclick="selectSuggestion('${m.replace(/'/g,"\\'")}')">
+    <span style="font-size:13px;color:var(--text)">${m}</span>
+    ${getBestWeight(m)?`<span style="font-size:11px;color:var(--accent);font-family:'DM Mono',monospace">${getBestWeight(m)}kg max</span>`:''}
+  </div>`).join('');
+}
+function selectSuggestion(name){
+  document.getElementById('exoInput').value=name;
+  document.getElementById('suggestionBox').style.display='none';
+  // Pre-fill last known weight
+  const best=getBestWeight(name);
+  if(best) document.getElementById('exoWeight').value=best;
+  document.getElementById('exoSeriesReps').focus();
+}
+function handleExoKey(e){
+  if(e.key==='Escape') document.getElementById('suggestionBox').style.display='none';
+  if(e.key==='Enter'){e.preventDefault();document.getElementById('exoWeight').focus();}
+}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#exoInput')&&!e.target.closest('#suggestionBox'))
+    document.getElementById('suggestionBox').style.display='none';
+});
+
+function initLog(){
+  const dateInput=document.getElementById('sessionDate');
+  if(!dateInput.value) dateInput.value=today();
+  renderExoLogList();
+}
+
+function parseSeriesReps(str){
+  const m=str.match(/(\d+)[×x\*\/](\d+)/i);
+  if(m) return{series:parseInt(m[1]),reps:parseInt(m[2])};
+  const n=parseInt(str);
+  if(!isNaN(n)) return{series:n,reps:8};
+  return{series:3,reps:8};
+}
+
+function addExoToLog(){
+  const name=document.getElementById('exoInput').value.trim();
+  if(!name){alert('Entre le nom d\'un exercice !');return;}
+  const weight=parseFloat(document.getElementById('exoWeight').value)||0;
+  const sr=parseSeriesReps(document.getElementById('exoSeriesReps').value||'3×8');
+  currentExos.push({name,weight,series:sr.series,reps:sr.reps});
+  document.getElementById('exoInput').value='';
+  document.getElementById('exoWeight').value='';
+  document.getElementById('exoSeriesReps').value='';
+  document.getElementById('suggestionBox').style.display='none';
+  renderExoLogList();
+}
+function removeExo(i){
+  currentExos.splice(i,1);
+  renderExoLogList();
+}
+function renderExoLogList(){
+  const list=document.getElementById('exoLogList');
+  if(!currentExos.length){list.innerHTML='<div style="font-size:13px;color:var(--muted);text-align:center;padding:8px">Aucun exercice ajouté</div>';return;}
+  list.innerHTML=currentExos.map((e,i)=>`
+    <div class="exo-log-item">
+      <div class="exo-log-name">${e.name}</div>
+      <div class="exo-log-detail">${e.weight>0?e.weight+'kg — ':''}${e.series}×${e.reps}</div>
+      <div class="exo-log-del" onclick="removeExo(${i})">×</div>
+    </div>`).join('');
+}
+function saveSession(){
+  if(!currentExos.length){alert('Ajoute au moins un exercice !');return;}
+  const session={
+    id:nextId(),
+    date:document.getElementById('sessionDate').value,
+    type:document.getElementById('sessionType').value,
+    notes:document.getElementById('sessionNotes').value,
+    exos:[...currentExos]
+  };
+  sessions.push(session);
+  saveData(sessions);
+  currentExos=[];
+  document.getElementById('sessionNotes').value='';
+  document.getElementById('sessionDate').value=today();
+  renderExoLogList();
+  showScreen('home',document.querySelector('.nav-btn'));
+}
+
+// ── PROGRESS ─────────────────────────────────────────────────
+function renderProg(){
+  const totalSessions=sessions.length;
+  const types=[...new Set(sessions.map(s=>s.type))].length;
+
+  // Best weights for key exercises
+  const keyExos=[
+    {name:'Press jambes',max:320},
+    {name:'Squat',max:150},
+    {name:'Haltères pec',max:50},
+    {name:'Pec Fly',max:100},
+    {name:'Triceps barre',max:60},
+    {name:'Bûcheron',max:50},
+    {name:'Lat pulldown',max:80},
+    {name:'Curl marteau',max:30},
+  ];
+
+  const statsHtml=`
+    <div class="stat-box"><div class="stat-val">${totalSessions}</div><div class="stat-label">Séances totales</div></div>
+    <div class="stat-box"><div class="stat-val">${types}</div><div class="stat-label">Groupes musculaires</div></div>
+    <div class="stat-box"><div class="stat-val">${getBestWeight('Press jambes')||320}kg</div><div class="stat-label">Record press jambes</div><div class="stat-delta">↑ record</div></div>
+    <div class="stat-box"><div class="stat-val">${getBestWeight('Haltères pec')||34}kg</div><div class="stat-label">Record haltères pec</div><div class="stat-delta">↑ record</div></div>`;
+  document.getElementById('statsGrid').innerHTML=statsHtml;
+
+  const progHtml=keyExos.map(e=>{
+    const best=getBestWeight(e.name);
+    if(!best) return '';
+    const pct=Math.min(100,Math.round(best/e.max*100));
+    return `<div class="prog-item">
+      <div class="prog-top"><span class="prog-name">${e.name}</span><span class="prog-val">${best}kg</span></div>
+      <div class="prog-bar-bg"><div class="prog-bar-fill" style="width:${pct}%"></div></div>
+    </div>`;
+  }).filter(Boolean).join('');
+  document.getElementById('progressList').innerHTML=progHtml||'<div class="empty">Enregistre des séances pour voir tes progrès !</div>';
+}
+
+// ── HISTORY ──────────────────────────────────────────────────
+function renderHistory(){
+  const sorted=[...sessions].sort((a,b)=>b.date.localeCompare(a.date));
+  if(!sorted.length){document.getElementById('historyList').innerHTML='<div class="empty"><div class="empty-icon">📋</div>Aucune séance enregistrée</div>';return;}
+  document.getElementById('historyList').innerHTML=sorted.map(s=>`
+    <div class="hist-item" onclick="openDetail(${s.id})">
+      <div class="hist-line" style="background:${TAG_COLOR[s.type]}"></div>
+      <div class="hist-info">
+        <div class="hist-type">${TYPE_LABEL[s.type]}</div>
+        <div class="hist-date">${fmtDate(s.date)}</div>
+      </div>
+      <div style="text-align:right">
+        <div class="hist-count" style="margin-bottom:4px">${s.exos.length} exercices</div>
+        <span class="tag ${TAG_CLASS[s.type]}">${TYPE_LABEL[s.type].split(' ')[0]}</span>
+      </div>
+    </div>`).join('');
+}
+
+// ── MODAL ────────────────────────────────────────────────────
+function openDetail(id){
+  const s=sessions.find(x=>x.id===id);
+  if(!s)return;
+  document.getElementById('modalTitle').innerHTML=`<span class="tag ${TAG_CLASS[s.type]}">${TYPE_LABEL[s.type]}</span> <span style="font-size:13px;color:var(--muted);margin-left:8px;font-family:'DM Mono',monospace">${fmtDate(s.date)}</span>`;
+  document.getElementById('modalBody').innerHTML=s.exos.map(e=>`
+    <div class="detail-exo">
+      <div class="detail-exo-name">${e.name}</div>
+      <div class="detail-exo-val">${e.weight>0?e.weight+'kg — ':''}${e.series} séries × ${e.reps} reps</div>
+    </div>`).join('')+(s.notes?`<div style="margin-top:12px;font-size:13px;color:var(--muted);line-height:1.5;padding-top:12px;border-top:1px solid var(--border)">${s.notes}</div>`:'');
+  document.getElementById('detailModal').classList.add('open');
+}
+function closeModal(){document.getElementById('detailModal').classList.remove('open')}
+
+// ── INIT ──────────────────────────────────────────────────────
+document.getElementById('headerDate').textContent=new Date().toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'long'});
+renderHome();
+</script>
+</body>
+</html>
