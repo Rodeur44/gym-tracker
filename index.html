@@ -199,14 +199,14 @@ input,select,textarea{font-family:'DM Sans',sans-serif;outline:none}
     <div class="logo">Gym<span>Log</span></div>
     <div style="display:flex;align-items:center;gap:10px">
       <div class="header-date" id="headerDate"></div>
-      <div class="avatar" id="avatarBtn" onclick="showScreen('profile',document.querySelectorAll('.nav-btn')[4])">?</div>
+      <div class="avatar" id="avatarBtn" onclick="showScreen('profile',null)">?</div>
     </div>
   </div>
 
   <div id="screen-home" class="screen active">
     <div id="nextCard"></div>
     <div id="lastSessionCard"></div>
-    <div><div class="section-title">Cette semaine</div><div class="card" style="padding:12px"><div class="streak-row" id="streakRow"></div></div></div>
+    <div><div style="display:flex;justify-content:space-between;align-items:center"><div class="section-title" style="margin:0">Cette semaine</div><div id="streakCount" style="font-size:12px;color:var(--accent);font-weight:600;font-family:'DM Mono',monospace"></div></div><div class="card" style="padding:12px;margin-top:10px"><div class="streak-row" id="streakRow"></div></div></div>
   </div>
 
   <div id="screen-log" class="screen">
@@ -278,9 +278,9 @@ input,select,textarea{font-family:'DM Sans',sans-serif;outline:none}
   <nav class="nav">
     <button class="nav-btn active" onclick="showScreen('home',this)"><span class="nav-icon">⚡</span><span>Accueil</span></button>
     <button class="nav-btn" onclick="showScreen('log',this)"><span class="nav-icon">＋</span><span>Séance</span></button>
+    <button class="nav-btn" onclick="showScreen('history',this)"><span class="nav-icon">📋</span><span>Historique</span></button>
     <button class="nav-btn" onclick="showScreen('prog',this)"><span class="nav-icon">📈</span><span>Progrès</span></button>
     <button class="nav-btn" onclick="showScreen('cards',this)"><span class="nav-icon">🃏</span><span>Cartes</span></button>
-    <button class="nav-btn" onclick="showScreen('profile',this)"><span class="nav-icon">👤</span><span>Profil</span></button>
   </nav>
 </div>
 
@@ -289,7 +289,10 @@ input,select,textarea{font-family:'DM Sans',sans-serif;outline:none}
     <div class="modal-handle"></div>
     <div class="modal-title" id="modalTitle"></div>
     <div id="modalBody"></div>
-    <button class="btn btn-secondary" style="margin-top:16px" onclick="closeModal('detailModal')">Fermer</button>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="btn btn-secondary" style="flex:1" onclick="closeModal('detailModal')">Fermer</button>
+      <button class="btn btn-secondary" style="flex:1;color:var(--red);border-color:var(--red)" id="deleteSessionBtn" onclick="deleteSession()">Supprimer</button>
+    </div>
   </div>
 </div>
 <div class="modal-overlay" id="cardModal" onclick="closeModal('cardModal')">
@@ -434,6 +437,14 @@ function fmtDate(d){return new Date(d+'T12:00:00').toLocaleDateString('fr-FR',{d
 function getNextType(){const o=['pec','dos','bras','jambes'];if(!sessions.length)return'pec';return o[(o.indexOf(sessions[0].type)+1)%o.length];}
 function getLastByType(t){return sessions.find(s=>s.type===t)||null;}
 function getBest(name){let b=0;sessions.forEach(s=>(s.exos||[]).forEach(e=>{if(e.name===name&&e.weight>b)b=e.weight}));return b;}
+function getStreak(){
+  if(!sessions.length) return 0;
+  const dates=new Set(sessions.map(s=>s.date));
+  let streak=0;const d=new Date();
+  if(!dates.has(d.toISOString().slice(0,10))) d.setDate(d.getDate()-1);
+  while(true){const ds=d.toISOString().slice(0,10);if(dates.has(ds)){streak++;d.setDate(d.getDate()-1);}else break;}
+  return streak;
+}
 
 // ── HOME ──────────────────────────────────────────────────────
 function renderHome(){
@@ -447,6 +458,8 @@ function renderHome(){
   const days=['L','M','M','J','V','S','D'];
   const now=new Date();
   document.getElementById('streakRow').innerHTML=Array.from({length:7},(_,i)=>{const d=new Date(now);d.setDate(d.getDate()-(6-i));const ds=d.toISOString().slice(0,10);const has=sessions.some(s=>s.date===ds);return`<div class="streak-dot ${has?'streak-active':'streak-inactive'}">${days[(d.getDay()+6)%7]}</div>`;}).join('');
+  const streak=getStreak();
+  document.getElementById('streakCount').textContent=streak>0?`🔥 ${streak} jour${streak>1?'s':''}  de suite`:'';
 }
 
 // ── LOG ───────────────────────────────────────────────────────
@@ -492,9 +505,12 @@ async function saveSession(){
 
 // ── PROG ──────────────────────────────────────────────────────
 function renderProg(){
-  document.getElementById('statsGrid').innerHTML=`<div class="stat-box"><div class="stat-val">${sessions.length}</div><div class="stat-label">Séances totales</div></div><div class="stat-box"><div class="stat-val">${[...new Set(sessions.map(s=>s.type))].length}</div><div class="stat-label">Groupes musculaires</div></div><div class="stat-box"><div class="stat-val">${getBest('Press jambes')||0}kg</div><div class="stat-label">Record press jambes</div><div class="stat-delta">↑</div></div><div class="stat-box"><div class="stat-val">${getBest('Haltères pec')||0}kg</div><div class="stat-label">Record haltères pec</div><div class="stat-delta">↑</div></div>`;
   const map={};sessions.forEach(s=>(s.exos||[]).forEach(e=>{if(e.weight>0&&(!map[e.name]||e.weight>map[e.name]))map[e.name]=e.weight;}));
-  const sorted=Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const top=Object.entries(map).sort((a,b)=>b[1]-a[1]);
+  const stat=(idx)=>top[idx]?`<div class="stat-box"><div class="stat-val">${top[idx][1]}kg</div><div class="stat-label" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${top[idx][0]}</div><div class="stat-delta">↑ record</div></div>`:`<div class="stat-box"><div class="stat-val">—</div><div class="stat-label">Aucun record</div></div>`;
+  document.getElementById('statsGrid').innerHTML=`<div class="stat-box"><div class="stat-val">${sessions.length}</div><div class="stat-label">Séances totales</div></div><div class="stat-box"><div class="stat-val">${[...new Set(sessions.map(s=>s.type))].length}/5</div><div class="stat-label">Groupes entraînés</div></div>${stat(0)}${stat(1)}`;
+
+  const sorted=top.slice(0,10);
   if(!sorted.length){document.getElementById('progressList').innerHTML='<div class="empty">Enregistre des séances pour voir tes progrès !</div>';return;}
   const mx=sorted[0][1];
   document.getElementById('progressList').innerHTML=sorted.map(([n,w])=>`<div class="prog-item"><div class="prog-top"><span class="prog-name">${n}</span><span class="prog-val">${w}kg</span></div><div class="prog-bar-bg"><div class="prog-bar-fill" style="width:${Math.round(w/mx*100)}%"></div></div></div>`).join('');
@@ -507,13 +523,28 @@ function renderHistory(){
 }
 
 // ── MODAL ────────────────────────────────────────────────────
+let currentDetailId = null;
 function openDetail(id){
   const s=sessions.find(x=>x.id==id);if(!s)return;
-  document.getElementById('modalTitle').innerHTML=`<span class="tag ${TAG_CLS[s.type]}">${TYPE_LBL[s.type]}</span> <span style="font-size:13px;color:var(--muted);margin-left:8px;font-family:'DM Mono',monospace">${fmtDate(s.date)}</span>`;
-  document.getElementById('modalBody').innerHTML=(s.exos||[]).map(e=>`<div class="detail-exo"><div class="detail-exo-name">${e.name}</div><div class="detail-exo-val">${e.weight>0?e.weight+'kg — ':''}${e.series} séries × ${e.reps} reps</div></div>`).join('')+(s.notes?`<div style="margin-top:12px;font-size:13px;color:var(--muted);line-height:1.5;padding-top:12px;border-top:1px solid var(--border)">${s.notes}</div>`:'');
+  currentDetailId=id;
+  const vol=(s.exos||[]).reduce((sum,e)=>sum+(e.weight*e.series*e.reps),0);
+  document.getElementById('modalTitle').innerHTML=`<span class="tag ${TAG_CLS[s.type]}">${TYPE_LBL[s.type]}</span> <span style="font-size:13px;color:var(--muted);margin-left:8px;font-family:'DM Mono',monospace">${fmtDate(s.date)}</span>${vol>0?`<span style="font-size:11px;color:var(--muted);display:block;margin-top:6px">Volume total : <span style="color:var(--accent);font-family:'DM Mono',monospace">${vol}kg</span></span>`:''}`;
+  document.getElementById('modalBody').innerHTML=(s.exos||[]).map(e=>`<div class="detail-exo"><div class="detail-exo-name">${e.name}</div><div class="detail-exo-val">${e.weight>0?e.weight+'kg — ':''}${e.series} séries × ${e.reps} reps${e.weight>0?` = ${e.weight*e.series*e.reps}kg vol.`:''}</div></div>`).join('')+(s.notes?`<div style="margin-top:12px;font-size:13px;color:var(--muted);line-height:1.5;padding-top:12px;border-top:1px solid var(--border)">${s.notes}</div>`:'');
   document.getElementById('detailModal').classList.add('open');
 }
 function closeModal(id){document.getElementById(id).classList.remove('open')}
+async function deleteSession(){
+  if(!currentDetailId) return;
+  if(!confirm('Supprimer cette séance ? Cette action est irréversible.')) return;
+  const {error}=await sb.from('sessions').delete().eq('id',currentDetailId).eq('user_id',user.id);
+  if(!error){
+    sessions=sessions.filter(s=>s.id!==currentDetailId);
+    currentDetailId=null;
+    closeModal('detailModal');
+    renderHistory();
+    renderHome();
+  } else alert('Erreur lors de la suppression.');
+}
 
 // ── RENDER CARDS (NEW LOGIC) ─────────────────────────────────
 function renderCards(){
