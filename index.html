@@ -169,6 +169,50 @@ input,select,textarea{font-family:'DM Sans',sans-serif;outline:none}
 .profile-email{text-align:center;font-size:13px;color:var(--muted);margin-bottom:20px}
 .empty{text-align:center;padding:40px 20px;color:var(--muted);font-size:14px}
 .empty-icon{font-size:36px;margin-bottom:10px}
+
+/* ── LOG v2 ────────────────────────────────────────────────── */
+.log-type-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.log-type-row::-webkit-scrollbar{display:none}
+.log-type-pill{flex-shrink:0;padding:9px 18px;border-radius:30px;border:1.5px solid var(--border);background:var(--surface2);color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap}
+.log-type-pill.active{border-color:var(--accent);background:rgba(200,255,0,.12);color:var(--accent)}
+.log-type-pill:active{transform:scale(.94)}
+
+.exo-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;overflow:hidden;transition:box-shadow .2s}
+.exo-card-head{padding:14px 16px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;border-bottom:1px solid var(--border)}
+.exo-card-title{font-size:15px;font-weight:600;color:var(--text);line-height:1.3}
+.exo-card-sub{font-size:11px;color:var(--muted);margin-top:3px}
+.exo-del-btn{width:28px;height:28px;border-radius:50%;background:var(--surface2);color:var(--muted);font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;flex-shrink:0;line-height:1;transition:all .15s}
+.exo-del-btn:active{background:var(--red);color:#fff}
+.exo-card-body{padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+
+.stepper-lbl{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;margin-bottom:6px}
+.stepper{display:flex;align-items:stretch;background:var(--surface2);border-radius:14px;border:1px solid var(--border);overflow:hidden}
+.st-btn{width:48px;font-size:24px;font-weight:200;color:var(--text);background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .1s;-webkit-tap-highlight-color:transparent;line-height:1}
+.st-btn:active{background:rgba(200,255,0,.15)}
+.st-center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 2px}
+.st-num{font-size:22px;font-weight:700;font-family:'DM Mono',monospace;line-height:1;color:var(--text)}
+.st-unit{font-size:10px;color:var(--muted);margin-top:3px;letter-spacing:.3px}
+.stepper-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+.btn-add-exo{width:100%;padding:16px;border-radius:16px;border:1.5px dashed var(--border);background:transparent;color:var(--muted);font-size:14px;font-weight:500;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-add-exo:active{border-color:var(--accent);color:var(--accent);background:rgba(200,255,0,.06)}
+
+.log-notes{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.log-notes summary{padding:13px 16px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;-webkit-tap-highlight-color:transparent}
+.log-notes summary::-webkit-details-marker{display:none}
+.log-notes[open] summary{border-bottom:1px solid var(--border);color:var(--text)}
+.log-empty{text-align:center;padding:28px 20px;color:var(--muted);font-size:13px;line-height:1.7;background:var(--surface);border:1px solid var(--border);border-radius:16px}
+
+.exo-pick-sect{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);padding:12px 0 8px;border-top:1px solid var(--border);margin-top:4px}
+.exo-pick-sect:first-child{border-top:none;margin-top:0;padding-top:0}
+.exo-pick-chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:4px}
+.exo-pick-chip{padding:7px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);font-size:12px;font-weight:500;color:var(--text);cursor:pointer;white-space:nowrap;transition:all .15s}
+.exo-pick-chip:active{background:var(--accent);color:#000;border-color:var(--accent);transform:scale(.96)}
+.exo-pick-row{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--border);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.exo-pick-row:last-child{border-bottom:none}
+.exo-pick-row:active{opacity:.45}
+.exo-pick-n{font-size:14px;color:var(--text)}
+.exo-pick-pr{font-size:11px;color:var(--accent);font-family:'DM Mono',monospace;flex-shrink:0;margin-left:8px}
 </style>
 </head>
 <body>
@@ -210,41 +254,37 @@ input,select,textarea{font-family:'DM Sans',sans-serif;outline:none}
   </div>
 
   <div id="screen-log" class="screen">
-    <div class="card">
-      <div class="section-title">Nouvelle séance</div>
-      <div class="form-field">
-        <label class="form-label">Type</label>
-        <select class="form-select" id="sessionType">
-          <option value="pec">Pec / Poitrine</option>
-          <option value="dos">Dos</option>
-          <option value="bras">Bras / Épaules</option>
-          <option value="jambes">Jambes</option>
-          <option value="cardio">Cardio</option>
-        </select>
-      </div>
-      <div class="form-field">
-        <label class="form-label">Date</label>
-        <input type="date" class="form-input" id="sessionDate"/>
-      </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div style="font-size:20px;font-weight:600;letter-spacing:-.5px">Séance</div>
+      <input type="date" class="form-input" id="sessionDate" style="width:auto;padding:7px 12px;font-size:13px;font-family:'DM Mono',monospace"/>
     </div>
-    <div class="card">
-      <div class="section-title">Exercices</div>
-      <div class="exo-log-list" id="exoLogList"></div>
-      <div class="form-field" style="position:relative">
-        <label class="form-label">Exercice</label>
-        <input type="text" class="form-input" id="exoInput" placeholder="Tape n'importe quel exercice…" autocomplete="off" oninput="filterSug()" onkeydown="handleExoKey(event)"/>
-        <div id="sugBox" style="display:none;position:absolute;left:0;right:0;background:var(--surface2);border:1px solid var(--border);border-radius:10px;z-index:50;overflow:hidden;margin-top:2px"></div>
-      </div>
-      <div class="form-grid" style="margin-bottom:12px">
-        <div><label class="form-label">Charge (kg)</label><input type="number" class="form-input" id="exoWeight" placeholder="32" step="0.5"/></div>
-        <div><label class="form-label">Séries × Reps</label><input type="text" class="form-input" id="exoSR" placeholder="4×8"/></div>
-      </div>
-      <button class="btn btn-secondary" onclick="addExo()">+ Ajouter l'exercice</button>
+
+    <div class="log-type-row">
+      <button class="log-type-pill" data-type="pec"    onclick="setLogType('pec',this)">Pec</button>
+      <button class="log-type-pill" data-type="dos"    onclick="setLogType('dos',this)">Dos</button>
+      <button class="log-type-pill" data-type="bras"   onclick="setLogType('bras',this)">Bras / Épaules</button>
+      <button class="log-type-pill" data-type="jambes" onclick="setLogType('jambes',this)">Jambes</button>
+      <button class="log-type-pill" data-type="cardio" onclick="setLogType('cardio',this)">Cardio</button>
     </div>
-    <div class="form-field">
-      <label class="form-label">Notes</label>
-      <textarea class="form-input" id="sessionNotes" rows="3" placeholder="Ressenti, douleurs, objectifs…" style="resize:none;line-height:1.5"></textarea>
-    </div>
+
+    <div id="exoCardList"></div>
+
+    <button class="btn-add-exo" onclick="openExoPicker()">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      Ajouter un exercice
+    </button>
+
+    <details class="log-notes">
+      <summary>
+        <span>Notes optionnelles</span>
+        <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="#666" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </summary>
+      <div style="padding:0 16px 14px">
+        <textarea class="form-input" id="sessionNotes" rows="3" placeholder="Ressenti, douleurs, objectifs…" style="resize:none;line-height:1.5;margin-top:10px"></textarea>
+      </div>
+    </details>
+
     <button class="btn btn-primary" id="saveBtn" onclick="saveSession()">Enregistrer la séance</button>
   </div>
 
@@ -302,6 +342,14 @@ input,select,textarea{font-family:'DM Sans',sans-serif;outline:none}
   </div>
 </div>
 
+<div class="modal-overlay" id="exoPickerModal" onclick="closeModal('exoPickerModal')">
+  <div class="modal" onclick="event.stopPropagation()" style="max-height:82vh;overflow-y:auto;padding-bottom:36px">
+    <div class="modal-handle"></div>
+    <input type="text" class="form-input" id="exoSearchInput" placeholder="Rechercher un exercice…" oninput="filterExoPicker()" autocomplete="off" style="margin-bottom:4px"/>
+    <div id="exoPickerContent"></div>
+  </div>
+</div>
+
 <script>
 // ══════════════════════════════════════════════════════════════
 // 👇 CLÉS SUPABASE INCHANGÉES
@@ -342,7 +390,7 @@ const TAG_CLS = {pec:'tag-pec',dos:'tag-dos',bras:'tag-bras',jambes:'tag-jambes'
 const TYPE_LBL = {pec:'Pec / Poitrine',dos:'Dos',bras:'Bras / Épaules',jambes:'Jambes',cardio:'Cardio'};
 const TAG_CLR = {pec:'#C8FF00',dos:'#7B61FF',bras:'#FF9500',jambes:'#FF4D4D',cardio:'#00E5E5'};
 
-let user=null, sessions=[], unlockedCards=new Set(), currentExos=[], authMode='login';
+let user=null, sessions=[], unlockedCards=new Set(), currentExos=[], authMode='login', logType='pec';
 
 // ── AUTH ──────────────────────────────────────────────────────
 function switchTab(m){
@@ -462,43 +510,149 @@ function renderHome(){
   document.getElementById('streakCount').textContent=streak>0?`🔥 ${streak} jour${streak>1?'s':''}  de suite`:'';
 }
 
-// ── LOG ───────────────────────────────────────────────────────
-function allExos(){const s=new Set();sessions.forEach(x=>(x.exos||[]).forEach(e=>s.add(e.name)));return[...s].sort();}
-function filterSug(){
-  const v=document.getElementById('exoInput').value.trim().toLowerCase();
-  const box=document.getElementById('sugBox');
-  if(!v){box.style.display='none';return;}
-  const m=allExos().filter(e=>e.toLowerCase().includes(v)).slice(0,6);
-  if(!m.length){box.style.display='none';return;}
-  box.style.display='block';
-  box.innerHTML=m.map(n=>`<div class="suggestion-item" onclick="selSug('${n.replace(/'/g,"\\'")}')"><span style="font-size:13px;color:var(--text)">${n}</span>${getBest(n)?`<span style="font-size:11px;color:var(--accent);font-family:'DM Mono',monospace">${getBest(n)}kg max</span>`:''}</div>`).join('');
+// ── LOG v2 ────────────────────────────────────────────────────
+const EXO_BY_TYPE = {
+  pec:    ['Développé couché','Développé incliné','Développé décliné','Écarté haltères','Écarté câble','Pec deck','Dips','Push-up','Développé haltères couché'],
+  dos:    ['Tractions','Tirage vertical','Rowing barre','Rowing haltère','Deadlift','Soulevé de terre','Tirage câble bas','Pull-over','Shrug','Face pull'],
+  bras:   ['Curl haltères','Curl barre','Curl marteau','Triceps corde','Triceps barre','Skullcrusher','Overhead press','Développé militaire','Élévation latérale','Élévation frontale'],
+  jambes: ['Squat','Leg press','Fentes','Romanian deadlift','Leg curl','Leg extension','Mollets debout','Mollets assis','Hip thrust','Bulgarian split squat'],
+  cardio: ['Course à pied','Vélo','Rameur','Corde à sauter','Elliptique','HIIT','Natation','Boxe','Ski erg']
+};
+
+function allExos(){const s=new Set();sessions.forEach(x=>(x.exos||[]).forEach(e=>s.add(e.name)));return[...s];}
+
+function setLogType(type, btn){
+  logType=type;
+  document.querySelectorAll('.log-type-pill').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
 }
-function selSug(n){document.getElementById('exoInput').value=n;document.getElementById('sugBox').style.display='none';const b=getBest(n);if(b)document.getElementById('exoWeight').value=b;document.getElementById('exoSR').focus();}
-function handleExoKey(e){if(e.key==='Escape')document.getElementById('sugBox').style.display='none';if(e.key==='Enter'){e.preventDefault();document.getElementById('exoWeight').focus();}}
-document.addEventListener('click',e=>{if(!e.target.closest('#exoInput')&&!e.target.closest('#sugBox'))document.getElementById('sugBox').style.display='none';});
-function initLog(){const d=document.getElementById('sessionDate');if(!d.value)d.value=new Date().toISOString().slice(0,10);renderExoList();}
-function parseSR(s){const m=s.match(/(\d+)[×x\*\/](\d+)/i);if(m)return{series:+m[1],reps:+m[2]};const n=+s;return{series:isNaN(n)?3:n,reps:8};}
-function addExo(){
-  const name=document.getElementById('exoInput').value.trim();
-  if(!name){alert('Entre un exercice !');return;}
-  const w=parseFloat(document.getElementById('exoWeight').value)||0;
-  const sr=parseSR(document.getElementById('exoSR').value||'3×8');
-  currentExos.push({name,weight:w,series:sr.series,reps:sr.reps});
-  document.getElementById('exoInput').value='';document.getElementById('exoWeight').value='';document.getElementById('exoSR').value='';
-  document.getElementById('sugBox').style.display='none';
-  renderExoList();
+
+function initLog(){
+  const d=document.getElementById('sessionDate');
+  if(!d.value) d.value=new Date().toISOString().slice(0,10);
+  if(!currentExos.length){
+    const nt=getNextType();
+    logType=nt;
+    document.querySelectorAll('.log-type-pill').forEach(b=>b.classList.toggle('active',b.dataset.type===nt));
+  }
+  renderExoCards();
 }
-function removeExo(i){currentExos.splice(i,1);renderExoList();}
-function renderExoList(){
-  const l=document.getElementById('exoLogList');
-  if(!currentExos.length){l.innerHTML='<div style="font-size:13px;color:var(--muted);text-align:center;padding:8px">Aucun exercice ajouté</div>';return;}
-  l.innerHTML=currentExos.map((e,i)=>`<div class="exo-log-item"><div class="exo-log-name">${e.name}</div><div class="exo-log-detail">${e.weight>0?e.weight+'kg — ':''}${e.series}×${e.reps}</div><div class="exo-log-del" onclick="removeExo(${i})">×</div></div>`).join('');
+
+function renderExoCards(){
+  const list=document.getElementById('exoCardList');
+  if(!currentExos.length){
+    list.innerHTML=`<div class="log-empty">Appuie sur <strong>+ Ajouter un exercice</strong><br>pour démarrer ta séance</div>`;
+    return;
+  }
+  list.innerHTML=currentExos.map((e,i)=>{
+    const pr=getBest(e.name);
+    const isRecord=pr>0&&e.weight>pr;
+    const sub=isRecord?'🏆 Nouveau record !':(pr>0?`Record : ${pr} kg`:'');
+    const wLabel=e.weight>0?e.weight:'—';
+    const wUnit=e.weight>0?'kg':'corps';
+    return `<div class="exo-card">
+      <div class="exo-card-head">
+        <div style="min-width:0">
+          <div class="exo-card-title">${e.name}</div>
+          ${sub?`<div class="exo-card-sub">${sub}</div>`:''}
+        </div>
+        <button class="exo-del-btn" onclick="removeExo(${i})">×</button>
+      </div>
+      <div class="exo-card-body">
+        <div>
+          <div class="stepper-lbl">Charge</div>
+          <div class="stepper">
+            <button class="st-btn" onclick="adjustExo(${i},'weight',-2.5)">−</button>
+            <div class="st-center"><div class="st-num">${wLabel}</div><div class="st-unit">${wUnit}</div></div>
+            <button class="st-btn" onclick="adjustExo(${i},'weight',2.5)">+</button>
+          </div>
+        </div>
+        <div class="stepper-row">
+          <div>
+            <div class="stepper-lbl">Séries</div>
+            <div class="stepper">
+              <button class="st-btn" onclick="adjustExo(${i},'series',-1)">−</button>
+              <div class="st-center"><div class="st-num">${e.series}</div><div class="st-unit">séries</div></div>
+              <button class="st-btn" onclick="adjustExo(${i},'series',1)">+</button>
+            </div>
+          </div>
+          <div>
+            <div class="stepper-lbl">Répétitions</div>
+            <div class="stepper">
+              <button class="st-btn" onclick="adjustExo(${i},'reps',-1)">−</button>
+              <div class="st-center"><div class="st-num">${e.reps}</div><div class="st-unit">reps</div></div>
+              <button class="st-btn" onclick="adjustExo(${i},'reps',1)">+</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
 }
+
+function adjustExo(i,field,delta){
+  const e=currentExos[i];
+  if(field==='weight') e.weight=Math.max(0,Math.round(((e.weight||0)+delta)*2)/2);
+  else if(field==='series') e.series=Math.max(1,e.series+delta);
+  else if(field==='reps')   e.reps=Math.max(1,e.reps+delta);
+  renderExoCards();
+}
+
+function openExoPicker(){
+  const inp=document.getElementById('exoSearchInput');
+  inp.value='';
+  filterExoPicker();
+  document.getElementById('exoPickerModal').classList.add('open');
+  setTimeout(()=>inp.focus(),220);
+}
+
+function filterExoPicker(){
+  const q=document.getElementById('exoSearchInput').value.trim().toLowerCase();
+  const prev=allExos();
+  let html='';
+
+  if(!q){
+    const recent=prev.slice(0,6);
+    if(recent.length){
+      html+=`<div class="exo-pick-sect">Récents</div>`;
+      html+=`<div class="exo-pick-chips">${recent.map(n=>`<div class="exo-pick-chip" onclick="pickExo('${n.replace(/'/g,"\\'")}')"> ${n}</div>`).join('')}</div>`;
+    }
+    const pool=EXO_BY_TYPE[logType]||[];
+    const sugg=pool.filter(n=>!prev.includes(n));
+    const list=sugg.length?sugg:pool;
+    html+=`<div class="exo-pick-sect">Suggérés — ${TYPE_LBL[logType]}</div>`;
+    html+=list.map(n=>exoPickRow(n)).join('');
+  } else {
+    const pool=[...new Set([...prev,...Object.values(EXO_BY_TYPE).flat()])];
+    const matches=pool.filter(n=>n.toLowerCase().includes(q)).slice(0,12);
+    html=matches.map(n=>exoPickRow(n)).join('');
+    const raw=document.getElementById('exoSearchInput').value.trim();
+    const alreadyExact=matches.some(n=>n.toLowerCase()===q);
+    if(!alreadyExact)
+      html+=`<div class="exo-pick-row" onclick="pickExo('${raw.replace(/'/g,"\\'")}')"><div class="exo-pick-n" style="color:var(--muted)">+ Ajouter &ldquo;<strong style="color:var(--text)">${raw}</strong>&rdquo;</div></div>`;
+  }
+  document.getElementById('exoPickerContent').innerHTML=html;
+}
+
+function exoPickRow(name){
+  const pr=getBest(name);
+  return `<div class="exo-pick-row" onclick="pickExo('${name.replace(/'/g,"\\'")}')"><div class="exo-pick-n">${name}</div>${pr?`<div class="exo-pick-pr">${pr} kg</div>`:''}</div>`;
+}
+
+function pickExo(name){
+  const pr=getBest(name)||0;
+  currentExos.push({name,weight:pr,series:3,reps:10});
+  closeModal('exoPickerModal');
+  renderExoCards();
+}
+
+function removeExo(i){currentExos.splice(i,1);renderExoCards();}
+
 async function saveSession(){
   if(!currentExos.length){alert('Ajoute au moins un exercice !');return;}
   const btn=document.getElementById('saveBtn');btn.textContent='Enregistrement…';btn.disabled=true;
-  const ok=await saveSessionToDB({date:document.getElementById('sessionDate').value,type:document.getElementById('sessionType').value,notes:document.getElementById('sessionNotes').value,exos:[...currentExos]});
-  if(ok){currentExos=[];document.getElementById('sessionNotes').value='';document.getElementById('sessionDate').value='';renderExoList();await checkCards();showScreen('home',document.querySelector('.nav-btn'));}
+  const ok=await saveSessionToDB({date:document.getElementById('sessionDate').value,type:logType,notes:document.getElementById('sessionNotes').value,exos:[...currentExos]});
+  if(ok){currentExos=[];document.getElementById('sessionNotes').value='';document.getElementById('sessionDate').value='';renderExoCards();await checkCards();showScreen('home',document.querySelector('.nav-btn'));}
   else alert('Erreur lors de la sauvegarde.');
   btn.textContent='Enregistrer la séance';btn.disabled=false;
 }
