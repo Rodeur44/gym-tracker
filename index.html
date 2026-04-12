@@ -213,6 +213,24 @@ input,select,textarea{font-family:'DM Sans',sans-serif;outline:none}
 .exo-pick-row:active{opacity:.45}
 .exo-pick-n{font-size:14px;color:var(--text)}
 .exo-pick-pr{font-size:11px;color:var(--accent);font-family:'DM Mono',monospace;flex-shrink:0;margin-left:8px}
+
+.sets-list{display:flex;flex-direction:column;gap:7px}
+.set-row{display:flex;align-items:center;gap:5px}
+.set-num{width:18px;font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;text-align:center;flex-shrink:0}
+.set-mini{display:flex;align-items:center;background:var(--surface2);border-radius:10px;border:1px solid var(--border);overflow:hidden;flex:1}
+.sm-btn{width:34px;height:38px;font-size:18px;font-weight:300;color:var(--text);background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;flex-shrink:0}
+.sm-btn:active{background:rgba(200,255,0,.18)}
+.sm-val{flex:1;text-align:center;font-size:14px;font-weight:600;font-family:'DM Mono',monospace;color:var(--text);min-width:0}
+.sm-unit{font-size:9px;color:var(--muted);font-weight:400;display:block}
+.set-sep{font-size:12px;color:var(--muted);flex-shrink:0;padding:0 1px}
+.set-del{width:26px;height:26px;border-radius:50%;background:none;border:none;color:var(--border);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;-webkit-tap-highlight-color:transparent;transition:color .15s}
+.set-del:active{color:var(--red)}
+.btn-add-set{background:none;border:1px dashed var(--border);border-radius:10px;padding:8px;width:100%;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;margin-top:2px}
+.btn-add-set:active{background:rgba(200,255,0,.08);border-color:var(--accent);color:var(--accent)}
+
+.exo-rename-input{background:none;border:none;border-bottom:1.5px solid var(--accent);color:var(--text);font-size:15px;font-weight:600;width:100%;padding:1px 0 3px;outline:none;font-family:'DM Sans',sans-serif}
+.exo-card-title{cursor:pointer}
+.exo-card-title:active{opacity:.6}
 </style>
 </head>
 <body>
@@ -484,7 +502,15 @@ function showScreen(id,btn){
 function fmtDate(d){return new Date(d+'T12:00:00').toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'})}
 function getNextType(){const o=['pec','dos','bras','jambes'];if(!sessions.length)return'pec';return o[(o.indexOf(sessions[0].type)+1)%o.length];}
 function getLastByType(t){return sessions.find(s=>s.type===t)||null;}
-function getBest(name){let b=0;sessions.forEach(s=>(s.exos||[]).forEach(e=>{if(e.name===name&&e.weight>b)b=e.weight}));return b;}
+function getBest(name){
+  let b=0;
+  sessions.forEach(s=>(s.exos||[]).forEach(e=>{
+    if(e.name!==name) return;
+    if(e.sets) e.sets.forEach(set=>{if((set.weight||0)>b)b=set.weight;});
+    else if((e.weight||0)>b) b=e.weight;
+  }));
+  return b;
+}
 function getStreak(){
   if(!sessions.length) return 0;
   const dates=new Set(sessions.map(s=>s.date));
@@ -498,10 +524,12 @@ function getStreak(){
 function renderHome(){
   const nt=getNextType();
   const last=sessions[0];
-  const tip=(()=>{const l=getLastByType(nt);if(!l)return'Première séance '+TYPE_LBL[nt]+' — donne tout !';const e=l.exos?.[0];return e&&e.weight>0?`Dernière : ${fmtDate(l.date)} — Vise ${(e.weight+2).toFixed(1).replace('.0','')}kg sur ${e.name}`:`Dernière : ${fmtDate(l.date)} — Augmente les reps !`;})();
+  const exoW=e=>(e.sets?Math.max(0,...e.sets.map(s=>s.weight||0)):e.weight||0);
+  const exoSR=e=>e.sets?`${e.sets.length}×${e.sets[0]?.reps||'?'}`:`${e.series}×${e.reps}`;
+  const tip=(()=>{const l=getLastByType(nt);if(!l)return'Première séance '+TYPE_LBL[nt]+' — donne tout !';const e=l.exos?.[0];const w=e?exoW(e):0;return e&&w>0?`Dernière : ${fmtDate(l.date)} — Vise ${(w+2).toFixed(1).replace('.0','')}kg sur ${e.name}`:`Dernière : ${fmtDate(l.date)} — Augmente les reps !`;})();
   document.getElementById('nextCard').innerHTML=`<div class="next-card"><div class="next-label">Prochaine séance</div><div class="next-title">${TYPE_LBL[nt]}</div><div class="next-tip">${tip}</div><div class="next-badge">${sessions.length} séances · ${unlockedCards.size} cartes</div></div>`;
   if(last){
-    document.getElementById('lastSessionCard').innerHTML=`<div><div class="section-title">Dernière séance</div><div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><span class="tag ${TAG_CLS[last.type]}">${TYPE_LBL[last.type]}</span><span style="font-size:12px;color:var(--muted);font-family:'DM Mono',monospace">${fmtDate(last.date)}</span></div>${(last.exos||[]).slice(0,4).map(e=>`<div class="exo-item"><div class="exo-dot"></div><div class="exo-name">${e.name}</div>${e.weight>0?`<div class="exo-weight">${e.weight}kg</div>`:''}<div class="exo-sets">${e.series}×${e.reps}</div></div>`).join('')}${(last.exos||[]).length>4?`<div style="font-size:12px;color:var(--muted);padding-top:8px">+${last.exos.length-4} exercices…</div>`:''}</div></div>`;
+    document.getElementById('lastSessionCard').innerHTML=`<div><div class="section-title">Dernière séance</div><div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><span class="tag ${TAG_CLS[last.type]}">${TYPE_LBL[last.type]}</span><span style="font-size:12px;color:var(--muted);font-family:'DM Mono',monospace">${fmtDate(last.date)}</span></div>${(last.exos||[]).slice(0,4).map(e=>`<div class="exo-item"><div class="exo-dot"></div><div class="exo-name">${e.name}</div>${exoW(e)>0?`<div class="exo-weight">${exoW(e)}kg</div>`:''}<div class="exo-sets">${exoSR(e)}</div></div>`).join('')}${(last.exos||[]).length>4?`<div style="font-size:12px;color:var(--muted);padding-top:8px">+${last.exos.length-4} exercices…</div>`:''}</div></div>`;
   } else document.getElementById('lastSessionCard').innerHTML='';
   const days=['L','M','M','J','V','S','D'];
   const now=new Date();
@@ -544,58 +572,73 @@ function renderExoCards(){
     list.innerHTML=`<div class="log-empty">Appuie sur <strong>+ Ajouter un exercice</strong><br>pour démarrer ta séance</div>`;
     return;
   }
-  list.innerHTML=currentExos.map((e,i)=>{
+  list.innerHTML=currentExos.map((e,ei)=>{
     const pr=getBest(e.name);
-    const isRecord=pr>0&&e.weight>pr;
+    const maxW=Math.max(0,...e.sets.map(s=>s.weight||0));
+    const isRecord=pr>0&&maxW>pr;
     const sub=isRecord?'🏆 Nouveau record !':(pr>0?`Record : ${pr} kg`:'');
-    const wLabel=e.weight>0?e.weight:'—';
-    const wUnit=e.weight>0?'kg':'corps';
+    const setsHTML=e.sets.map((set,si)=>{
+      const w=set.weight>0?set.weight:'—';
+      const u=set.weight>0?'kg':'corps';
+      return `<div class="set-row">
+        <div class="set-num">${si+1}</div>
+        <div class="set-mini">
+          <button class="sm-btn" onclick="adjustSet(${ei},${si},'weight',-2.5)">−</button>
+          <div class="sm-val">${w}<span class="sm-unit">${u}</span></div>
+          <button class="sm-btn" onclick="adjustSet(${ei},${si},'weight',2.5)">+</button>
+        </div>
+        <div class="set-sep">×</div>
+        <div class="set-mini" style="max-width:96px">
+          <button class="sm-btn" onclick="adjustSet(${ei},${si},'reps',-1)">−</button>
+          <div class="sm-val">${set.reps}<span class="sm-unit">reps</span></div>
+          <button class="sm-btn" onclick="adjustSet(${ei},${si},'reps',1)">+</button>
+        </div>
+        <button class="set-del" onclick="removeSet(${ei},${si})">×</button>
+      </div>`;
+    }).join('');
     return `<div class="exo-card">
       <div class="exo-card-head">
-        <div style="min-width:0">
-          <div class="exo-card-title">${e.name}</div>
-          ${sub?`<div class="exo-card-sub">${sub}</div>`:''}
+        <div style="min-width:0;flex:1">
+          <div class="exo-card-title" id="exo-name-${ei}" onclick="startRenameExo(${ei})">${e.name}</div>
+          ${sub?`<div class="exo-card-sub">${sub}</div>`:'<div class="exo-card-sub" style="color:var(--border);font-size:10px">Tap pour renommer</div>'}
         </div>
-        <button class="exo-del-btn" onclick="removeExo(${i})">×</button>
+        <button class="exo-del-btn" onclick="removeExo(${ei})">×</button>
       </div>
       <div class="exo-card-body">
-        <div>
-          <div class="stepper-lbl">Charge</div>
-          <div class="stepper">
-            <button class="st-btn" onclick="adjustExo(${i},'weight',-2.5)">−</button>
-            <div class="st-center"><div class="st-num">${wLabel}</div><div class="st-unit">${wUnit}</div></div>
-            <button class="st-btn" onclick="adjustExo(${i},'weight',2.5)">+</button>
-          </div>
-        </div>
-        <div class="stepper-row">
-          <div>
-            <div class="stepper-lbl">Séries</div>
-            <div class="stepper">
-              <button class="st-btn" onclick="adjustExo(${i},'series',-1)">−</button>
-              <div class="st-center"><div class="st-num">${e.series}</div><div class="st-unit">séries</div></div>
-              <button class="st-btn" onclick="adjustExo(${i},'series',1)">+</button>
-            </div>
-          </div>
-          <div>
-            <div class="stepper-lbl">Répétitions</div>
-            <div class="stepper">
-              <button class="st-btn" onclick="adjustExo(${i},'reps',-1)">−</button>
-              <div class="st-center"><div class="st-num">${e.reps}</div><div class="st-unit">reps</div></div>
-              <button class="st-btn" onclick="adjustExo(${i},'reps',1)">+</button>
-            </div>
-          </div>
-        </div>
+        <div class="sets-list">${setsHTML}</div>
+        <button class="btn-add-set" onclick="addSet(${ei})">+ Série</button>
       </div>
     </div>`;
   }).join('');
 }
 
-function adjustExo(i,field,delta){
-  const e=currentExos[i];
-  if(field==='weight') e.weight=Math.max(0,Math.round(((e.weight||0)+delta)*2)/2);
-  else if(field==='series') e.series=Math.max(1,e.series+delta);
-  else if(field==='reps')   e.reps=Math.max(1,e.reps+delta);
+function adjustSet(ei,si,field,delta){
+  const set=currentExos[ei].sets[si];
+  if(field==='weight') set.weight=Math.max(0,Math.round(((set.weight||0)+delta)*2)/2);
+  else if(field==='reps') set.reps=Math.max(1,(set.reps||1)+delta);
   renderExoCards();
+}
+function addSet(ei){
+  const sets=currentExos[ei].sets;
+  const last=sets[sets.length-1]||{weight:0,reps:10};
+  sets.push({weight:last.weight,reps:last.reps});
+  renderExoCards();
+}
+function removeSet(ei,si){
+  currentExos[ei].sets.splice(si,1);
+  if(!currentExos[ei].sets.length) currentExos.splice(ei,1);
+  renderExoCards();
+}
+function startRenameExo(ei){
+  const el=document.getElementById(`exo-name-${ei}`);
+  if(!el||el.tagName==='INPUT') return;
+  const cur=currentExos[ei].name;
+  el.outerHTML=`<input class="exo-rename-input" id="exo-name-${ei}" value="${cur.replace(/"/g,'&quot;')}" onblur="finishRenameExo(${ei})" onkeydown="if(event.key==='Enter')this.blur()"/>`;
+  setTimeout(()=>{const inp=document.getElementById(`exo-name-${ei}`);if(inp){inp.focus();inp.select();}},30);
+}
+function finishRenameExo(ei){
+  const inp=document.getElementById(`exo-name-${ei}`);
+  if(inp){const v=inp.value.trim();if(v)currentExos[ei].name=v;renderExoCards();}
 }
 
 function openExoPicker(){
@@ -612,6 +655,8 @@ function filterExoPicker(){
   let html='';
 
   if(!q){
+    html+=`<div class="exo-pick-sect" style="padding-top:0;border-top:none">Accès rapide</div>`;
+    html+=`<div class="exo-pick-row" onclick="addUnknownMachine()"><div class="exo-pick-n">📷 Machine sans nom</div><div style="font-size:11px;color:var(--muted)">Renomme après</div></div>`;
     const recent=prev.slice(0,6);
     if(recent.length){
       html+=`<div class="exo-pick-sect">Récents</div>`;
@@ -641,9 +686,17 @@ function exoPickRow(name){
 
 function pickExo(name){
   const pr=getBest(name)||0;
-  currentExos.push({name,weight:pr,series:3,reps:10});
+  currentExos.push({name,sets:[{weight:pr,reps:10}]});
   closeModal('exoPickerModal');
   renderExoCards();
+}
+function addUnknownMachine(){
+  const n=currentExos.filter(e=>e.name.startsWith('Machine')).length;
+  const name=n===0?'Machine':`Machine ${n+1}`;
+  currentExos.push({name,sets:[{weight:0,reps:10}]});
+  closeModal('exoPickerModal');
+  renderExoCards();
+  setTimeout(()=>startRenameExo(currentExos.length-1),80);
 }
 
 function removeExo(i){currentExos.splice(i,1);renderExoCards();}
@@ -659,7 +712,10 @@ async function saveSession(){
 
 // ── PROG ──────────────────────────────────────────────────────
 function renderProg(){
-  const map={};sessions.forEach(s=>(s.exos||[]).forEach(e=>{if(e.weight>0&&(!map[e.name]||e.weight>map[e.name]))map[e.name]=e.weight;}));
+  const map={};sessions.forEach(s=>(s.exos||[]).forEach(e=>{
+    const w=e.sets?Math.max(0,...e.sets.map(s=>s.weight||0)):(e.weight||0);
+    if(w>0&&(!map[e.name]||w>map[e.name]))map[e.name]=w;
+  }));
   const top=Object.entries(map).sort((a,b)=>b[1]-a[1]);
   const stat=(idx)=>top[idx]?`<div class="stat-box"><div class="stat-val">${top[idx][1]}kg</div><div class="stat-label" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${top[idx][0]}</div><div class="stat-delta">↑ record</div></div>`:`<div class="stat-box"><div class="stat-val">—</div><div class="stat-label">Aucun record</div></div>`;
   document.getElementById('statsGrid').innerHTML=`<div class="stat-box"><div class="stat-val">${sessions.length}</div><div class="stat-label">Séances totales</div></div><div class="stat-box"><div class="stat-val">${[...new Set(sessions.map(s=>s.type))].length}/5</div><div class="stat-label">Groupes entraînés</div></div>${stat(0)}${stat(1)}`;
@@ -681,9 +737,14 @@ let currentDetailId = null;
 function openDetail(id){
   const s=sessions.find(x=>x.id==id);if(!s)return;
   currentDetailId=id;
-  const vol=(s.exos||[]).reduce((sum,e)=>sum+(e.weight*e.series*e.reps),0);
+  const vol=(s.exos||[]).reduce((sum,e)=>e.sets?sum+e.sets.reduce((a,st)=>a+(st.weight||0)*st.reps,0):sum+(e.weight||0)*(e.series||0)*(e.reps||0),0);
   document.getElementById('modalTitle').innerHTML=`<span class="tag ${TAG_CLS[s.type]}">${TYPE_LBL[s.type]}</span> <span style="font-size:13px;color:var(--muted);margin-left:8px;font-family:'DM Mono',monospace">${fmtDate(s.date)}</span>${vol>0?`<span style="font-size:11px;color:var(--muted);display:block;margin-top:6px">Volume total : <span style="color:var(--accent);font-family:'DM Mono',monospace">${vol}kg</span></span>`:''}`;
-  document.getElementById('modalBody').innerHTML=(s.exos||[]).map(e=>`<div class="detail-exo"><div class="detail-exo-name">${e.name}</div><div class="detail-exo-val">${e.weight>0?e.weight+'kg — ':''}${e.series} séries × ${e.reps} reps${e.weight>0?` = ${e.weight*e.series*e.reps}kg vol.`:''}</div></div>`).join('')+(s.notes?`<div style="margin-top:12px;font-size:13px;color:var(--muted);line-height:1.5;padding-top:12px;border-top:1px solid var(--border)">${s.notes}</div>`:'');
+  document.getElementById('modalBody').innerHTML=(s.exos||[]).map(e=>{
+    const lines=e.sets
+      ?e.sets.map((st,i)=>`<div class="detail-exo-val">Série ${i+1} — ${st.weight>0?st.weight+'kg':'corps'} × ${st.reps} reps</div>`).join('')
+      :`<div class="detail-exo-val">${e.weight>0?e.weight+'kg — ':''}${e.series} séries × ${e.reps} reps</div>`;
+    return `<div class="detail-exo"><div class="detail-exo-name">${e.name}</div>${lines}</div>`;
+  }).join('')+(s.notes?`<div style="margin-top:12px;font-size:13px;color:var(--muted);line-height:1.5;padding-top:12px;border-top:1px solid var(--border)">${s.notes}</div>`:'');
   document.getElementById('detailModal').classList.add('open');
 }
 function closeModal(id){document.getElementById(id).classList.remove('open')}
