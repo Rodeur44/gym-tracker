@@ -42,10 +42,10 @@ input,select,textarea{font-family:'DM Sans',sans-serif;outline:none}
 .header-date{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace}
 .avatar{width:30px;height:30px;border-radius:50%;background:var(--surface2);border:1px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--accent);cursor:pointer}
 
-.nav{display:flex;background:var(--surface);border-top:1px solid var(--border);position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;z-index:100}
-.nav-btn{flex:1;padding:10px 2px 14px;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;color:var(--muted);font-size:9px;transition:color .2s}
+.nav{display:flex;background:var(--surface);border-top:1px solid var(--border);position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;z-index:100;padding-bottom:env(safe-area-inset-bottom)}
+.nav-btn{flex:1;padding:10px 4px 14px;display:flex;flex-direction:column;align-items:center;gap:4px;background:none;color:var(--muted);font-size:9px;font-weight:500;transition:color .2s;letter-spacing:.3px}
 .nav-btn.active{color:var(--accent)}
-.nav-icon{font-size:18px;line-height:1}
+.nav-btn svg{transition:stroke .2s}
 
 .screen{display:none;padding:16px 16px 90px;flex-direction:column;gap:14px;animation:fadeIn .2s ease}
 .screen.active{display:flex}
@@ -214,23 +214,28 @@ input,select,textarea{font-family:'DM Sans',sans-serif;outline:none}
 .exo-pick-n{font-size:14px;color:var(--text)}
 .exo-pick-pr{font-size:11px;color:var(--accent);font-family:'DM Mono',monospace;flex-shrink:0;margin-left:8px}
 
-.sets-list{display:flex;flex-direction:column;gap:7px}
-.set-row{display:flex;align-items:center;gap:5px}
-.set-num{width:18px;font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;text-align:center;flex-shrink:0}
-.set-mini{display:flex;align-items:center;background:var(--surface2);border-radius:10px;border:1px solid var(--border);overflow:hidden;flex:1}
-.sm-btn{width:34px;height:38px;font-size:18px;font-weight:300;color:var(--text);background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;flex-shrink:0}
-.sm-btn:active{background:rgba(200,255,0,.18)}
-.sm-val{flex:1;text-align:center;font-size:14px;font-weight:600;font-family:'DM Mono',monospace;color:var(--text);min-width:0}
-.sm-unit{font-size:9px;color:var(--muted);font-weight:400;display:block}
-.set-sep{font-size:12px;color:var(--muted);flex-shrink:0;padding:0 1px}
-.set-del{width:26px;height:26px;border-radius:50%;background:none;border:none;color:var(--border);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;-webkit-tap-highlight-color:transparent;transition:color .15s}
+.sets-list{display:flex;flex-direction:column}
+.set-row{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--border)}
+.set-row:last-child{border-bottom:none;padding-bottom:2px}
+.set-badge{width:24px;height:24px;border-radius:7px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--muted);flex-shrink:0;font-family:'DM Mono',monospace}
+.set-ctrl{flex:1;display:flex;align-items:center;background:var(--surface2);border-radius:12px;border:1px solid var(--border);overflow:hidden}
+.sc-btn{width:40px;height:50px;font-size:22px;font-weight:200;color:var(--text);background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;flex-shrink:0;transition:background .1s}
+.sc-btn:active{background:rgba(200,255,0,.14)}
+.sc-mid{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:50px}
+.sc-num{font-size:19px;font-weight:700;font-family:'DM Mono',monospace;color:var(--text);line-height:1}
+.sc-unit{font-size:9px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:.6px}
+.set-x{font-size:13px;color:var(--muted);flex-shrink:0}
+.set-del{width:28px;height:28px;border-radius:50%;background:none;border:none;color:var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px;-webkit-tap-highlight-color:transparent;transition:color .15s}
 .set-del:active{color:var(--red)}
-.btn-add-set{background:none;border:1px dashed var(--border);border-radius:10px;padding:8px;width:100%;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;margin-top:2px}
-.btn-add-set:active{background:rgba(200,255,0,.08);border-color:var(--accent);color:var(--accent)}
+.btn-add-set{background:none;border:1.5px dashed var(--border);border-radius:12px;padding:11px;width:100%;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn-add-set:active{border-color:var(--accent);color:var(--accent);background:rgba(200,255,0,.05)}
 
 .exo-rename-input{background:none;border:none;border-bottom:1.5px solid var(--accent);color:var(--text);font-size:15px;font-weight:600;width:100%;padding:1px 0 3px;outline:none;font-family:'DM Sans',sans-serif}
-.exo-card-title{cursor:pointer}
-.exo-card-title:active{opacity:.6}
+.exo-card-title{cursor:pointer;transition:opacity .15s}
+.exo-card-title:active{opacity:.5}
+
+.edit-banner{display:none;background:rgba(200,255,0,.08);border:1px solid rgba(200,255,0,.25);border-radius:14px;padding:12px 16px;flex-direction:row;align-items:center;justify-content:space-between;gap:10px}
+.edit-banner-cancel{background:none;border:1px solid var(--border);border-radius:8px;padding:5px 12px;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer}
 </style>
 </head>
 <body>
@@ -272,6 +277,14 @@ input,select,textarea{font-family:'DM Sans',sans-serif;outline:none}
   </div>
 
   <div id="screen-log" class="screen">
+
+    <div id="editModeBanner" class="edit-banner">
+      <div>
+        <div style="font-size:12px;font-weight:700;color:var(--accent);letter-spacing:.3px">MODIFICATION</div>
+        <div id="editModeLabel" style="font-size:11px;color:var(--muted);margin-top:2px"></div>
+      </div>
+      <button class="edit-banner-cancel" onclick="cancelEdit()">Annuler</button>
+    </div>
 
     <div style="display:flex;justify-content:space-between;align-items:center">
       <div style="font-size:20px;font-weight:600;letter-spacing:-.5px">Séance</div>
@@ -334,11 +347,26 @@ input,select,textarea{font-family:'DM Sans',sans-serif;outline:none}
   </div>
 
   <nav class="nav">
-    <button class="nav-btn active" onclick="showScreen('home',this)"><span class="nav-icon">⚡</span><span>Accueil</span></button>
-    <button class="nav-btn" onclick="showScreen('log',this)"><span class="nav-icon">＋</span><span>Séance</span></button>
-    <button class="nav-btn" onclick="showScreen('history',this)"><span class="nav-icon">📋</span><span>Historique</span></button>
-    <button class="nav-btn" onclick="showScreen('prog',this)"><span class="nav-icon">📈</span><span>Progrès</span></button>
-    <button class="nav-btn" onclick="showScreen('cards',this)"><span class="nav-icon">🃏</span><span>Cartes</span></button>
+    <button class="nav-btn active" onclick="showScreen('home',this)">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span>Accueil</span>
+    </button>
+    <button class="nav-btn" onclick="showScreen('log',this)">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
+      <span>Séance</span>
+    </button>
+    <button class="nav-btn" onclick="showScreen('history',this)">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1.2" fill="currentColor" stroke="none"/><circle cx="3" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="3" cy="18" r="1.2" fill="currentColor" stroke="none"/></svg>
+      <span>Historique</span>
+    </button>
+    <button class="nav-btn" onclick="showScreen('prog',this)">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>
+      <span>Progrès</span>
+    </button>
+    <button class="nav-btn" onclick="showScreen('cards',this)">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+      <span>Cartes</span>
+    </button>
   </nav>
 </div>
 
@@ -349,8 +377,11 @@ input,select,textarea{font-family:'DM Sans',sans-serif;outline:none}
     <div id="modalBody"></div>
     <div style="display:flex;gap:8px;margin-top:16px">
       <button class="btn btn-secondary" style="flex:1" onclick="closeModal('detailModal')">Fermer</button>
-      <button class="btn btn-secondary" style="flex:1;color:var(--red);border-color:var(--red)" id="deleteSessionBtn" onclick="deleteSession()">Supprimer</button>
+      <button class="btn btn-primary" style="flex:1" onclick="startEditSession(currentDetailId)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Modifier
+      </button>
     </div>
+    <button class="btn btn-secondary" style="width:100%;margin-top:8px;color:var(--red);border-color:transparent" id="deleteSessionBtn" onclick="deleteSession()">Supprimer la séance</button>
   </div>
 </div>
 <div class="modal-overlay" id="cardModal" onclick="closeModal('cardModal')">
@@ -408,7 +439,7 @@ const TAG_CLS = {pec:'tag-pec',dos:'tag-dos',bras:'tag-bras',jambes:'tag-jambes'
 const TYPE_LBL = {pec:'Pec / Poitrine',dos:'Dos',bras:'Bras / Épaules',jambes:'Jambes',cardio:'Cardio'};
 const TAG_CLR = {pec:'#C8FF00',dos:'#7B61FF',bras:'#FF9500',jambes:'#FF4D4D',cardio:'#00E5E5'};
 
-let user=null, sessions=[], unlockedCards=new Set(), currentExos=[], authMode='login', logType='pec';
+let user=null, sessions=[], unlockedCards=new Set(), currentExos=[], authMode='login', logType='pec', editMode=false, editSessionId=null;
 
 // ── AUTH ──────────────────────────────────────────────────────
 function switchTab(m){
@@ -557,12 +588,41 @@ function setLogType(type, btn){
 
 function initLog(){
   const d=document.getElementById('sessionDate');
-  if(!d.value) d.value=new Date().toISOString().slice(0,10);
-  if(!currentExos.length){
+  if(!editMode && !d.value) d.value=new Date().toISOString().slice(0,10);
+  if(!editMode && !currentExos.length){
     const nt=getNextType();
     logType=nt;
     document.querySelectorAll('.log-type-pill').forEach(b=>b.classList.toggle('active',b.dataset.type===nt));
+  } else {
+    document.querySelectorAll('.log-type-pill').forEach(b=>b.classList.toggle('active',b.dataset.type===logType));
   }
+  const banner=document.getElementById('editModeBanner');
+  if(banner) banner.style.display=editMode?'flex':'none';
+  if(editMode&&editSessionId){
+    const s=sessions.find(x=>x.id===editSessionId);
+    const lbl=document.getElementById('editModeLabel');
+    if(s&&lbl) lbl.textContent=`Séance du ${fmtDate(s.date)} · ${TYPE_LBL[s.type]}`;
+  }
+  document.getElementById('saveBtn').textContent=editMode?'Mettre à jour la séance':'Enregistrer la séance';
+  renderExoCards();
+}
+function startEditSession(id){
+  const s=sessions.find(x=>x.id===id);if(!s)return;
+  editMode=true;editSessionId=id;
+  currentExos=(s.exos||[]).map(e=>
+    e.sets?{name:e.name,sets:e.sets.map(st=>({weight:st.weight||0,reps:st.reps||10}))}
+          :{name:e.name,sets:Array.from({length:e.series||1},()=>({weight:e.weight||0,reps:e.reps||10}))}
+  );
+  logType=s.type;
+  closeModal('detailModal');
+  const navLogBtn=document.querySelector('.nav-btn:nth-child(2)');
+  showScreen('log',navLogBtn);
+  setTimeout(()=>{document.getElementById('sessionDate').value=s.date;},60);
+}
+function cancelEdit(){
+  editMode=false;editSessionId=null;currentExos=[];
+  document.getElementById('editModeBanner').style.display='none';
+  document.getElementById('saveBtn').textContent='Enregistrer la séance';
   renderExoCards();
 }
 
@@ -572,41 +632,47 @@ function renderExoCards(){
     list.innerHTML=`<div class="log-empty">Appuie sur <strong>+ Ajouter un exercice</strong><br>pour démarrer ta séance</div>`;
     return;
   }
+  const accent=TAG_CLR[logType]||'var(--accent)';
   list.innerHTML=currentExos.map((e,ei)=>{
     const pr=getBest(e.name);
     const maxW=Math.max(0,...e.sets.map(s=>s.weight||0));
     const isRecord=pr>0&&maxW>pr;
-    const sub=isRecord?'🏆 Nouveau record !':(pr>0?`Record : ${pr} kg`:'');
+    const prBadge=isRecord
+      ?`<span style="display:inline-block;background:rgba(200,255,0,.15);color:var(--accent);font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;letter-spacing:.3px">🏆 NOUVEAU RECORD</span>`
+      :(pr>0?`<span style="font-size:11px;color:var(--muted)">Record · <span style="color:var(--text);font-weight:600;font-family:'DM Mono',monospace">${pr} kg</span></span>`:'');
     const setsHTML=e.sets.map((set,si)=>{
       const w=set.weight>0?set.weight:'—';
-      const u=set.weight>0?'kg':'corps';
+      const u=set.weight>0?'KG':'CORPS';
       return `<div class="set-row">
-        <div class="set-num">${si+1}</div>
-        <div class="set-mini">
-          <button class="sm-btn" onclick="adjustSet(${ei},${si},'weight',-2.5)">−</button>
-          <div class="sm-val">${w}<span class="sm-unit">${u}</span></div>
-          <button class="sm-btn" onclick="adjustSet(${ei},${si},'weight',2.5)">+</button>
+        <div class="set-badge">${si+1}</div>
+        <div class="set-ctrl">
+          <button class="sc-btn" onclick="adjustSet(${ei},${si},'weight',-2.5)">−</button>
+          <div class="sc-mid"><span class="sc-num">${w}</span><span class="sc-unit">${u}</span></div>
+          <button class="sc-btn" onclick="adjustSet(${ei},${si},'weight',2.5)">+</button>
         </div>
-        <div class="set-sep">×</div>
-        <div class="set-mini" style="max-width:96px">
-          <button class="sm-btn" onclick="adjustSet(${ei},${si},'reps',-1)">−</button>
-          <div class="sm-val">${set.reps}<span class="sm-unit">reps</span></div>
-          <button class="sm-btn" onclick="adjustSet(${ei},${si},'reps',1)">+</button>
+        <div class="set-x">×</div>
+        <div class="set-ctrl" style="max-width:104px">
+          <button class="sc-btn" onclick="adjustSet(${ei},${si},'reps',-1)">−</button>
+          <div class="sc-mid"><span class="sc-num">${set.reps}</span><span class="sc-unit">REPS</span></div>
+          <button class="sc-btn" onclick="adjustSet(${ei},${si},'reps',1)">+</button>
         </div>
         <button class="set-del" onclick="removeSet(${ei},${si})">×</button>
       </div>`;
     }).join('');
-    return `<div class="exo-card">
+    return `<div class="exo-card" style="border-left:3px solid ${accent}">
       <div class="exo-card-head">
         <div style="min-width:0;flex:1">
           <div class="exo-card-title" id="exo-name-${ei}" onclick="startRenameExo(${ei})">${e.name}</div>
-          ${sub?`<div class="exo-card-sub">${sub}</div>`:'<div class="exo-card-sub" style="color:var(--border);font-size:10px">Tap pour renommer</div>'}
+          <div style="margin-top:4px">${prBadge||`<span style="font-size:10px;color:var(--border)">Appuie sur le nom pour renommer</span>`}</div>
         </div>
         <button class="exo-del-btn" onclick="removeExo(${ei})">×</button>
       </div>
       <div class="exo-card-body">
         <div class="sets-list">${setsHTML}</div>
-        <button class="btn-add-set" onclick="addSet(${ei})">+ Série</button>
+        <button class="btn-add-set" onclick="addSet(${ei})">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          Ajouter une série
+        </button>
       </div>
     </div>`;
   }).join('');
@@ -703,10 +769,22 @@ function removeExo(i){currentExos.splice(i,1);renderExoCards();}
 
 async function saveSession(){
   if(!currentExos.length){alert('Ajoute au moins un exercice !');return;}
-  const btn=document.getElementById('saveBtn');btn.textContent='Enregistrement…';btn.disabled=true;
-  const ok=await saveSessionToDB({date:document.getElementById('sessionDate').value,type:logType,notes:document.getElementById('sessionNotes').value,exos:[...currentExos]});
-  if(ok){currentExos=[];document.getElementById('sessionNotes').value='';document.getElementById('sessionDate').value='';renderExoCards();await checkCards();showScreen('home',document.querySelector('.nav-btn'));}
-  else alert('Erreur lors de la sauvegarde.');
+  const btn=document.getElementById('saveBtn');
+  btn.textContent=editMode?'Mise à jour…':'Enregistrement…';btn.disabled=true;
+  const payload={date:document.getElementById('sessionDate').value,type:logType,notes:document.getElementById('sessionNotes').value,exos:[...currentExos]};
+  let ok=false;
+  if(editMode&&editSessionId){
+    const{error}=await sb.from('sessions').update(payload).eq('id',editSessionId).eq('user_id',user.id);
+    if(!error){const idx=sessions.findIndex(s=>s.id===editSessionId);if(idx>=0)sessions[idx]={...sessions[idx],...payload};ok=true;}
+  } else {
+    ok=await saveSessionToDB(payload);
+  }
+  if(ok){
+    editMode=false;editSessionId=null;
+    currentExos=[];document.getElementById('sessionNotes').value='';document.getElementById('sessionDate').value='';
+    document.getElementById('editModeBanner').style.display='none';
+    renderExoCards();await checkCards();showScreen('home',document.querySelector('.nav-btn'));
+  } else alert('Erreur lors de la sauvegarde.');
   btn.textContent='Enregistrer la séance';btn.disabled=false;
 }
 
