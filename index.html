@@ -215,18 +215,26 @@ input,select,textarea{font-family:'DM Sans',sans-serif;outline:none}
 .exo-pick-pr{font-size:11px;color:var(--accent);font-family:'DM Mono',monospace;flex-shrink:0;margin-left:8px}
 
 .sets-list{display:flex;flex-direction:column}
-.set-row{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--border)}
+.set-row{padding:12px 0;border-bottom:1px solid var(--border)}
 .set-row:last-child{border-bottom:none;padding-bottom:2px}
+.set-top{display:flex;align-items:center;gap:8px;margin-bottom:12px}
 .set-badge{width:24px;height:24px;border-radius:7px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--muted);flex-shrink:0;font-family:'DM Mono',monospace}
-.set-ctrl{flex:1;display:flex;align-items:center;background:var(--surface2);border-radius:12px;border:1px solid var(--border);overflow:hidden}
-.sc-btn{width:40px;height:50px;font-size:22px;font-weight:200;color:var(--text);background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;flex-shrink:0;transition:background .1s}
-.sc-btn:active{background:rgba(200,255,0,.14)}
-.sc-mid{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:50px}
-.sc-num{font-size:19px;font-weight:700;font-family:'DM Mono',monospace;color:var(--text);line-height:1}
-.sc-unit{font-size:9px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:.6px}
-.set-x{font-size:13px;color:var(--muted);flex-shrink:0}
+.set-wval{display:flex;align-items:baseline;gap:4px;min-width:76px}
+.set-wnum{font-size:22px;font-weight:700;font-family:'DM Mono',monospace;color:var(--text);line-height:1}
+.set-wunit{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.set-x{font-size:12px;color:var(--muted);flex-shrink:0}
+.set-reps{display:flex;align-items:center;background:var(--surface2);border-radius:10px;border:1px solid var(--border);overflow:hidden;flex:1}
+.srep-btn{width:36px;height:44px;font-size:20px;font-weight:200;color:var(--text);background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;flex-shrink:0}
+.srep-btn:active{background:rgba(200,255,0,.14)}
+.srep-mid{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:44px}
 .set-del{width:28px;height:28px;border-radius:50%;background:none;border:none;color:var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px;-webkit-tap-highlight-color:transparent;transition:color .15s}
 .set-del:active{color:var(--red)}
+.set-slider-wrap{padding-left:32px}
+.wslider{width:100%;height:6px;-webkit-appearance:none;appearance:none;border-radius:3px;outline:none;cursor:pointer;border:none}
+.wslider::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;border-radius:50%;background:var(--accent);cursor:grab;box-shadow:0 2px 12px rgba(200,255,0,.5);transition:transform .1s}
+.wslider::-webkit-slider-thumb:active{transform:scale(1.2);cursor:grabbing}
+.wslider::-moz-range-thumb{width:28px;height:28px;border-radius:50%;background:var(--accent);cursor:grab;border:none;box-shadow:0 2px 12px rgba(200,255,0,.5)}
+.wslider::-moz-range-track{background:transparent}
 .btn-add-set{background:none;border:1.5px dashed var(--border);border-radius:12px;padding:11px;width:100%;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:6px}
 .btn-add-set:active{border-color:var(--accent);color:var(--accent);background:rgba(200,255,0,.05)}
 
@@ -643,20 +651,29 @@ function renderExoCards(){
     const setsHTML=e.sets.map((set,si)=>{
       const w=set.weight>0?set.weight:'—';
       const u=set.weight>0?'KG':'CORPS';
+      const pct=(set.weight/250*100).toFixed(1);
+      const trackBg=`linear-gradient(to right,var(--accent) ${pct}%,var(--border) ${pct}%)`;
       return `<div class="set-row">
-        <div class="set-badge">${si+1}</div>
-        <div class="set-ctrl">
-          <button class="sc-btn" onclick="adjustSet(${ei},${si},'weight',-2.5)">−</button>
-          <div class="sc-mid"><span class="sc-num">${w}</span><span class="sc-unit">${u}</span></div>
-          <button class="sc-btn" onclick="adjustSet(${ei},${si},'weight',2.5)">+</button>
+        <div class="set-top">
+          <div class="set-badge">${si+1}</div>
+          <div class="set-wval">
+            <span class="set-wnum" id="wn-${ei}-${si}">${w}</span>
+            <span class="set-wunit" id="wu-${ei}-${si}">${u}</span>
+          </div>
+          <div class="set-x">×</div>
+          <div class="set-reps">
+            <button class="srep-btn" onclick="adjustSet(${ei},${si},'reps',-1)">−</button>
+            <div class="srep-mid"><span class="set-wnum">${set.reps}</span><span class="set-wunit">REPS</span></div>
+            <button class="srep-btn" onclick="adjustSet(${ei},${si},'reps',1)">+</button>
+          </div>
+          <button class="set-del" onclick="removeSet(${ei},${si})">×</button>
         </div>
-        <div class="set-x">×</div>
-        <div class="set-ctrl" style="max-width:104px">
-          <button class="sc-btn" onclick="adjustSet(${ei},${si},'reps',-1)">−</button>
-          <div class="sc-mid"><span class="sc-num">${set.reps}</span><span class="sc-unit">REPS</span></div>
-          <button class="sc-btn" onclick="adjustSet(${ei},${si},'reps',1)">+</button>
+        <div class="set-slider-wrap">
+          <input type="range" class="wslider" min="0" max="250" step="2.5" value="${set.weight}"
+            style="background:${trackBg}"
+            oninput="liveWeight(${ei},${si},this)"
+            onchange="commitWeight(${ei},${si},this)"/>
         </div>
-        <button class="set-del" onclick="removeSet(${ei},${si})">×</button>
       </div>`;
     }).join('');
     return `<div class="exo-card" style="border-left:3px solid ${accent}">
@@ -682,6 +699,19 @@ function adjustSet(ei,si,field,delta){
   const set=currentExos[ei].sets[si];
   if(field==='weight') set.weight=Math.max(0,Math.round(((set.weight||0)+delta)*2)/2);
   else if(field==='reps') set.reps=Math.max(1,(set.reps||1)+delta);
+  renderExoCards();
+}
+function liveWeight(ei,si,slider){
+  const val=+slider.value;
+  const numEl=document.getElementById(`wn-${ei}-${si}`);
+  const unitEl=document.getElementById(`wu-${ei}-${si}`);
+  if(numEl) numEl.textContent=val>0?val:'—';
+  if(unitEl) unitEl.textContent=val>0?'KG':'CORPS';
+  const pct=(val/250*100).toFixed(1);
+  slider.style.background=`linear-gradient(to right,var(--accent) ${pct}%,var(--border) ${pct}%)`;
+}
+function commitWeight(ei,si,slider){
+  currentExos[ei].sets[si].weight=+slider.value;
   renderExoCards();
 }
 function addSet(ei){
