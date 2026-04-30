@@ -1,0 +1,135 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.4);
+}
+
+:root {
+  --background: #0A0A0A;
+  --foreground: #F5F5F4;
+  --card: rgba(255,255,255,0.025);
+  --card-foreground: #F5F5F4;
+  --primary: #7C3AED;
+  --primary-foreground: #ffffff;
+  --secondary: rgba(255,255,255,0.045);
+  --secondary-foreground: #F5F5F4;
+  --muted: rgba(255,255,255,0.045);
+  --muted-foreground: #737373;
+  --accent: #A78BFA;
+  --accent-foreground: #0A0A0A;
+  --destructive: #F87171;
+  --border: rgba(255,255,255,0.06);
+  --input: rgba(255,255,255,0.045);
+  --ring: rgba(139,92,246,0.35);
+  --radius: 1rem;
+
+  /* GymLog custom tokens */
+  --gl-accent: #A78BFA;
+  --gl-accent-soft: rgba(139,92,246,0.12);
+  --gl-accent-glow: rgba(139,92,246,0.35);
+  --gl-surface: rgba(255,255,255,0.025);
+  --gl-surface-2: rgba(255,255,255,0.045);
+  --gl-surface-solid: #141414;
+  --gl-surface-2-solid: #1C1C1C;
+  --gl-border: rgba(255,255,255,0.06);
+  --gl-border-strong: rgba(255,255,255,0.10);
+  --gl-muted: #737373;
+  --gl-muted-2: #525252;
+  --gl-spring: cubic-bezier(0.34,1.56,0.64,1);
+  --gl-ease-out: cubic-bezier(0.16,1,0.3,1);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'DM Sans', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    letter-spacing: -0.01em;
+    overscroll-behavior-y: contain;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 100% 60% at 50% -5%, rgba(124,58,237,0.18) 0%, transparent 65%),
+      radial-gradient(ellipse 70% 50% at 80% 110%, rgba(139,92,246,0.10) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 40% at 10% 50%, rgba(99,102,241,0.06) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+}
+
+@layer utilities {
+  .glass {
+    background: rgba(255,255,255,0.03);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .glass-strong {
+    background: rgba(20,20,20,0.85);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .card-glass {
+    background: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.015) 100%);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.06);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04);
+    position: relative;
+  }
+  .card-glass::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 10%;
+    right: 10%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
+    pointer-events: none;
+  }
+  .glow-accent {
+    box-shadow: 0 0 24px rgba(139,92,246,0.35);
+  }
+  .text-accent {
+    color: #A78BFA;
+  }
+  .tracking-tight-xl {
+    letter-spacing: -0.04em;
+  }
+}
