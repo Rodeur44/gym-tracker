@@ -32,47 +32,64 @@ function DetailModal({ session, onClose, onEdit, onDelete }: {
         exit={{ y: 40, opacity: 0 }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         onClick={e => e.stopPropagation()}
-        className="w-full max-w-[430px] bg-[#141414] border border-white/[0.08] rounded-t-3xl p-6 max-h-[85vh] overflow-y-auto"
+        className="w-full max-w-[430px] bg-[#141414] border border-white/[0.08] rounded-t-3xl max-h-[80vh] flex flex-col"
       >
-        <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-5" />
-        <div className="flex items-center justify-between mb-4">
-          <span className="text-[11px] font-semibold px-3 py-1 rounded-full border"
-            style={{ color: clr, background: TAG_BG[session.type as MuscleGroup], borderColor: `${clr}33` }}>
-            {TYPE_LBL[session.type as MuscleGroup]}
-          </span>
-          <span className="text-xs text-zinc-500 font-mono">{fmtDate(session.date)}</span>
+        {/* Header — fixe */}
+        <div className="flex-shrink-0 px-6 pt-5 pb-4">
+          <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-5" />
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold px-3 py-1 rounded-full border"
+              style={{ color: clr, background: TAG_BG[session.type as MuscleGroup], borderColor: `${clr}33` }}>
+              {TYPE_LBL[session.type as MuscleGroup]}
+            </span>
+            <span className="text-xs text-zinc-500 font-mono">{fmtDate(session.date)}</span>
+          </div>
         </div>
 
-        <div className="flex flex-col gap-1 mb-6">
-          {(session.exos || []).map((e, i) => (
-            <div key={i} className="py-3 border-b border-white/[0.05] last:border-none">
-              <div className="flex justify-between items-baseline mb-1">
-                <span className="text-sm font-medium text-zinc-200">{e.name}</span>
-                <span className="text-xs font-mono text-zinc-500">{e.sets.length} série{e.sets.length > 1 ? 's' : ''}</span>
+        {/* Contenu — scrollable */}
+        <div className="flex-1 overflow-y-auto px-6 pb-2">
+          <div className="flex flex-col gap-1">
+            {(session.exos || []).map((e, i) => (
+              <div key={i} className="py-3 border-b border-white/[0.05] last:border-none">
+                <div className="flex justify-between items-baseline mb-1">
+                  <span className="text-sm font-medium text-zinc-200">{e.name}</span>
+                  <span className="text-xs font-mono text-zinc-500">{e.sets.length} série{e.sets.length > 1 ? 's' : ''}</span>
+                </div>
+                <div className="flex flex-wrap gap-2 mt-1.5">
+                  {e.sets.map((s, si) => (
+                    <span key={si} className="text-[11px] font-mono bg-[#1C1C1C] border border-white/[0.06] px-2.5 py-1 rounded-lg text-zinc-400">
+                      {s.weight > 0 ? `${s.weight}kg` : 'corps'} × {s.reps}
+                    </span>
+                  ))}
+                </div>
               </div>
-              <div className="flex flex-wrap gap-2 mt-1.5">
-                {e.sets.map((s, si) => (
-                  <span key={si} className="text-[11px] font-mono bg-[#1C1C1C] border border-white/[0.06] px-2.5 py-1 rounded-lg text-zinc-400">
-                    {s.weight > 0 ? `${s.weight}kg` : 'corps'} × {s.reps}
-                  </span>
-                ))}
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
-        <div className="flex gap-2 mb-2">
-          <button onClick={onClose} className="flex-1 py-3.5 rounded-2xl bg-[#1C1C1C] border border-white/[0.06] text-sm font-semibold text-zinc-300 hover:bg-[#222] transition-all">
-            Fermer
-          </button>
-          <button onClick={onEdit} className="flex-1 py-3.5 rounded-2xl text-sm font-semibold text-white flex items-center justify-center gap-2"
-            style={{ background: 'linear-gradient(135deg,#6D28D9,#7C3AED)', boxShadow: '0 8px 24px -8px rgba(109,40,217,0.5)' }}>
-            <Pencil size={14} /> Modifier
-          </button>
+        {/* Footer — toujours visible */}
+        <div className="flex-shrink-0 px-6 pt-3 pb-6 border-t border-white/[0.05]">
+          <div className="flex gap-2">
+            <motion.button
+              whileTap={{ scale: 0.94 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+              onClick={onDelete}
+              aria-label="Supprimer la séance"
+              className="w-12 h-12 rounded-2xl flex items-center justify-center text-red-400 bg-red-500/5 border border-red-500/15 active:bg-red-500/15 transition-colors"
+            >
+              <Trash2 size={18} strokeWidth={1.8} />
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.97 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+              onClick={onEdit}
+              className="flex-1 h-12 rounded-2xl text-sm font-semibold text-white flex items-center justify-center gap-2"
+              style={{ background: 'linear-gradient(135deg,#6D28D9,#7C3AED)', boxShadow: '0 8px 24px -8px rgba(109,40,217,0.5)' }}
+            >
+              <Pencil size={16} strokeWidth={1.8} /> Modifier la séance
+            </motion.button>
+          </div>
         </div>
-        <button onClick={onDelete} className="w-full py-3 rounded-2xl text-sm font-semibold text-red-400 bg-red-500/5 border border-red-500/10 hover:bg-red-500/10 transition-all">
-          Supprimer la séance
-        </button>
       </motion.div>
     </motion.div>
   )

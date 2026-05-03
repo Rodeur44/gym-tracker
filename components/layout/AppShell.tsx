@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Home, Plus, Clock, BarChart2, LayoutGrid, LogOut } from 'lucide-react'
 import { useApp } from '@/context/AppContext'
@@ -30,7 +30,11 @@ const SCREENS = {
 
 export default function AppShell() {
   const [tab, setTab] = useState<Tab>('home')
-  const { user, signOut } = useApp()
+  const { user, signOut, editMode } = useApp()
+
+  useEffect(() => {
+    if (editMode) setTab('log')
+  }, [editMode])
   const name = user?.user_metadata?.display_name || user?.email?.split('@')[0] || '?'
   const initials = name[0].toUpperCase()
 

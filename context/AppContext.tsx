@@ -177,7 +177,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const newCards = checkUnlocks(updatedSessions, unlockedCards)
       if (newCards.length > 0) {
         setUnlockedCards(prev => new Set([...prev, ...newCards]))
-        sb.from('user_cards').insert(newCards.map(id => ({ user_id: user.id, card_id: id })))
+        await sb.from('user_cards').insert(newCards.map(id => ({ user_id: user.id, card_id: id })))
       }
 
       return true
