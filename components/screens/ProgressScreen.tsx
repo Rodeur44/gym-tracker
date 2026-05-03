@@ -1,10 +1,38 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import type { Variants } from 'framer-motion'
+import { BarChart2 } from 'lucide-react'
 import { useApp } from '@/context/AppContext'
+
+const stagger: Variants = { animate: { transition: { staggerChildren: 0.07 } } }
+const fadeUp: Variants = {
+  initial: { opacity: 0, y: 16 },
+  animate: { opacity: 1, y: 0 },
+}
 
 export default function ProgressScreen() {
   const { sessions } = useApp()
+
+  if (!sessions.length) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        className="flex flex-col items-center justify-center min-h-[70vh] px-8 text-center"
+      >
+        <div className="w-20 h-20 rounded-[24px] flex items-center justify-center mb-6 border"
+          style={{ background: 'linear-gradient(135deg,rgba(109,40,217,0.15),rgba(139,92,246,0.06))', borderColor: 'rgba(139,92,246,0.2)', boxShadow: '0 0 40px -12px rgba(139,92,246,0.4)' }}>
+          <BarChart2 size={36} className="text-[#A78BFA]" />
+        </div>
+        <h3 className="text-lg font-semibold text-zinc-100 mb-2 tracking-tight">Aucun progrès encore</h3>
+        <p className="text-sm text-zinc-500 leading-relaxed max-w-[220px]">
+          Enregistre ta première séance avec des poids pour voir tes records et ton volume ici.
+        </p>
+      </motion.div>
+    )
+  }
 
   const map: Record<string, number> = {}
   sessions.forEach(s => (s.exos || []).forEach(e => {
@@ -20,25 +48,23 @@ export default function ProgressScreen() {
 
   const statCards = [
     { val: sessions.length, lbl: 'Séances totales' },
-    { val: [...new Set(sessions.map(s => s.type))].length + '/5', lbl: 'Groupes entraînés' },
+    { val: `${[...new Set(sessions.map(s => s.type))].length}/5`, lbl: 'Groupes entraînés' },
     { val: top[0] ? `${top[0][1]}kg` : '—', lbl: top[0]?.[0] || 'Meilleur record' },
-    { val: Math.round(totalVol / 1000) + 'T', lbl: 'Volume total soulevé' },
+    { val: `${Math.round(totalVol / 1000)}T`, lbl: 'Volume total soulevé' },
   ]
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
+      variants={stagger}
+      initial="initial"
+      animate="animate"
       className="px-4 pt-5 pb-28 flex flex-col gap-5"
     >
-      {/* Stats grid */}
       <div className="grid grid-cols-2 gap-3">
-        {statCards.map(({ val, lbl }, i) => (
+        {statCards.map(({ val, lbl }) => (
           <motion.div
             key={lbl}
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.07, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            variants={fadeUp}
             whileHover={{ y: -3 }}
             className="card-glass rounded-[18px] p-4 relative overflow-hidden"
             style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)' }}
@@ -50,16 +76,13 @@ export default function ProgressScreen() {
         ))}
       </div>
 
-      {/* Records bar chart */}
-      <div>
+      <motion.div variants={fadeUp}>
         <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-[1.8px] mb-3 flex items-center gap-2">
           <span className="w-[3px] h-[11px] rounded-full bg-[#A78BFA] shadow-[0_0_8px_rgba(139,92,246,0.5)] inline-block" />
-          Records
+          Records ({top.length})
         </p>
         <div className="card-glass rounded-2xl p-4">
-          {!top.length ? (
-            <p className="text-sm text-zinc-600 text-center py-4">Enregistre des séances pour voir tes progrès !</p>
-          ) : top.slice(0, 10).map(([name, w], i) => (
+          {top.slice(0, 10).map(([name, w], i) => (
             <div key={name} className="py-2.5 border-b border-white/[0.04] last:border-none">
               <div className="flex justify-between items-baseline mb-2">
                 <span className="text-sm text-zinc-300 tracking-tight truncate mr-2">{name}</span>
@@ -79,7 +102,7 @@ export default function ProgressScreen() {
             </div>
           ))}
         </div>
-      </div>
+      </motion.div>
     </motion.div>
   )
 }

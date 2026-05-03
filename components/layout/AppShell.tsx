@@ -50,7 +50,7 @@ export default function AppShell() {
           <button
             onClick={signOut}
             className="w-8 h-8 rounded-full bg-[#1C1C1C] border border-[#A78BFA] flex items-center justify-center text-[13px] font-semibold text-[#A78BFA] transition-all duration-300 hover:shadow-[0_0_16px_rgba(139,92,246,0.4)] hover:scale-105 active:scale-95"
-            title="Se déconnecter"
+            aria-label="Se déconnecter"
           >
             {initials}
           </button>

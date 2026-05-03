@@ -100,28 +100,38 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const saveSession = useCallback(async (payload: Omit<Session, 'id' | 'user_id' | 'created_at'>) => {
     if (!user) return false
     if (editMode && editSessionId) {
+      // Optimistic: apply immediately, revert on error
+      setSessions(prev => prev.map(s => s.id === editSessionId ? { ...s, ...payload } : s))
+      setEditMode(false); setEditSessionId(null)
       const { error } = await sb.from('sessions').update(payload).eq('id', editSessionId).eq('user_id', user.id)
-      if (!error) {
-        setSessions(prev => prev.map(s => s.id === editSessionId ? { ...s, ...payload } : s))
-        setEditMode(false); setEditSessionId(null)
-        return true
-      }
-      return false
-    }
-    const { data, error } = await sb.from('sessions').insert({ ...payload, user_id: user.id }).select().single()
-    if (!error && data) {
-      setSessions(prev => [data as Session, ...prev])
+      if (error) { await loadData(user.id); return false }
       return true
     }
+    // Optimistic: insert temp session immediately
+    const tempId = `temp-${Date.now()}`
+    const tempSession: Session = { ...payload, id: tempId, user_id: user.id, created_at: new Date().toISOString() }
+    setSessions(prev => [tempSession, ...prev])
+    const { data, error } = await sb.from('sessions').insert({ ...payload, user_id: user.id }).select().single()
+    if (!error && data) {
+      setSessions(prev => prev.map(s => s.id === tempId ? data as Session : s))
+      return true
+    }
+    setSessions(prev => prev.filter(s => s.id !== tempId))
     return false
-  }, [user, editMode, editSessionId, sb])
+  }, [user, editMode, editSessionId, sb, loadData])
 
   const deleteSession = useCallback(async (id: string) => {
     if (!user) return false
+    // Optimistic: remove immediately, revert on error
+    const snapshot = sessions.find(s => s.id === id)
+    setSessions(prev => prev.filter(s => s.id !== id))
     const { error } = await sb.from('sessions').delete().eq('id', id).eq('user_id', user.id)
-    if (!error) { setSessions(prev => prev.filter(s => s.id !== id)); return true }
-    return false
-  }, [user, sb])
+    if (error) {
+      if (snapshot) setSessions(prev => [...prev, snapshot].sort((a, b) => b.date.localeCompare(a.date)))
+      return false
+    }
+    return true
+  }, [user, sessions, sb])
 
   const signOut = useCallback(async () => {
     await sb.auth.signOut()

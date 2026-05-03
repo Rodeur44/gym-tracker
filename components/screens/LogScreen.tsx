@@ -180,7 +180,7 @@ function SetRow({ set, idx, accent, onWeightChange, onRepsChange, onDelete }: {
           <button onClick={() => onRepsChange(1)} className="w-10 h-11 flex items-center justify-center text-xl font-light text-white hover:bg-[rgba(139,92,246,0.08)] active:bg-[rgba(139,92,246,0.18)] active:scale-90 transition-all">+</button>
         </div>
         {/* Delete */}
-        <button onClick={onDelete}
+        <button onClick={onDelete} aria-label="Supprimer la série"
           className="w-[30px] h-[30px] rounded-full bg-[#1C1C1C] border border-white/[0.06] flex items-center justify-center text-zinc-500 flex-shrink-0 hover:text-red-400 hover:border-red-400/30 active:bg-red-500 active:text-white active:rotate-90 transition-all duration-200">
           <X size={14} />
         </button>
@@ -277,7 +277,7 @@ function ExoCard({ exo, idx, accent, getBest, onChange, onDelete }: {
             )}
           </div>
         </div>
-        <button onClick={onDelete}
+        <button onClick={onDelete} aria-label="Supprimer l'exercice"
           className="w-8 h-8 rounded-full bg-[#1C1C1C] border border-white/[0.06] flex items-center justify-center text-zinc-500 flex-shrink-0 hover:text-red-400 hover:border-red-400/30 active:rotate-90 active:bg-red-500 active:text-white transition-all duration-200">
           <X size={16} />
         </button>
@@ -313,7 +313,6 @@ export default function LogScreen() {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
   const [notes, setNotes] = useState('')
   const [pickerOpen, setPickerOpen] = useState(false)
-  const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
   const allPrev = [...new Set(sessions.flatMap(s => (s.exos || []).map(e => e.name)))]
@@ -335,14 +334,13 @@ export default function LogScreen() {
 
   async function handleSave() {
     if (!currentExos.length) { setError('Ajoute au moins un exercice !'); return }
-    setSaving(true); setError('')
+    setError('')
     const ok = await saveSession({ date, type: logType, notes, exos: currentExos })
     if (ok) {
       setCurrentExos([]); setNotes(''); setDate(new Date().toISOString().slice(0, 10))
     } else {
       setError('Erreur lors de la sauvegarde.')
     }
-    setSaving(false)
   }
 
   return (
@@ -457,11 +455,10 @@ export default function LogScreen() {
         <motion.button
           whileTap={{ scale: 0.97 }}
           onClick={handleSave}
-          disabled={saving}
-          className="w-full py-4 rounded-2xl font-semibold text-[15px] text-white disabled:opacity-60 transition-all"
+          className="w-full py-4 rounded-2xl font-semibold text-[15px] text-white transition-all"
           style={{ background: 'linear-gradient(135deg,#6D28D9,#7C3AED 50%,#8B5CF6)', boxShadow: '0 12px 32px -8px rgba(109,40,217,0.6)' }}
         >
-          {saving ? 'Enregistrement…' : editMode ? 'Mettre à jour la séance' : 'Enregistrer la séance'}
+          {editMode ? 'Mettre à jour la séance' : 'Enregistrer la séance'}
         </motion.button>
       </motion.div>
 

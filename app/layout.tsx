@@ -18,6 +18,15 @@ const dmMono = DM_Mono({
 export const metadata: Metadata = {
   title: 'GymLog',
   description: 'Suis tes séances, bats tes records, débloque ta collection.',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'GymLog',
+  },
+  icons: {
+    icon: '/icon.svg',
+    apple: '/icon.svg',
+  },
 }
 
 export const viewport: Viewport = {
