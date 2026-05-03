@@ -111,6 +111,9 @@
   .animation-delay-luma {
     animation-delay: -1.25s;
   }
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
 }
 
 @layer utilities {

@@ -30,33 +30,45 @@ const SCREENS = {
 }
 
 const slideVariants: Variants = {
-  initial: (d: number) => ({ opacity: 0, x: d * 48 }),
+  initial: (d: number) => ({ opacity: 0, x: d * 50 }),
   animate: { opacity: 1, x: 0 },
-  exit: (d: number) => ({ opacity: 0, x: d * -24 }),
+  exit: (d: number) => ({ opacity: 0, x: d * -25 }),
+}
+
+const snapVariants: Variants = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1 },
+  exit: { opacity: 0 },
 }
 
 export default function AppShell() {
   const [tab, setTab] = useState<Tab>('home')
   const [direction, setDirection] = useState(1)
+  const [scrubbing, setScrubbing] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
+
   const profileRef = useRef<HTMLDivElement>(null)
-  const touchStartX = useRef(0)
-  const touchStartY = useRef(0)
+  const mainRef = useRef<HTMLElement>(null)
+  const navRef = useRef<HTMLDivElement>(null)
   const navDragging = useRef(false)
+  const tabRef = useRef(tab)
+  tabRef.current = tab
+
   const { user, signOut, editMode, repeatPending, clearRepeat } = useApp()
 
-  // Navigate to a tab with direction tracking
-  const goTo = useCallback((newTab: Tab) => {
-    setDirection(prev => {
-      const from = NAV.findIndex(n => n.id === tab)
+  // ── Tab navigation with direction ────────────────────────────
+  const goTo = useCallback((newTab: Tab, anim: 'slide' | 'snap' = 'slide') => {
+    setScrubbing(anim === 'snap')
+    setDirection(() => {
+      const from = NAV.findIndex(n => n.id === tabRef.current)
       const to = NAV.findIndex(n => n.id === newTab)
       return to >= from ? 1 : -1
     })
     setTab(newTab)
-  }, [tab])
+  }, [])
 
-  // Navigate by relative direction
   const navigateDir = useCallback((dir: 1 | -1) => {
+    setScrubbing(false)
     setDirection(dir)
     setTab(prev => {
       const idx = NAV.findIndex(n => n.id === prev)
@@ -67,11 +79,11 @@ export default function AppShell() {
   }, [])
 
   useEffect(() => {
-    if (editMode) { setDirection(1); setTab('log') }
+    if (editMode) { setScrubbing(false); setDirection(1); setTab('log') }
   }, [editMode])
 
   useEffect(() => {
-    if (repeatPending) { setDirection(1); setTab('log'); clearRepeat() }
+    if (repeatPending) { setScrubbing(false); setDirection(1); setTab('log'); clearRepeat() }
   }, [repeatPending, clearRepeat])
 
   useEffect(() => {
@@ -83,21 +95,50 @@ export default function AppShell() {
     return () => document.removeEventListener('mousedown', handler)
   }, [profileOpen])
 
-  // ── Swipe gesture on content ──────────────────────────────────
-  function onTouchStart(e: React.TouchEvent) {
-    touchStartX.current = e.touches[0].clientX
-    touchStartY.current = e.touches[0].clientY
-  }
+  // ── Swipe on content — native listeners to allow preventDefault ─
+  useEffect(() => {
+    const el = mainRef.current
+    if (!el) return
 
-  function onTouchEnd(e: React.TouchEvent) {
-    const dx = e.changedTouches[0].clientX - touchStartX.current
-    const dy = e.changedTouches[0].clientY - touchStartY.current
-    // Ignore if primarily vertical (user is scrolling)
-    if (Math.abs(dy) > Math.abs(dx) * 0.7) return
-    // Require minimum horizontal distance
-    if (Math.abs(dx) < 65) return
-    navigateDir(dx < 0 ? 1 : -1)
-  }
+    let startX = 0
+    let startY = 0
+    let lock: 'none' | 'h' | 'v' = 'none'
+
+    function onStart(e: TouchEvent) {
+      startX = e.touches[0].clientX
+      startY = e.touches[0].clientY
+      lock = 'none'
+    }
+
+    function onMove(e: TouchEvent) {
+      const dx = e.touches[0].clientX - startX
+      const dy = e.touches[0].clientY - startY
+
+      if (lock === 'none' && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
+        lock = Math.abs(dx) > Math.abs(dy) * 0.75 ? 'h' : 'v'
+      }
+
+      // Block vertical scroll while a horizontal swipe is in progress
+      if (lock === 'h') e.preventDefault()
+    }
+
+    function onEnd(e: TouchEvent) {
+      if (lock !== 'h') return
+      const dx = e.changedTouches[0].clientX - startX
+      if (Math.abs(dx) < 65) return
+      navigateDir(dx < 0 ? 1 : -1)
+      lock = 'none'
+    }
+
+    el.addEventListener('touchstart', onStart, { passive: true })
+    el.addEventListener('touchmove', onMove, { passive: false })
+    el.addEventListener('touchend', onEnd, { passive: true })
+    return () => {
+      el.removeEventListener('touchstart', onStart)
+      el.removeEventListener('touchmove', onMove)
+      el.removeEventListener('touchend', onEnd)
+    }
+  }, [navigateDir])
 
   // ── Nav bar scrubbing ─────────────────────────────────────────
   function onNavPointerDown(e: React.PointerEvent<HTMLDivElement>) {
@@ -111,11 +152,12 @@ export default function AppShell() {
     const x = e.clientX - rect.left
     const idx = Math.min(NAV.length - 1, Math.max(0, Math.floor((x / rect.width) * NAV.length)))
     const hovered = NAV[idx].id
-    if (hovered !== tab) goTo(hovered)
+    if (hovered !== tabRef.current) goTo(hovered, 'snap')
   }
 
   function onNavPointerUp() {
     navDragging.current = false
+    setScrubbing(false)
   }
 
   const name = user?.user_metadata?.display_name || user?.email?.split('@')[0] || '?'
@@ -168,21 +210,20 @@ export default function AppShell() {
         </div>
       </header>
 
-      {/* Screen — swipe zone */}
-      <main
-        className="flex-1 overflow-hidden"
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
-      >
+      {/* Screen */}
+      <main ref={mainRef} className="flex-1 overflow-hidden">
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div
             key={tab}
             custom={direction}
-            variants={slideVariants}
+            variants={scrubbing ? snapVariants : slideVariants}
             initial="initial"
             animate="animate"
             exit="exit"
-            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+            transition={scrubbing
+              ? { duration: 0.1, ease: 'easeOut' }
+              : { duration: 0.28, ease: [0.16, 1, 0.3, 1] }
+            }
             className="h-full"
           >
             <Screen />
@@ -190,9 +231,10 @@ export default function AppShell() {
         </AnimatePresence>
       </main>
 
-      {/* Bottom Nav — with scrub gesture */}
-      <nav className="glass-strong border-t border-white/[0.06] fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-50 pb-safe">
+      {/* Bottom Nav */}
+      <nav className="glass-strong border-t border-white/[0.06] fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-50">
         <div
+          ref={navRef}
           className="flex"
           onPointerDown={onNavPointerDown}
           onPointerMove={onNavPointerMove}
@@ -205,7 +247,8 @@ export default function AppShell() {
               <button
                 key={id}
                 onClick={() => goTo(id)}
-                className="flex-1 flex flex-col items-center gap-1 pt-2.5 pb-3.5 relative"
+                className="flex-1 flex flex-col items-center gap-1 pt-3 relative"
+                style={{ paddingBottom: 'max(20px, env(safe-area-inset-bottom, 20px))' }}
               >
                 {active && (
                   <motion.div
