@@ -6,7 +6,6 @@ import Image from 'next/image'
 import { useApp } from '@/context/AppContext'
 import { CARDS } from '@/lib/constants'
 import { TiltCard } from '@/components/ui/tilt-card'
-import { GlowCard } from '@/components/ui/spotlight-card'
 
 const RARITY_LBL = { rare: 'Rare', epic: 'Épique', legendary: 'Légendaire' }
 const RARITY_CLR = {
@@ -37,17 +36,15 @@ export default function CardsScreen() {
             const isLocked = !unlockedCards.has(card.id)
             const { border, badge, glow } = RARITY_CLR[card.rarity]
             return isLocked ? (
-                <GlowCard
+                <motion.div
                   key={card.id}
-                  glowColor="purple"
-                  className="overflow-hidden cursor-default"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.05, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                  className="bg-[#1C1C1C] rounded-2xl overflow-hidden border cursor-default"
+                  style={{ borderColor: 'rgba(139,92,246,0.18)', boxShadow: '0 0 20px -10px rgba(139,92,246,0.25)' }}
                 >
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.05, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                    className="opacity-40 blur-[4px] brightness-50 saturate-50 pointer-events-none select-none"
-                  >
+                  <div className="opacity-40 blur-[3px] brightness-50 saturate-50 pointer-events-none select-none">
                     <div className="relative aspect-[2/3] w-full">
                       <Image src={card.image} alt={card.name} fill className="object-cover" sizes="200px" />
                       <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/60 to-transparent" />
@@ -59,8 +56,8 @@ export default function CardsScreen() {
                         {RARITY_LBL[card.rarity]}
                       </span>
                     </div>
-                  </motion.div>
-                </GlowCard>
+                  </div>
+                </motion.div>
               ) : (
                 <motion.div
                   key={card.id}
