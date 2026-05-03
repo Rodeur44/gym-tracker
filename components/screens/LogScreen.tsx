@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, X, ChevronRight, AlertCircle, Camera } from 'lucide-react'
+import { Plus, X, ChevronRight, AlertCircle, Camera, Copy } from 'lucide-react'
 import { useApp } from '@/context/AppContext'
 import { TYPE_LBL, TAG_CLR, TAG_BG, EXO_BY_TYPE } from '@/lib/constants'
 import type { MuscleGroup, Exercise } from '@/types'
@@ -307,10 +307,33 @@ function ExoCard({ exo, idx, accent, getBest, onChange, onDelete }: {
             />
           ))}
         </AnimatePresence>
-        <button onClick={addSet}
-          className="w-full mt-3 mb-4 py-3 rounded-xl border-dashed border-[1.5px] border-white/10 text-xs font-semibold text-zinc-500 flex items-center justify-center gap-1.5 hover:border-[#A78BFA] hover:text-[#A78BFA] hover:bg-[rgba(139,92,246,0.04)] active:scale-98 transition-all">
-          <Plus size={12} /> Ajouter une série
-        </button>
+        <div className="flex gap-2 mt-3 mb-4">
+          {exo.sets.length > 0 && (
+            <motion.button
+              onClick={addSet}
+              whileTap={{ scale: 0.96 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+              className="flex-1 py-3 rounded-xl border border-white/[0.08] text-xs font-semibold text-[#A78BFA] flex items-center justify-center gap-2 bg-[rgba(139,92,246,0.06)] hover:bg-[rgba(139,92,246,0.1)] active:bg-[rgba(139,92,246,0.14)] transition-colors"
+            >
+              <Copy size={13} strokeWidth={1.8} />
+              Dupliquer ·{' '}
+              {exo.sets[exo.sets.length - 1].weight > 0
+                ? `${exo.sets[exo.sets.length - 1].weight}kg`
+                : 'corps'}{' '}
+              × {exo.sets[exo.sets.length - 1].reps}
+            </motion.button>
+          )}
+          <motion.button
+            onClick={() => onChange({ ...exo, sets: [...exo.sets, { weight: 0, reps: 10 }] })}
+            whileTap={{ scale: 0.96 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+            className={`py-3 rounded-xl border-dashed border-[1.5px] border-white/10 text-xs font-semibold text-zinc-600 flex items-center justify-center gap-1.5 hover:border-white/20 hover:text-zinc-400 transition-all ${exo.sets.length > 0 ? 'px-3' : 'flex-1'}`}
+            aria-label="Nouvelle série vierge"
+          >
+            <Plus size={13} strokeWidth={1.8} />
+            {exo.sets.length === 0 ? 'Ajouter une série' : ''}
+          </motion.button>
+        </div>
       </div>
     </motion.div>
   )
