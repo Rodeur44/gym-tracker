@@ -32,7 +32,8 @@ function DetailModal({ session, onClose, onEdit, onDelete }: {
         exit={{ y: 40, opacity: 0 }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         onClick={e => e.stopPropagation()}
-        className="w-full max-w-[430px] bg-[#141414] border border-white/[0.08] rounded-t-3xl max-h-[80vh] flex flex-col"
+        className="w-full max-w-[430px] bg-[#141414] border border-white/[0.08] rounded-t-3xl flex flex-col"
+        style={{ maxHeight: 'calc(80vh - 80px)', marginBottom: 'calc(70px + env(safe-area-inset-bottom, 0px))' }}
       >
         {/* Header — fixe */}
         <div className="flex-shrink-0 px-6 pt-5 pb-4">

@@ -89,6 +89,7 @@ export default function CardsScreen() {
                 scale={1.02}
                 perspective={1000}
                 spotlight
+                holoIntensity={selected.rarity === 'legendary' ? 0.5 : selected.rarity === 'epic' ? 0.3 : 0.12}
                 className="rounded-3xl bg-[#141414] border text-center"
                 style={{
                   borderColor: RARITY_CLR[selected.rarity].border,
