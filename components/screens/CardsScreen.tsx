@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 import { useApp } from '@/context/AppContext'
 import { CARDS } from '@/lib/constants'
+import { TiltCard } from '@/components/ui/tilt-card'
 
 const RARITY_LBL = { rare: 'Rare', epic: 'Épique', legendary: 'Légendaire' }
 const RARITY_CLR = {
@@ -81,19 +82,34 @@ export default function CardsScreen() {
               exit={{ scale: 0.8, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 300, damping: 25 }}
               onClick={e => e.stopPropagation()}
-              className="w-60 bg-[#141414] rounded-3xl overflow-hidden border text-center"
-              style={{ borderColor: RARITY_CLR[selected.rarity].border, boxShadow: `0 0 60px -10px ${RARITY_CLR[selected.rarity].glow}` }}
+              className="w-60"
             >
-              <div className="relative aspect-[2/3] w-full">
-                <Image src={selected.image} alt={selected.name} fill className="object-cover" sizes="240px" />
-              </div>
-              <div className="p-5">
-                <div className="text-base font-bold text-white mb-1">{selected.name}</div>
-                <div className="text-xs text-zinc-400 mb-4">{selected.cond}</div>
-                <button onClick={() => setSelected(null)} className="w-full py-2.5 rounded-xl bg-[#1C1C1C] border border-white/[0.06] text-sm font-medium text-zinc-300">
-                  Retour
-                </button>
-              </div>
+              <TiltCard
+                tiltLimit={12}
+                scale={1.02}
+                perspective={1000}
+                effect="gravitate"
+                spotlight
+                className="rounded-3xl bg-[#141414] border text-center"
+                style={{
+                  borderColor: RARITY_CLR[selected.rarity].border,
+                  boxShadow: `0 0 60px -10px ${RARITY_CLR[selected.rarity].glow}`,
+                }}
+              >
+                <div className="relative aspect-[2/3] w-full">
+                  <Image src={selected.image} alt={selected.name} fill className="object-cover rounded-t-3xl" sizes="240px" />
+                </div>
+                <div className="p-5">
+                  <div className="text-base font-bold text-white mb-1">{selected.name}</div>
+                  <div className="text-xs text-zinc-400 mb-4">{selected.cond}</div>
+                  <button
+                    onClick={() => setSelected(null)}
+                    className="w-full py-2.5 rounded-xl bg-[#1C1C1C] border border-white/[0.06] text-sm font-medium text-zinc-300"
+                  >
+                    Retour
+                  </button>
+                </div>
+              </TiltCard>
             </motion.div>
           </motion.div>
         )}
