@@ -2,9 +2,10 @@
 
 import { useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, X, ChevronRight, AlertCircle, Camera, Copy, CopyPlus } from 'lucide-react'
+import { Plus, X, ChevronRight, AlertCircle, Camera, Copy, CopyPlus, LayoutGrid } from 'lucide-react'
 import { useApp } from '@/context/AppContext'
-import { TYPE_LBL, TAG_CLR, TAG_BG, EXO_BY_TYPE } from '@/lib/constants'
+import { TYPE_LBL, TAG_CLR, TAG_BG, EXO_BY_TYPE, WORKOUT_TEMPLATES } from '@/lib/constants'
+import type { WorkoutTemplate } from '@/lib/constants'
 import type { MuscleGroup, Exercise } from '@/types'
 
 const MUSCLE_TABS: MuscleGroup[] = ['pec', 'dos', 'bras', 'jambes', 'cardio']
@@ -351,12 +352,81 @@ function ExoCard({ exo, idx, accent, getBest, onChange, onDelete, onDuplicate }:
   )
 }
 
+// ── Template Sheet ────────────────────────────────────────────────
+function TemplateSheet({ onClose, onPick, getBest }: {
+  onClose: () => void
+  onPick: (t: WorkoutTemplate) => void
+  getBest: (name: string) => number
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/70 backdrop-blur-xl z-50 flex items-end justify-center"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ y: 60, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 60, opacity: 0 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        onClick={e => e.stopPropagation()}
+        className="w-full max-w-[430px] bg-[#141414] border border-white/[0.08] rounded-t-3xl flex flex-col"
+        style={{ maxHeight: 'calc(85vh - 80px)', marginBottom: 'calc(70px + env(safe-area-inset-bottom, 0px))' }}
+      >
+        <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mt-4 mb-4 flex-shrink-0" />
+        <div className="px-5 pb-3 flex-shrink-0">
+          <h3 className="text-base font-semibold text-white">Programmes</h3>
+          <p className="text-xs text-zinc-500 mt-0.5">Sélectionne un programme pour pré-remplir ta séance</p>
+        </div>
+        <div className="overflow-y-auto flex-1 px-4 pb-8 flex flex-col gap-3">
+          {WORKOUT_TEMPLATES.map(t => (
+            <motion.button
+              key={t.id}
+              whileTap={{ scale: 0.98 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+              onClick={() => onPick(t)}
+              className="w-full text-left bg-[#1C1C1C] border border-white/[0.06] rounded-2xl p-4 hover:border-[rgba(139,92,246,0.3)] transition-colors"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-semibold text-zinc-200">{t.name}</span>
+                <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full border"
+                  style={{ color: TAG_CLR[t.type], background: TAG_BG[t.type], borderColor: `${TAG_CLR[t.type]}33` }}>
+                  {TYPE_LBL[t.type].split(' ')[0]}
+                </span>
+              </div>
+              <div className="flex flex-col gap-1">
+                {t.exos.slice(0, 3).map(e => {
+                  const best = getBest(e.name)
+                  return (
+                    <div key={e.name} className="flex items-center justify-between">
+                      <span className="text-[11px] text-zinc-500 truncate">{e.name}</span>
+                      <span className="text-[11px] font-mono text-zinc-600 ml-2 flex-shrink-0">
+                        {e.sets}×{e.reps}{best > 0 ? ` · ${best}kg` : ''}
+                      </span>
+                    </div>
+                  )
+                })}
+                {t.exos.length > 3 && (
+                  <span className="text-[11px] text-zinc-600 mt-0.5">+{t.exos.length - 3} exercices…</span>
+                )}
+              </div>
+            </motion.button>
+          ))}
+        </div>
+      </motion.div>
+    </motion.div>
+  )
+}
+
 // ── Log Screen ────────────────────────────────────────────────────
 export default function LogScreen() {
   const { currentExos, setCurrentExos, logType, setLogType, editMode, editSessionId, cancelEdit, saveSession, getBest, sessions } = useApp()
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
   const [notes, setNotes] = useState('')
   const [pickerOpen, setPickerOpen] = useState(false)
+  const [templatesOpen, setTemplatesOpen] = useState(false)
   const [error, setError] = useState('')
 
   const allPrev = [...new Set(sessions.flatMap(s => (s.exos || []).map(e => e.name)))]
@@ -374,6 +444,15 @@ export default function LogScreen() {
     const copy = { ...currentExos[idx], sets: currentExos[idx].sets.map(s => ({ ...s })) }
     setCurrentExos([...currentExos, copy])
   }, [currentExos, setCurrentExos])
+
+  function loadTemplate(t: WorkoutTemplate) {
+    setLogType(t.type)
+    setCurrentExos(t.exos.map(e => ({
+      name: e.name,
+      sets: Array.from({ length: e.sets }, () => ({ weight: getBest(e.name), reps: e.reps })),
+    })))
+    setTemplatesOpen(false)
+  }
 
   function pickExo(name: string) {
     const pr = getBest(name)
@@ -441,6 +520,17 @@ export default function LogScreen() {
             </motion.button>
           ))}
         </div>
+
+        {/* Template trigger */}
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+          onClick={() => setTemplatesOpen(true)}
+          className="flex items-center gap-2 self-start text-[12px] font-semibold text-zinc-500 px-3 py-2 rounded-xl border border-white/[0.06] bg-[#1C1C1C] hover:text-[#A78BFA] hover:border-[rgba(139,92,246,0.3)] transition-all"
+        >
+          <LayoutGrid size={14} strokeWidth={1.8} />
+          Utiliser un programme
+        </motion.button>
 
         {/* Exercise cards */}
         <AnimatePresence mode="popLayout">
@@ -520,6 +610,13 @@ export default function LogScreen() {
             onClose={() => setPickerOpen(false)}
             getBest={getBest}
             allPrev={allPrev}
+          />
+        )}
+        {templatesOpen && (
+          <TemplateSheet
+            onClose={() => setTemplatesOpen(false)}
+            onPick={loadTemplate}
+            getBest={getBest}
           />
         )}
       </AnimatePresence>

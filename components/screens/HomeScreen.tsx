@@ -1,10 +1,12 @@
 'use client'
 
+import { useMemo } from 'react'
 import { motion } from 'framer-motion'
 import type { Variants } from 'framer-motion'
+import { Zap } from 'lucide-react'
 import { useApp } from '@/context/AppContext'
-import { TYPE_LBL, TAG_CLR, TAG_BG } from '@/lib/constants'
-import type { MuscleGroup } from '@/types'
+import { TYPE_LBL, TAG_CLR, TAG_BG, EXO_BY_TYPE } from '@/lib/constants'
+import type { MuscleGroup, Session } from '@/types'
 
 const stagger: Variants = {
   animate: { transition: { staggerChildren: 0.08 } }
@@ -19,10 +21,58 @@ function fmtDate(d: string) {
 }
 
 export default function HomeScreen() {
-  const { sessions, unlockedCards, getBest, getStreak, getNextType } = useApp()
+  const { sessions, unlockedCards, getBest, getStreak, getNextType, repeatSession } = useApp()
   const nt = getNextType()
   const streak = getStreak()
   const last = sessions[0]
+
+  const aiSuggestion = useMemo(() => {
+    const mainGroups: MuscleGroup[] = ['pec', 'dos', 'bras', 'jambes']
+    const rested = mainGroups.map(type => {
+      const lastS = sessions.find(s => s.type === type)
+      const daysSince = lastS
+        ? Math.floor((Date.now() - new Date(lastS.date + 'T12:00:00').getTime()) / 86400000)
+        : 999
+      return { type, daysSince }
+    }).sort((a, b) => b.daysSince - a.daysSince)
+
+    const { type, daysSince } = rested[0]
+
+    const freq: Record<string, number> = {}
+    sessions.filter(s => s.type === type).forEach(s =>
+      s.exos.forEach(e => { freq[e.name] = (freq[e.name] || 0) + 1 })
+    )
+    const topNames = Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([n]) => n)
+    const names = topNames.length >= 2 ? topNames : EXO_BY_TYPE[type].slice(0, 4)
+
+    const exos = names.map(name => {
+      const best = getBest(name)
+      const target = best > 0 ? +(best + 2.5).toFixed(1) : 0
+      return { name, target }
+    })
+
+    return { type, daysSince, exos }
+  }, [sessions, getBest])
+
+  function startAiSession() {
+    const fake: Session = {
+      id: 'ai',
+      user_id: '',
+      created_at: '',
+      date: new Date().toISOString().slice(0, 10),
+      type: aiSuggestion.type,
+      notes: '',
+      exos: aiSuggestion.exos.map(e => ({
+        name: e.name,
+        sets: [
+          { weight: e.target, reps: 8 },
+          { weight: e.target, reps: 8 },
+          { weight: e.target, reps: 8 },
+        ],
+      })),
+    }
+    repeatSession(fake)
+  }
 
   const exoW = (e: { sets: { weight: number }[] }) => Math.max(0, ...e.sets.map(s => s.weight || 0))
   const exoSR = (e: { sets: { weight?: number; reps?: number }[] }) => `${e.sets.length}×${e.sets[0]?.reps || '?'}`
@@ -141,6 +191,48 @@ export default function HomeScreen() {
               </motion.div>
             ))}
           </div>
+        </div>
+      </motion.div>
+      {/* AI suggestion */}
+      <motion.div variants={fadeUp}>
+        <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-[1.8px] mb-3 flex items-center gap-2">
+          <span className="w-[3px] h-[11px] rounded-full bg-[#A78BFA] shadow-[0_0_8px_rgba(139,92,246,0.5)] inline-block" />
+          Suggestion IA
+        </p>
+        <div className="card-glass rounded-2xl p-4">
+          <div className="flex items-start justify-between mb-3">
+            <div>
+              <div className="text-[10px] font-bold text-zinc-600 uppercase tracking-[1.2px] mb-0.5">Muscle le plus reposé</div>
+              <div className="text-sm font-semibold text-zinc-200">{TYPE_LBL[aiSuggestion.type]}</div>
+            </div>
+            <span className="text-[11px] font-mono text-zinc-500 bg-[#1C1C1C] border border-white/[0.06] px-2.5 py-1 rounded-lg">
+              {aiSuggestion.daysSince >= 999 ? 'Jamais' : `${aiSuggestion.daysSince}j repos`}
+            </span>
+          </div>
+          <div className="flex flex-col gap-0.5 mb-4">
+            {aiSuggestion.exos.map(e => (
+              <div key={e.name} className="flex items-center justify-between py-2 border-b border-white/[0.04] last:border-none">
+                <span className="text-sm text-zinc-300 truncate mr-3">{e.name}</span>
+                {e.target > 0 ? (
+                  <span className="text-[11px] font-mono font-semibold flex-shrink-0" style={{ color: TAG_CLR[aiSuggestion.type] }}>
+                    Vise {e.target}kg
+                  </span>
+                ) : (
+                  <span className="text-[11px] text-zinc-600 flex-shrink-0">poids libre</span>
+                )}
+              </div>
+            ))}
+          </div>
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+            onClick={startAiSession}
+            className="w-full h-11 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2"
+            style={{ background: 'linear-gradient(135deg,#6D28D9,#7C3AED)', boxShadow: '0 8px 24px -8px rgba(109,40,217,0.45)' }}
+          >
+            <Zap size={16} strokeWidth={1.8} />
+            Commencer cette séance
+          </motion.button>
         </div>
       </motion.div>
     </motion.div>
