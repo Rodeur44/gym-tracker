@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { useApp } from '@/context/AppContext'
 import { CARDS } from '@/lib/constants'
 import { TiltCard } from '@/components/ui/tilt-card'
+import { GlowCard } from '@/components/ui/spotlight-card'
 
 const RARITY_LBL = { rare: 'Rare', epic: 'Épique', legendary: 'Légendaire' }
 const RARITY_CLR = {
@@ -35,33 +36,54 @@ export default function CardsScreen() {
           {[...unlocked, ...locked].map((card, i) => {
             const isLocked = !unlockedCards.has(card.id)
             const { border, badge, glow } = RARITY_CLR[card.rarity]
-            return (
-              <motion.div
-                key={card.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                whileHover={!isLocked ? { y: -4, scale: 1.02 } : undefined}
-                whileTap={!isLocked ? { scale: 0.97 } : undefined}
-                onClick={() => !isLocked && setSelected(card)}
-                className={`bg-[#1C1C1C] rounded-2xl overflow-hidden border cursor-pointer transition-shadow ${isLocked ? 'opacity-40 filter blur-[6px] brightness-50 saturate-50 cursor-default pointer-events-none' : ''}`}
-                style={{
-                  borderColor: isLocked ? 'rgba(255,255,255,0.06)' : border,
-                  boxShadow: isLocked ? 'none' : `0 0 24px -8px ${glow}`,
-                }}
-              >
-                <div className="relative aspect-[2/3] w-full">
-                  <Image src={card.image} alt={card.name} fill className="object-cover" sizes="200px" />
-                  <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/60 to-transparent" />
-                </div>
-                <div className="p-3 text-center">
-                  <div className="text-[12px] font-semibold text-zinc-200 leading-tight mb-1.5">{card.name}</div>
-                  <div className="text-[10px] text-zinc-500 leading-snug mb-2">{card.cond}</div>
-                  <span className={`inline-block text-[9px] font-extrabold uppercase tracking-[0.6px] px-2 py-0.5 rounded-md text-white ${badge}`}>
-                    {RARITY_LBL[card.rarity]}
-                  </span>
-                </div>
-              </motion.div>
+            return isLocked ? (
+                <GlowCard
+                  key={card.id}
+                  glowColor="purple"
+                  className="overflow-hidden opacity-40 brightness-50 saturate-50 cursor-default"
+                >
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.05, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                  >
+                    <div className="relative aspect-[2/3] w-full">
+                      <Image src={card.image} alt={card.name} fill className="object-cover" sizes="200px" />
+                      <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/60 to-transparent" />
+                    </div>
+                    <div className="p-3 text-center">
+                      <div className="text-[12px] font-semibold text-zinc-200 leading-tight mb-1.5">{card.name}</div>
+                      <div className="text-[10px] text-zinc-500 leading-snug mb-2">{card.cond}</div>
+                      <span className={`inline-block text-[9px] font-extrabold uppercase tracking-[0.6px] px-2 py-0.5 rounded-md text-white ${badge}`}>
+                        {RARITY_LBL[card.rarity]}
+                      </span>
+                    </div>
+                  </motion.div>
+                </GlowCard>
+              ) : (
+                <motion.div
+                  key={card.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.05, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                  whileHover={{ y: -4, scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => setSelected(card)}
+                  className="bg-[#1C1C1C] rounded-2xl overflow-hidden border cursor-pointer transition-shadow"
+                  style={{ borderColor: border, boxShadow: `0 0 24px -8px ${glow}` }}
+                >
+                  <div className="relative aspect-[2/3] w-full">
+                    <Image src={card.image} alt={card.name} fill className="object-cover" sizes="200px" />
+                    <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/60 to-transparent" />
+                  </div>
+                  <div className="p-3 text-center">
+                    <div className="text-[12px] font-semibold text-zinc-200 leading-tight mb-1.5">{card.name}</div>
+                    <div className="text-[10px] text-zinc-500 leading-snug mb-2">{card.cond}</div>
+                    <span className={`inline-block text-[9px] font-extrabold uppercase tracking-[0.6px] px-2 py-0.5 rounded-md text-white ${badge}`}>
+                      {RARITY_LBL[card.rarity]}
+                    </span>
+                  </div>
+                </motion.div>
             )
           })}
         </div>

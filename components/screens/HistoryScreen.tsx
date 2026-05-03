@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Clock, Trash2, Pencil } from 'lucide-react'
+import { Clock, Trash2, Pencil, RotateCcw } from 'lucide-react'
 import { useApp } from '@/context/AppContext'
 import { TYPE_LBL, TAG_CLR, TAG_BG } from '@/lib/constants'
 import type { MuscleGroup, Session } from '@/types'
@@ -11,11 +11,12 @@ function fmtDate(d: string) {
   return new Date(d + 'T12:00:00').toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
-function DetailModal({ session, onClose, onEdit, onDelete }: {
+function DetailModal({ session, onClose, onEdit, onDelete, onRepeat }: {
   session: Session
   onClose: () => void
   onEdit: () => void
   onDelete: () => void
+  onRepeat: () => void
 }) {
   const clr = TAG_CLR[session.type as MuscleGroup]
   return (
@@ -69,7 +70,16 @@ function DetailModal({ session, onClose, onEdit, onDelete }: {
         </div>
 
         {/* Footer — toujours visible */}
-        <div className="flex-shrink-0 px-6 pt-3 pb-6 border-t border-white/[0.05]">
+        <div className="flex-shrink-0 px-6 pt-3 pb-6 border-t border-white/[0.05] flex flex-col gap-2">
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+            onClick={onRepeat}
+            className="w-full h-12 rounded-2xl text-sm font-semibold text-white flex items-center justify-center gap-2"
+            style={{ background: 'linear-gradient(135deg,#6D28D9,#7C3AED)', boxShadow: '0 8px 24px -8px rgba(109,40,217,0.5)' }}
+          >
+            <RotateCcw size={16} strokeWidth={1.8} /> Reprendre cette séance
+          </motion.button>
           <div className="flex gap-2">
             <motion.button
               whileTap={{ scale: 0.94 }}
@@ -84,10 +94,9 @@ function DetailModal({ session, onClose, onEdit, onDelete }: {
               whileTap={{ scale: 0.97 }}
               transition={{ type: 'spring', stiffness: 400, damping: 25 }}
               onClick={onEdit}
-              className="flex-1 h-12 rounded-2xl text-sm font-semibold text-white flex items-center justify-center gap-2"
-              style={{ background: 'linear-gradient(135deg,#6D28D9,#7C3AED)', boxShadow: '0 8px 24px -8px rgba(109,40,217,0.5)' }}
+              className="flex-1 h-12 rounded-2xl text-sm font-semibold text-zinc-300 flex items-center justify-center gap-2 bg-white/[0.04] border border-white/[0.06]"
             >
-              <Pencil size={16} strokeWidth={1.8} /> Modifier la séance
+              <Pencil size={16} strokeWidth={1.8} /> Modifier
             </motion.button>
           </div>
         </div>
@@ -97,12 +106,18 @@ function DetailModal({ session, onClose, onEdit, onDelete }: {
 }
 
 export default function HistoryScreen() {
-  const { sessions, deleteSession, startEdit } = useApp()
+  const { sessions, deleteSession, startEdit, repeatSession } = useApp()
   const [selected, setSelected] = useState<Session | null>(null)
 
   async function handleDelete() {
     if (!selected) return
     await deleteSession(selected.id)
+    setSelected(null)
+  }
+
+  function handleRepeat() {
+    if (!selected) return
+    repeatSession(selected)
     setSelected(null)
   }
 
@@ -167,6 +182,7 @@ export default function HistoryScreen() {
             onClose={() => setSelected(null)}
             onEdit={() => { startEdit(selected.id); setSelected(null) }}
             onDelete={handleDelete}
+            onRepeat={handleRepeat}
           />
         )}
       </AnimatePresence>

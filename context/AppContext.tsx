@@ -76,6 +76,9 @@ interface AppContextValue {
   editSessionId: string | null
   startEdit: (id: string) => void
   cancelEdit: () => void
+  repeatPending: boolean
+  repeatSession: (session: Session) => void
+  clearRepeat: () => void
   // Actions
   saveSession: (payload: Omit<Session, 'id' | 'user_id' | 'created_at'>) => Promise<boolean>
   deleteSession: (id: string) => Promise<boolean>
@@ -99,6 +102,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [logType, setLogType] = useState<MuscleGroup>('pec')
   const [editMode, setEditMode] = useState(false)
   const [editSessionId, setEditSessionId] = useState<string | null>(null)
+  const [repeatPending, setRepeatPending] = useState(false)
 
   const loadData = useCallback(async (userId: string) => {
     const [{ data: s }, { data: c }] = await Promise.all([
@@ -219,11 +223,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setEditMode(false); setEditSessionId(null); setCurrentExos([])
   }, [])
 
+  const repeatSession = useCallback((session: Session) => {
+    setLogType(session.type as MuscleGroup)
+    setCurrentExos(session.exos.map(e => ({
+      name: e.name,
+      sets: e.sets.map(s => ({ weight: s.weight || 0, reps: s.reps || 10 }))
+    })))
+    setRepeatPending(true)
+  }, [])
+
+  const clearRepeat = useCallback(() => setRepeatPending(false), [])
+
   return (
     <AppContext.Provider value={{
       user, sessions, unlockedCards, loading,
       currentExos, setCurrentExos, logType, setLogType,
       editMode, editSessionId, startEdit, cancelEdit,
+      repeatPending, repeatSession, clearRepeat,
       saveSession, deleteSession, signOut, reload,
       getBest, getStreak, getNextType,
     }}>
