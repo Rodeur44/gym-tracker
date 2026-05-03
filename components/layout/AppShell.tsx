@@ -136,14 +136,22 @@ export default function AppShell() {
     const nav = navRef.current
     if (!nav) return
 
-    function onStart() {
+    let startX = 0
+    let isScrubbing = false
+
+    function onStart(e: TouchEvent) {
       navDragging.current = true
-      setScrubbing(true)
+      startX = e.touches[0].clientX
+      isScrubbing = false
     }
 
     function onMove(e: TouchEvent) {
       if (!navDragging.current) return
+      // Activate scrubbing only after real horizontal movement
+      if (!isScrubbing && Math.abs(e.touches[0].clientX - startX) < 6) return
       e.preventDefault()
+      isScrubbing = true
+      setScrubbing(true)
       const touch = e.touches[0]
       const rect = nav!.getBoundingClientRect()
       const x = touch.clientX - rect.left
@@ -157,6 +165,7 @@ export default function AppShell() {
 
     function onEnd() {
       navDragging.current = false
+      isScrubbing = false
       setScrubbing(false)
     }
 
