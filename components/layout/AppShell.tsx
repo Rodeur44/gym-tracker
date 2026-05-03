@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import type { Variants } from 'framer-motion'
 import { Home, Plus, Clock, BarChart2, LayoutGrid, LogOut } from 'lucide-react'
 import { useApp } from '@/context/AppContext'
 import HomeScreen from '@/components/screens/HomeScreen'
@@ -28,18 +29,49 @@ const SCREENS = {
   cards: CardsScreen,
 }
 
+const slideVariants: Variants = {
+  initial: (d: number) => ({ opacity: 0, x: d * 48 }),
+  animate: { opacity: 1, x: 0 },
+  exit: (d: number) => ({ opacity: 0, x: d * -24 }),
+}
+
 export default function AppShell() {
   const [tab, setTab] = useState<Tab>('home')
+  const [direction, setDirection] = useState(1)
   const [profileOpen, setProfileOpen] = useState(false)
   const profileRef = useRef<HTMLDivElement>(null)
+  const touchStartX = useRef(0)
+  const touchStartY = useRef(0)
+  const navDragging = useRef(false)
   const { user, signOut, editMode, repeatPending, clearRepeat } = useApp()
 
+  // Navigate to a tab with direction tracking
+  const goTo = useCallback((newTab: Tab) => {
+    setDirection(prev => {
+      const from = NAV.findIndex(n => n.id === tab)
+      const to = NAV.findIndex(n => n.id === newTab)
+      return to >= from ? 1 : -1
+    })
+    setTab(newTab)
+  }, [tab])
+
+  // Navigate by relative direction
+  const navigateDir = useCallback((dir: 1 | -1) => {
+    setDirection(dir)
+    setTab(prev => {
+      const idx = NAV.findIndex(n => n.id === prev)
+      const next = idx + dir
+      if (next < 0 || next >= NAV.length) return prev
+      return NAV[next].id
+    })
+  }, [])
+
   useEffect(() => {
-    if (editMode) setTab('log')
+    if (editMode) { setDirection(1); setTab('log') }
   }, [editMode])
 
   useEffect(() => {
-    if (repeatPending) { setTab('log'); clearRepeat() }
+    if (repeatPending) { setDirection(1); setTab('log'); clearRepeat() }
   }, [repeatPending, clearRepeat])
 
   useEffect(() => {
@@ -51,9 +83,43 @@ export default function AppShell() {
     return () => document.removeEventListener('mousedown', handler)
   }, [profileOpen])
 
+  // ── Swipe gesture on content ──────────────────────────────────
+  function onTouchStart(e: React.TouchEvent) {
+    touchStartX.current = e.touches[0].clientX
+    touchStartY.current = e.touches[0].clientY
+  }
+
+  function onTouchEnd(e: React.TouchEvent) {
+    const dx = e.changedTouches[0].clientX - touchStartX.current
+    const dy = e.changedTouches[0].clientY - touchStartY.current
+    // Ignore if primarily vertical (user is scrolling)
+    if (Math.abs(dy) > Math.abs(dx) * 0.7) return
+    // Require minimum horizontal distance
+    if (Math.abs(dx) < 65) return
+    navigateDir(dx < 0 ? 1 : -1)
+  }
+
+  // ── Nav bar scrubbing ─────────────────────────────────────────
+  function onNavPointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    navDragging.current = true
+    ;(e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId)
+  }
+
+  function onNavPointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    if (!navDragging.current) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const idx = Math.min(NAV.length - 1, Math.max(0, Math.floor((x / rect.width) * NAV.length)))
+    const hovered = NAV[idx].id
+    if (hovered !== tab) goTo(hovered)
+  }
+
+  function onNavPointerUp() {
+    navDragging.current = false
+  }
+
   const name = user?.user_metadata?.display_name || user?.email?.split('@')[0] || '?'
   const initials = name[0].toUpperCase()
-
   const Screen = SCREENS[tab]
 
   return (
@@ -102,15 +168,21 @@ export default function AppShell() {
         </div>
       </header>
 
-      {/* Screen */}
-      <main className="flex-1 overflow-hidden">
-        <AnimatePresence mode="wait">
+      {/* Screen — swipe zone */}
+      <main
+        className="flex-1 overflow-hidden"
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+      >
+        <AnimatePresence mode="wait" custom={direction}>
           <motion.div
             key={tab}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            custom={direction}
+            variants={slideVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
             className="h-full"
           >
             <Screen />
@@ -118,15 +190,21 @@ export default function AppShell() {
         </AnimatePresence>
       </main>
 
-      {/* Bottom Nav */}
+      {/* Bottom Nav — with scrub gesture */}
       <nav className="glass-strong border-t border-white/[0.06] fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-50 pb-safe">
-        <div className="flex">
+        <div
+          className="flex"
+          onPointerDown={onNavPointerDown}
+          onPointerMove={onNavPointerMove}
+          onPointerUp={onNavPointerUp}
+          onPointerLeave={onNavPointerUp}
+        >
           {NAV.map(({ id, label, icon: Icon }) => {
             const active = tab === id
             return (
               <button
                 key={id}
-                onClick={() => setTab(id)}
+                onClick={() => goTo(id)}
                 className="flex-1 flex flex-col items-center gap-1 pt-2.5 pb-3.5 relative"
               >
                 {active && (
