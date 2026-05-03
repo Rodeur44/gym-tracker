@@ -35,11 +35,6 @@ const slideVariants: Variants = {
   exit: (d: number) => ({ opacity: 0, x: d * -25 }),
 }
 
-const snapVariants: Variants = {
-  initial: { opacity: 0 },
-  animate: { opacity: 1 },
-  exit: { opacity: 0 },
-}
 
 export default function AppShell() {
   const [tab, setTab] = useState<Tab>('home')
@@ -57,13 +52,9 @@ export default function AppShell() {
   const { user, signOut, editMode, repeatPending, clearRepeat } = useApp()
 
   // ── Tab navigation with direction ────────────────────────────
-  const goTo = useCallback((newTab: Tab, anim: 'slide' | 'snap' = 'slide') => {
-    setScrubbing(anim === 'snap')
-    setDirection(() => {
-      const from = NAV.findIndex(n => n.id === tabRef.current)
-      const to = NAV.findIndex(n => n.id === newTab)
-      return to >= from ? 1 : -1
-    })
+  const goTo = useCallback((newTab: Tab) => {
+    setScrubbing(false)
+    setDirection(NAV.findIndex(n => n.id === newTab) >= NAV.findIndex(n => n.id === tabRef.current) ? 1 : -1)
     setTab(newTab)
   }, [])
 
@@ -140,25 +131,46 @@ export default function AppShell() {
     }
   }, [navigateDir])
 
-  // ── Nav bar scrubbing ─────────────────────────────────────────
-  function onNavPointerDown(e: React.PointerEvent<HTMLDivElement>) {
-    navDragging.current = true
-    ;(e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId)
-  }
+  // ── Nav bar scrubbing — native touch events for iOS ──────────
+  useEffect(() => {
+    const nav = navRef.current
+    if (!nav) return
 
-  function onNavPointerMove(e: React.PointerEvent<HTMLDivElement>) {
-    if (!navDragging.current) return
-    const rect = e.currentTarget.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const idx = Math.min(NAV.length - 1, Math.max(0, Math.floor((x / rect.width) * NAV.length)))
-    const hovered = NAV[idx].id
-    if (hovered !== tabRef.current) goTo(hovered, 'snap')
-  }
+    function onStart() {
+      navDragging.current = true
+      setScrubbing(true)
+    }
 
-  function onNavPointerUp() {
-    navDragging.current = false
-    setScrubbing(false)
-  }
+    function onMove(e: TouchEvent) {
+      if (!navDragging.current) return
+      e.preventDefault()
+      const touch = e.touches[0]
+      const rect = nav!.getBoundingClientRect()
+      const x = touch.clientX - rect.left
+      const idx = Math.min(NAV.length - 1, Math.max(0, Math.floor((x / rect.width) * NAV.length)))
+      const hovered = NAV[idx].id
+      if (hovered !== tabRef.current) {
+        setDirection(NAV.findIndex(n => n.id === hovered) >= NAV.findIndex(n => n.id === tabRef.current) ? 1 : -1)
+        setTab(hovered)
+      }
+    }
+
+    function onEnd() {
+      navDragging.current = false
+      setScrubbing(false)
+    }
+
+    nav.addEventListener('touchstart', onStart, { passive: true })
+    nav.addEventListener('touchmove', onMove, { passive: false })
+    nav.addEventListener('touchend', onEnd, { passive: true })
+    nav.addEventListener('touchcancel', onEnd, { passive: true })
+    return () => {
+      nav.removeEventListener('touchstart', onStart)
+      nav.removeEventListener('touchmove', onMove)
+      nav.removeEventListener('touchend', onEnd)
+      nav.removeEventListener('touchcancel', onEnd)
+    }
+  }, [])
 
   const name = user?.user_metadata?.display_name || user?.email?.split('@')[0] || '?'
   const initials = name[0].toUpperCase()
@@ -215,35 +227,31 @@ export default function AppShell() {
 
       {/* Screen */}
       <main ref={mainRef} className="flex-1 overflow-hidden">
-        <AnimatePresence mode="wait" custom={direction}>
-          <motion.div
-            key={tab}
-            custom={direction}
-            variants={scrubbing ? snapVariants : slideVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            transition={scrubbing
-              ? { duration: 0.1, ease: 'easeOut' }
-              : { duration: 0.28, ease: [0.16, 1, 0.3, 1] }
-            }
-            className="h-full"
-          >
+        {scrubbing ? (
+          <div className="h-full">
             <Screen />
-          </motion.div>
-        </AnimatePresence>
+          </div>
+        ) : (
+          <AnimatePresence mode="wait" custom={direction}>
+            <motion.div
+              key={tab}
+              custom={direction}
+              variants={slideVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+              className="h-full"
+            >
+              <Screen />
+            </motion.div>
+          </AnimatePresence>
+        )}
       </main>
 
       {/* Bottom Nav */}
       <nav className="glass-strong border-t border-white/[0.06] fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-50">
-        <div
-          ref={navRef}
-          className="flex"
-          onPointerDown={onNavPointerDown}
-          onPointerMove={onNavPointerMove}
-          onPointerUp={onNavPointerUp}
-          onPointerLeave={onNavPointerUp}
-        >
+        <div ref={navRef} className="flex">
           {NAV.map(({ id, label, icon: Icon }) => {
             const active = tab === id
             return (
