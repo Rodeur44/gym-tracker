@@ -167,7 +167,10 @@ export default function AppShell() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Header */}
-      <header className="sticky top-0 z-50 glass-strong flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
+      <header
+        className="sticky top-0 z-50 glass-strong flex items-center justify-between px-5 border-b border-white/[0.06]"
+        style={{ paddingTop: 'max(16px, env(safe-area-inset-top, 16px))', paddingBottom: '16px' }}
+      >
         <div className="text-xl font-semibold tracking-tight">
           Gym<span className="text-[#A78BFA] drop-shadow-[0_0_12px_rgba(139,92,246,0.6)]">Log</span>
         </div>
