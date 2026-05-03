@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, X, ChevronRight, AlertCircle, Camera, Copy } from 'lucide-react'
+import { Plus, X, ChevronRight, AlertCircle, Camera, Copy, CopyPlus } from 'lucide-react'
 import { useApp } from '@/context/AppContext'
 import { TYPE_LBL, TAG_CLR, TAG_BG, EXO_BY_TYPE } from '@/lib/constants'
 import type { MuscleGroup, Exercise } from '@/types'
@@ -209,13 +209,14 @@ function SetRow({ set, idx, accent, onWeightChange, onRepsChange, onDelete }: {
 }
 
 // ── Exo Card ──────────────────────────────────────────────────────
-function ExoCard({ exo, idx, accent, getBest, onChange, onDelete }: {
+function ExoCard({ exo, idx, accent, getBest, onChange, onDelete, onDuplicate }: {
   exo: Exercise
   idx: number
   accent: string
   getBest: (n: string) => number
   onChange: (updated: Exercise) => void
   onDelete: () => void
+  onDuplicate: () => void
 }) {
   const pr = getBest(exo.name)
   const maxW = Math.max(0, ...exo.sets.map(s => s.weight || 0))
@@ -286,10 +287,21 @@ function ExoCard({ exo, idx, accent, getBest, onChange, onDelete }: {
             )}
           </div>
         </div>
-        <button onClick={onDelete} aria-label="Supprimer l'exercice"
-          className="w-8 h-8 rounded-full bg-[#1C1C1C] border border-white/[0.06] flex items-center justify-center text-zinc-500 flex-shrink-0 hover:text-red-400 hover:border-red-400/30 active:rotate-90 active:bg-red-500 active:text-white transition-all duration-200">
-          <X size={16} />
-        </button>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <motion.button
+            onClick={onDuplicate}
+            whileTap={{ scale: 0.9 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+            aria-label="Dupliquer l'exercice en bas de liste"
+            className="w-8 h-8 rounded-full bg-[#1C1C1C] border border-white/[0.06] flex items-center justify-center text-zinc-500 hover:text-[#A78BFA] hover:border-[#A78BFA]/30 transition-all duration-200"
+          >
+            <CopyPlus size={14} strokeWidth={1.8} />
+          </motion.button>
+          <button onClick={onDelete} aria-label="Supprimer l'exercice"
+            className="w-8 h-8 rounded-full bg-[#1C1C1C] border border-white/[0.06] flex items-center justify-center text-zinc-500 flex-shrink-0 hover:text-red-400 hover:border-red-400/30 active:rotate-90 active:bg-red-500 active:text-white transition-all duration-200">
+            <X size={16} />
+          </button>
+        </div>
       </div>
 
       {/* Sets */}
@@ -356,6 +368,11 @@ export default function LogScreen() {
 
   const removeExo = useCallback((idx: number) => {
     setCurrentExos(currentExos.filter((_, i) => i !== idx))
+  }, [currentExos, setCurrentExos])
+
+  const duplicateExo = useCallback((idx: number) => {
+    const copy = { ...currentExos[idx], sets: currentExos[idx].sets.map(s => ({ ...s })) }
+    setCurrentExos([...currentExos, copy])
   }, [currentExos, setCurrentExos])
 
   function pickExo(name: string) {
@@ -445,6 +462,7 @@ export default function LogScreen() {
                 getBest={getBest}
                 onChange={updated => updateExo(i, updated)}
                 onDelete={() => removeExo(i)}
+                onDuplicate={() => duplicateExo(i)}
               />
             ))
           )}
