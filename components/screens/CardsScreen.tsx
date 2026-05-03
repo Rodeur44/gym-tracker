@@ -40,12 +40,13 @@ export default function CardsScreen() {
                 <GlowCard
                   key={card.id}
                   glowColor="purple"
-                  className="overflow-hidden opacity-40 brightness-50 saturate-50 cursor-default"
+                  className="overflow-hidden cursor-default"
                 >
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.05, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                    className="opacity-40 blur-[4px] brightness-50 saturate-50 pointer-events-none select-none"
                   >
                     <div className="relative aspect-[2/3] w-full">
                       <Image src={card.image} alt={card.name} fill className="object-cover" sizes="200px" />
