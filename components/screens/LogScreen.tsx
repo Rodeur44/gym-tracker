@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, X, ChevronRight, AlertCircle } from 'lucide-react'
+import { Plus, X, ChevronRight, AlertCircle, Camera } from 'lucide-react'
 import { useApp } from '@/context/AppContext'
 import { TYPE_LBL, TAG_CLR, TAG_BG, EXO_BY_TYPE } from '@/lib/constants'
 import type { MuscleGroup, Exercise } from '@/types'
@@ -95,15 +95,24 @@ function ExoPicker({ type, onPick, onClose, getBest, allPrev }: {
           ) : (
             <>
               {/* Accès rapide */}
-              <div className="text-[10px] font-bold text-zinc-600 uppercase tracking-[1.2px] mb-2 pt-1">Accès rapide</div>
+              <div className="text-[11px] font-bold uppercase tracking-[1.8px] text-zinc-500 mb-3 pt-1">Accès rapide</div>
               <motion.div
-                whileTap={{ scale: 0.98 }}
+                whileTap={{ scale: 0.97 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
                 onClick={() => onPick('Machine')}
-                className="flex items-center gap-3 px-2 py-3 rounded-xl cursor-pointer hover:bg-white/[0.04] transition-all border-b border-white/[0.04]"
+                className="flex items-center gap-3 px-4 py-3.5 rounded-2xl cursor-pointer card-glass border border-white/[0.06] min-h-[56px] group"
               >
-                <div className="w-[3px] h-7 rounded-full opacity-40 flex-shrink-0" style={{ background: clr }} />
-                <span className="text-sm text-zinc-300">📷 Machine sans nom</span>
-                <span className="ml-auto text-xs text-zinc-600">Renomme après</span>
+                <div
+                  className="w-10 h-10 rounded-[12px] flex items-center justify-center flex-shrink-0"
+                  style={{ background: TAG_BG[type], border: `1px solid ${clr}33` }}
+                >
+                  <Camera size={20} strokeWidth={1.8} style={{ color: clr }} />
+                </div>
+                <div className="flex flex-col gap-0.5 flex-1 min-w-0">
+                  <span className="text-[15px] font-semibold tracking-tight text-white">Machine sans nom</span>
+                  <span className="text-[11px] text-zinc-500">Renomme l&apos;exercice après</span>
+                </div>
+                <ChevronRight size={16} strokeWidth={1.8} className="text-zinc-600 flex-shrink-0 group-hover:text-zinc-400 transition-colors" />
               </motion.div>
 
               {/* Récents */}
