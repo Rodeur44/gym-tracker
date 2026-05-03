@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { DM_Sans, DM_Mono } from 'next/font/google'
 import './globals.css'
 import { AppProvider } from '@/context/AppContext'
+import { BackgroundShader } from '@/components/ui/background-shader'
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
@@ -40,6 +41,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="fr" className="dark">
       <body className={`${dmSans.variable} ${dmMono.variable} font-sans antialiased`}>
+        <BackgroundShader />
         <div className="relative z-10 min-h-screen max-w-[430px] mx-auto overflow-x-hidden">
           <AppProvider>
             {children}
