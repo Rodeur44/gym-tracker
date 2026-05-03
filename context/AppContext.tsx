@@ -6,6 +6,62 @@ import { createClient } from '@/lib/supabase/client'
 import type { Session, MuscleGroup, Exercise } from '@/types'
 import { MUSCLE_ORDER } from '@/lib/constants'
 
+// ── Unlock checker (pure, outside component) ─────────────────────
+function checkUnlocks(allSessions: Session[], currentUnlocked: Set<string>): string[] {
+  const newCards: string[] = []
+  const has = (id: string) => currentUnlocked.has(id)
+
+  const volumeForType = (type: MuscleGroup) =>
+    allSessions
+      .filter(s => s.type === type)
+      .flatMap(s => s.exos.flatMap(e => e.sets))
+      .reduce((acc, set) => acc + (set.weight || 0) * (set.reps || 0), 0)
+
+  const totalRepsForKeyword = (keyword: string) =>
+    allSessions
+      .flatMap(s => s.exos.filter(e => e.name.toLowerCase().includes(keyword)))
+      .flatMap(e => e.sets)
+      .reduce((acc, set) => acc + (set.reps || 0), 0)
+
+  const maxRepsInOneSession = (keyword: string) =>
+    Math.max(0, ...allSessions.map(s =>
+      s.exos
+        .filter(e => e.name.toLowerCase().includes(keyword))
+        .flatMap(e => e.sets)
+        .reduce((acc, set) => acc + (set.reps || 0), 0)
+    ))
+
+  const computeStreak = () => {
+    const dates = new Set(allSessions.map(s => s.date))
+    let count = 0
+    const d = new Date()
+    if (!dates.has(d.toISOString().slice(0, 10))) d.setDate(d.getDate() - 1)
+    while (true) {
+      const ds = d.toISOString().slice(0, 10)
+      if (dates.has(ds)) { count++; d.setDate(d.getDate() - 1) } else break
+    }
+    return count
+  }
+
+  const total = allSessions.length
+
+  if (!has('consist_newbie') && total >= 1) newCards.push('consist_newbie')
+  if (!has('consist_veteran') && total >= 100) newCards.push('consist_veteran')
+  if (!has('consist_unstoppable') && computeStreak() >= 100) newCards.push('consist_unstoppable')
+
+  if (!has('volume_chest') && volumeForType('pec') > 50_000) newCards.push('volume_chest')
+  if (!has('volume_back') && totalRepsForKeyword('traction') >= 10_000) newCards.push('volume_back')
+  if (!has('volume_legs') && volumeForType('jambes') > 150_000) newCards.push('volume_legs')
+  if (!has('volume_arms') && volumeForType('bras') > 40_000) newCards.push('volume_arms')
+
+  if (!has('reps_pullups') && maxRepsInOneSession('traction') >= 100) newCards.push('reps_pullups')
+  if (!has('reps_dips') && maxRepsInOneSession('dip') >= 100) newCards.push('reps_dips')
+
+  if (!has('goal_muscleup') && totalRepsForKeyword('muscle') >= 1) newCards.push('goal_muscleup')
+
+  return newCards
+}
+
 interface AppContextValue {
   user: User | null
   sessions: Session[]
@@ -113,12 +169,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setSessions(prev => [tempSession, ...prev])
     const { data, error } = await sb.from('sessions').insert({ ...payload, user_id: user.id }).select().single()
     if (!error && data) {
-      setSessions(prev => prev.map(s => s.id === tempId ? data as Session : s))
+      const savedSession = data as Session
+      setSessions(prev => prev.map(s => s.id === tempId ? savedSession : s))
+
+      // Check card unlocks against the updated sessions list
+      const updatedSessions = [savedSession, ...sessions.filter(s => s.id !== tempId)]
+      const newCards = checkUnlocks(updatedSessions, unlockedCards)
+      if (newCards.length > 0) {
+        setUnlockedCards(prev => new Set([...prev, ...newCards]))
+        sb.from('user_cards').insert(newCards.map(id => ({ user_id: user.id, card_id: id })))
+      }
+
       return true
     }
     setSessions(prev => prev.filter(s => s.id !== tempId))
     return false
-  }, [user, editMode, editSessionId, sb, loadData])
+  }, [user, editMode, editSessionId, sb, loadData, sessions, unlockedCards])
 
   const deleteSession = useCallback(async (id: string) => {
     if (!user) return false
