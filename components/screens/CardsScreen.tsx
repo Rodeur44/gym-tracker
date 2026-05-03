@@ -85,10 +85,9 @@ export default function CardsScreen() {
               className="w-60"
             >
               <TiltCard
-                tiltLimit={12}
+                tiltLimit={14}
                 scale={1.02}
                 perspective={1000}
-                effect="gravitate"
                 spotlight
                 className="rounded-3xl bg-[#141414] border text-center"
                 style={{
@@ -96,8 +95,19 @@ export default function CardsScreen() {
                   boxShadow: `0 0 60px -10px ${RARITY_CLR[selected.rarity].glow}`,
                 }}
               >
-                <div className="relative aspect-[2/3] w-full">
-                  <Image src={selected.image} alt={selected.name} fill className="object-cover rounded-t-3xl" sizes="240px" />
+                <div
+                  className="relative aspect-[2/3] w-full select-none"
+                  style={{ WebkitTouchCallout: 'none' }}
+                  onContextMenu={e => e.preventDefault()}
+                >
+                  <Image
+                    src={selected.image}
+                    alt={selected.name}
+                    fill
+                    draggable={false}
+                    className="object-cover rounded-t-3xl pointer-events-none"
+                    sizes="240px"
+                  />
                 </div>
                 <div className="p-5">
                   <div className="text-base font-bold text-white mb-1">{selected.name}</div>
