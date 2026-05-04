@@ -97,6 +97,14 @@ interface AppContextValue {
   proOpen: boolean
   openPro: () => void
   closePro: () => void
+  // Rest timer
+  restActive: boolean
+  restEndsAt: number | null
+  restDuration: number
+  startRest: (seconds?: number) => void
+  stopRest: () => void
+  addRest: (deltaSec: number) => void
+  setDefaultRest: (seconds: number) => void
 }
 
 const AppContext = createContext<AppContextValue | null>(null)
@@ -114,6 +122,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [repeatPending, setRepeatPending] = useState(false)
   const [isPro, setIsPro] = useState(false)
   const [proOpen, setProOpen] = useState(false)
+  const [restEndsAt, setRestEndsAt] = useState<number | null>(null)
+  const [restDuration, setRestDuration] = useState(90)
 
   const openPro = useCallback(() => setProOpen(true), [])
   const closePro = useCallback(() => setProOpen(false), [])
@@ -121,7 +131,32 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (typeof window === 'undefined') return
     setIsPro(localStorage.getItem('gymlog_pro') === '1')
+    const saved = parseInt(localStorage.getItem('gymlog_rest_default') || '', 10)
+    if (!Number.isNaN(saved) && saved >= 15 && saved <= 600) setRestDuration(saved)
   }, [])
+
+  const startRest = useCallback((seconds?: number) => {
+    const dur = seconds ?? restDuration
+    setRestEndsAt(Date.now() + dur * 1000)
+  }, [restDuration])
+
+  const stopRest = useCallback(() => setRestEndsAt(null), [])
+
+  const addRest = useCallback((deltaSec: number) => {
+    setRestEndsAt(prev => {
+      if (!prev) return prev
+      const next = prev + deltaSec * 1000
+      return Math.max(Date.now() + 1000, next)
+    })
+  }, [])
+
+  const setDefaultRest = useCallback((seconds: number) => {
+    const clamped = Math.max(15, Math.min(600, seconds))
+    setRestDuration(clamped)
+    if (typeof window !== 'undefined') localStorage.setItem('gymlog_rest_default', String(clamped))
+  }, [])
+
+  const restActive = restEndsAt !== null
 
   const activatePro = useCallback(() => {
     if (typeof window !== 'undefined') localStorage.setItem('gymlog_pro', '1')
@@ -279,6 +314,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       getBest, getStreak, getNextType,
       isPro, unlockPro, activatePro, disablePro,
       proOpen, openPro, closePro,
+      restActive, restEndsAt, restDuration,
+      startRest, stopRest, addRest, setDefaultRest,
     }}>
       {children}
     </AppContext.Provider>

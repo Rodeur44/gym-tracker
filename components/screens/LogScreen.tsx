@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, X, ChevronRight, AlertCircle, Camera, Copy, CopyPlus, LayoutGrid } from 'lucide-react'
+import { Plus, X, ChevronRight, AlertCircle, Camera, Copy, CopyPlus, LayoutGrid, Check } from 'lucide-react'
 import { useApp } from '@/context/AppContext'
 import { TYPE_LBL, TAG_CLR, TAG_BG, EXO_BY_TYPE, WORKOUT_TEMPLATES } from '@/lib/constants'
 import type { WorkoutTemplate } from '@/lib/constants'
@@ -188,6 +188,7 @@ function SetRow({ set, idx, accent, onWeightChange, onRepsChange, onDelete }: {
   onRepsChange: (delta: number) => void
   onDelete: () => void
 }) {
+  const { startRest } = useApp()
   const pct = (set.weight / 250 * 100).toFixed(1)
   const trackStyle = { background: `linear-gradient(to right,${accent} ${pct}%,#1C1C1C ${pct}%)` }
 
@@ -223,6 +224,14 @@ function SetRow({ set, idx, accent, onWeightChange, onRepsChange, onDelete }: {
           </div>
           <button onClick={() => onRepsChange(1)} className="w-10 h-11 flex items-center justify-center text-xl font-light text-white hover:bg-[rgba(139,92,246,0.08)] active:bg-[rgba(139,92,246,0.18)] active:scale-90 transition-all">+</button>
         </div>
+        {/* Done & rest */}
+        <button
+          onClick={() => startRest()}
+          aria-label="Marquer fait et démarrer le repos"
+          className="w-[30px] h-[30px] rounded-full bg-[#1C1C1C] border border-white/[0.06] flex items-center justify-center text-zinc-500 flex-shrink-0 hover:text-[#A78BFA] hover:border-[#A78BFA]/40 active:bg-[#7C3AED] active:text-white active:scale-90 transition-all duration-200"
+        >
+          <Check size={14} strokeWidth={2.2} />
+        </button>
         {/* Delete */}
         <button onClick={onDelete} aria-label="Supprimer la série"
           className="w-[30px] h-[30px] rounded-full bg-[#1C1C1C] border border-white/[0.06] flex items-center justify-center text-zinc-500 flex-shrink-0 hover:text-red-400 hover:border-red-400/30 active:bg-red-500 active:text-white active:rotate-90 transition-all duration-200">

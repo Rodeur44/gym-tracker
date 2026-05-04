@@ -11,6 +11,7 @@ import HistoryScreen from '@/components/screens/HistoryScreen'
 import ProgressScreen from '@/components/screens/ProgressScreen'
 import CardsScreen from '@/components/screens/CardsScreen'
 import ProScreen from '@/components/screens/ProScreen'
+import { RestTimer } from '@/components/ui/RestTimer'
 
 type Tab = 'home' | 'log' | 'history' | 'prog' | 'cards'
 
@@ -341,6 +342,9 @@ export default function AppShell() {
       <AnimatePresence>
         {proOpen && <ProScreen onClose={closePro} />}
       </AnimatePresence>
+
+      {/* Rest timer — only visible on the Séance tab */}
+      {tab === 'log' && <RestTimer />}
     </div>
   )
 }
