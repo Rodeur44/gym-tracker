@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Timer, X, Plus, Minus, Settings2 } from 'lucide-react'
+import { Timer, X, Plus, Minus, Settings2, Volume2 } from 'lucide-react'
 import { useApp } from '@/context/AppContext'
 
 const PRESETS = [60, 90, 120, 180]
@@ -14,11 +14,10 @@ function fmt(s: number) {
 }
 
 export function RestTimer() {
-  const { restActive, restEndsAt, restDuration, startRest, stopRest, addRest, setDefaultRest } = useApp()
+  const { restActive, restEndsAt, restDuration, startRest, stopRest, addRest, setDefaultRest, testBeep } = useApp()
   const [expanded, setExpanded] = useState(false)
   const [now, setNow] = useState(() => Date.now())
   const [picker, setPicker] = useState(false)
-  const audioCtxRef = useRef<AudioContext | null>(null)
   const lastEndedRef = useRef<number | null>(null)
 
   // Tick every 200ms while active
@@ -29,50 +28,19 @@ export function RestTimer() {
     return () => window.clearInterval(id)
   }, [restActive])
 
-  // Detect end of timer → beep + stop
+  // Detect end of timer (visual only — the beep is scheduled at start)
   useEffect(() => {
     if (!restActive || restEndsAt == null) return
     if (now >= restEndsAt && lastEndedRef.current !== restEndsAt) {
       lastEndedRef.current = restEndsAt
-      playBeep()
-      // iOS Safari ignores vibrate but harmless on other platforms
+      // Vibration as a fallback for non-iOS devices that support it
       if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
         try { navigator.vibrate?.([200, 80, 200]) } catch {}
       }
-      // Briefly show the "done" state then auto-dismiss
-      window.setTimeout(() => { stopRest(); setExpanded(false) }, 1200)
+      // Show the "done" state briefly then auto-dismiss
+      window.setTimeout(() => { stopRest(); setExpanded(false) }, 1500)
     }
   }, [now, restActive, restEndsAt, stopRest])
-
-  function playBeep() {
-    try {
-      if (!audioCtxRef.current) {
-        const Ctx = (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext || window.AudioContext
-        audioCtxRef.current = new Ctx()
-      }
-      const ctx = audioCtxRef.current!
-      // Resume if suspended (iOS may suspend after backgrounding)
-      if (ctx.state === 'suspended') ctx.resume()
-      const t0 = ctx.currentTime
-      const beep = (freq: number, when: number, dur = 0.14) => {
-        const osc = ctx.createOscillator()
-        const gain = ctx.createGain()
-        osc.type = 'sine'
-        osc.frequency.value = freq
-        gain.gain.setValueAtTime(0.0001, when)
-        gain.gain.exponentialRampToValueAtTime(0.35, when + 0.01)
-        gain.gain.exponentialRampToValueAtTime(0.0001, when + dur)
-        osc.connect(gain).connect(ctx.destination)
-        osc.start(when)
-        osc.stop(when + dur + 0.02)
-      }
-      beep(880, t0)
-      beep(1100, t0 + 0.18)
-      beep(1320, t0 + 0.36, 0.22)
-    } catch {
-      // Audio not available — silent fail
-    }
-  }
 
   const remaining = restEndsAt && restActive ? Math.max(0, Math.ceil((restEndsAt - now) / 1000)) : 0
   const progress = restEndsAt && restActive ? Math.max(0, Math.min(1, 1 - remaining / restDuration)) : 0
@@ -286,6 +254,18 @@ export function RestTimer() {
                   <Plus size={16} strokeWidth={2} />
                 </button>
               </div>
+
+              {/* Test sound */}
+              <button
+                onClick={testBeep}
+                className="w-full mt-4 h-11 rounded-xl bg-[#1C1C1C] border border-white/[0.08] flex items-center justify-center gap-2 text-[13px] text-zinc-200 font-semibold active:scale-[0.98] transition-transform"
+              >
+                <Volume2 size={14} strokeWidth={1.8} className="text-[#A78BFA]" />
+                Tester le son
+              </button>
+              <p className="text-[11px] text-zinc-500 leading-relaxed mt-3 px-1 text-center">
+                💡 Sur iPhone, le bip ne joue pas si le mode silencieux est activé (interrupteur sur le côté). Vérifie aussi le volume.
+              </p>
             </motion.div>
           </motion.div>
         )}
