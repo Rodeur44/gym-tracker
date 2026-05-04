@@ -5,6 +5,7 @@ import type { User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import type { Session, MuscleGroup, Exercise } from '@/types'
 import { MUSCLE_ORDER } from '@/lib/constants'
+import { validatePromo } from '@/lib/promo'
 
 // ── Unlock checker (pure, outside component) ─────────────────────
 function checkUnlocks(allSessions: Session[], currentUnlocked: Set<string>): string[] {
@@ -88,6 +89,14 @@ interface AppContextValue {
   getBest: (name: string) => number
   getStreak: () => number
   getNextType: () => MuscleGroup
+  // Pro
+  isPro: boolean
+  unlockPro: (code: string) => boolean
+  activatePro: () => void
+  disablePro: () => void
+  proOpen: boolean
+  openPro: () => void
+  closePro: () => void
 }
 
 const AppContext = createContext<AppContextValue | null>(null)
@@ -103,6 +112,32 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [editMode, setEditMode] = useState(false)
   const [editSessionId, setEditSessionId] = useState<string | null>(null)
   const [repeatPending, setRepeatPending] = useState(false)
+  const [isPro, setIsPro] = useState(false)
+  const [proOpen, setProOpen] = useState(false)
+
+  const openPro = useCallback(() => setProOpen(true), [])
+  const closePro = useCallback(() => setProOpen(false), [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    setIsPro(localStorage.getItem('gymlog_pro') === '1')
+  }, [])
+
+  const activatePro = useCallback(() => {
+    if (typeof window !== 'undefined') localStorage.setItem('gymlog_pro', '1')
+    setIsPro(true)
+  }, [])
+
+  const unlockPro = useCallback((code: string) => {
+    if (!validatePromo(code)) return false
+    activatePro()
+    return true
+  }, [activatePro])
+
+  const disablePro = useCallback(() => {
+    if (typeof window !== 'undefined') localStorage.removeItem('gymlog_pro')
+    setIsPro(false)
+  }, [])
 
   const loadData = useCallback(async (userId: string) => {
     const [{ data: s }, { data: c }] = await Promise.all([
@@ -242,6 +277,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       repeatPending, repeatSession, clearRepeat,
       saveSession, deleteSession, signOut, reload,
       getBest, getStreak, getNextType,
+      isPro, unlockPro, activatePro, disablePro,
+      proOpen, openPro, closePro,
     }}>
       {children}
     </AppContext.Provider>

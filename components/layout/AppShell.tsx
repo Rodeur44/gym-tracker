@@ -42,7 +42,6 @@ export default function AppShell() {
   const [direction, setDirection] = useState(1)
   const [scrubbing, setScrubbing] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
-  const [proOpen, setProOpen] = useState(false)
 
   const profileRef = useRef<HTMLDivElement>(null)
   const mainRef = useRef<HTMLElement>(null)
@@ -51,7 +50,7 @@ export default function AppShell() {
   const tabRef = useRef(tab)
   tabRef.current = tab
 
-  const { user, signOut, editMode, repeatPending, clearRepeat } = useApp()
+  const { user, signOut, editMode, repeatPending, clearRepeat, isPro, proOpen, openPro, closePro } = useApp()
 
   // ── Tab navigation with direction ────────────────────────────
   const goTo = useCallback((newTab: Tab) => {
@@ -237,11 +236,18 @@ export default function AppShell() {
                     <p className="text-sm font-medium text-zinc-200 mt-0.5 truncate">{user?.email}</p>
                   </div>
                   <button
-                    onClick={() => { setProfileOpen(false); setProOpen(true) }}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-[#A78BFA] hover:bg-[#A78BFA]/10 transition-colors border-b border-white/[0.06]"
+                    onClick={() => { setProfileOpen(false); openPro() }}
+                    className="w-full flex items-center justify-between gap-3 px-4 py-3 text-sm font-medium text-[#A78BFA] hover:bg-[#A78BFA]/10 transition-colors border-b border-white/[0.06]"
                   >
-                    <Crown size={16} strokeWidth={1.8} />
-                    GymLog Pro
+                    <span className="flex items-center gap-3">
+                      <Crown size={16} strokeWidth={1.8} />
+                      GymLog Pro
+                    </span>
+                    {isPro && (
+                      <span className="text-[10px] font-bold text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-2 py-0.5 rounded-full">
+                        ACTIF
+                      </span>
+                    )}
                   </button>
                   <button
                     onClick={() => { setProfileOpen(false); signOut() }}
@@ -321,7 +327,7 @@ export default function AppShell() {
 
       {/* Pro subscription modal */}
       <AnimatePresence>
-        {proOpen && <ProScreen onClose={() => setProOpen(false)} />}
+        {proOpen && <ProScreen onClose={closePro} />}
       </AnimatePresence>
     </div>
   )

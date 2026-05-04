@@ -3,7 +3,7 @@
 import { useMemo } from 'react'
 import { motion } from 'framer-motion'
 import type { Variants } from 'framer-motion'
-import { Zap } from 'lucide-react'
+import { Zap, Crown, Sparkles, ChevronRight } from 'lucide-react'
 import { useApp } from '@/context/AppContext'
 import { TYPE_LBL, TAG_CLR, TAG_BG, EXO_BY_TYPE } from '@/lib/constants'
 import type { MuscleGroup, Session } from '@/types'
@@ -22,7 +22,7 @@ function fmtDate(d: string) {
 }
 
 export default function HomeScreen() {
-  const { sessions, unlockedCards, getBest, getStreak, getNextType, repeatSession } = useApp()
+  const { sessions, unlockedCards, getBest, getStreak, getNextType, repeatSession, isPro, openPro } = useApp()
   const nt = getNextType()
   const streak = getStreak()
   const last = sessions[0]
@@ -200,6 +200,39 @@ export default function HomeScreen() {
           </div>
         </div>
       </motion.div>
+      {/* Pro CTA — only when not Pro */}
+      {!isPro && (
+        <motion.div variants={fadeUp}>
+          <button
+            onClick={openPro}
+            className="w-full text-left rounded-2xl p-4 relative overflow-hidden border active:scale-[0.99] transition-transform"
+            style={{
+              background: 'linear-gradient(135deg,#1E0B3D 0%,#3B0764 35%,#5B21B6 75%,#7C3AED 100%)',
+              borderColor: 'rgba(139,92,246,0.32)',
+              boxShadow: '0 12px 32px -12px rgba(91,33,182,0.55), inset 0 1px 0 rgba(255,255,255,0.1)',
+            }}
+          >
+            <div className="absolute -right-10 -top-12 w-32 h-32 rounded-full bg-white/15 blur-2xl pointer-events-none" />
+            <div className="absolute -left-6 -bottom-10 w-24 h-24 rounded-full bg-black/30 blur-2xl pointer-events-none" />
+
+            <div className="relative flex items-center gap-3">
+              <div className="w-11 h-11 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center border border-white/20 flex-shrink-0">
+                <Crown size={20} strokeWidth={2} className="text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] font-bold text-white/70 uppercase tracking-[1.4px]">GymLog Pro</span>
+                  <Sparkles size={11} strokeWidth={2} className="text-white/70" />
+                </div>
+                <h3 className="text-[15px] font-semibold text-white tracking-tight mt-0.5">Débloquer toutes les fonctionnalités</h3>
+                <p className="text-[12px] text-white/70 mt-0.5">7 jours offerts · code d'invitation accepté</p>
+              </div>
+              <ChevronRight size={20} strokeWidth={2} className="text-white/80 flex-shrink-0" />
+            </div>
+          </button>
+        </motion.div>
+      )}
+
       {/* AI suggestion */}
       <motion.div variants={fadeUp}>
         <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-[1.8px] mb-3 flex items-center gap-2">
