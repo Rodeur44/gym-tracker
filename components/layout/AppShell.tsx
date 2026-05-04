@@ -3,13 +3,14 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Variants } from 'framer-motion'
-import { Home, Plus, Clock, BarChart2, LayoutGrid, LogOut } from 'lucide-react'
+import { Home, Plus, Clock, BarChart2, LayoutGrid, LogOut, Crown } from 'lucide-react'
 import { useApp } from '@/context/AppContext'
 import HomeScreen from '@/components/screens/HomeScreen'
 import LogScreen from '@/components/screens/LogScreen'
 import HistoryScreen from '@/components/screens/HistoryScreen'
 import ProgressScreen from '@/components/screens/ProgressScreen'
 import CardsScreen from '@/components/screens/CardsScreen'
+import ProScreen from '@/components/screens/ProScreen'
 
 type Tab = 'home' | 'log' | 'history' | 'prog' | 'cards'
 
@@ -41,6 +42,7 @@ export default function AppShell() {
   const [direction, setDirection] = useState(1)
   const [scrubbing, setScrubbing] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
+  const [proOpen, setProOpen] = useState(false)
 
   const profileRef = useRef<HTMLDivElement>(null)
   const mainRef = useRef<HTMLElement>(null)
@@ -94,14 +96,27 @@ export default function AppShell() {
     let startX = 0
     let startY = 0
     let lock: 'none' | 'h' | 'v' = 'none'
+    let disabled = false
+
+    function shouldSkipSwipe(target: EventTarget | null): boolean {
+      // Disable swipe entirely while editing a session — sliders / steppers
+      // / inputs need horizontal touch space without tab navigation hijacking it
+      if (tabRef.current === 'log') return true
+      if (!(target instanceof Element)) return false
+      if (target.closest('input[type="range"]')) return true
+      if (target.closest('[data-no-swipe]')) return true
+      return false
+    }
 
     function onStart(e: TouchEvent) {
+      disabled = shouldSkipSwipe(e.target)
       startX = e.touches[0].clientX
       startY = e.touches[0].clientY
       lock = 'none'
     }
 
     function onMove(e: TouchEvent) {
+      if (disabled) return
       const dx = e.touches[0].clientX - startX
       const dy = e.touches[0].clientY - startY
 
@@ -114,6 +129,7 @@ export default function AppShell() {
     }
 
     function onEnd(e: TouchEvent) {
+      if (disabled) { disabled = false; return }
       if (lock !== 'h') return
       const dx = e.changedTouches[0].clientX - startX
       if (Math.abs(dx) < 65) return
@@ -221,6 +237,13 @@ export default function AppShell() {
                     <p className="text-sm font-medium text-zinc-200 mt-0.5 truncate">{user?.email}</p>
                   </div>
                   <button
+                    onClick={() => { setProfileOpen(false); setProOpen(true) }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-[#A78BFA] hover:bg-[#A78BFA]/10 transition-colors border-b border-white/[0.06]"
+                  >
+                    <Crown size={16} strokeWidth={1.8} />
+                    GymLog Pro
+                  </button>
+                  <button
                     onClick={() => { setProfileOpen(false); signOut() }}
                     className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-400 hover:bg-red-500/10 transition-colors"
                   >
@@ -295,6 +318,11 @@ export default function AppShell() {
           })}
         </div>
       </nav>
+
+      {/* Pro subscription modal */}
+      <AnimatePresence>
+        {proOpen && <ProScreen onClose={() => setProOpen(false)} />}
+      </AnimatePresence>
     </div>
   )
 }

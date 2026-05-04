@@ -7,6 +7,7 @@ import { Zap } from 'lucide-react'
 import { useApp } from '@/context/AppContext'
 import { TYPE_LBL, TAG_CLR, TAG_BG, EXO_BY_TYPE } from '@/lib/constants'
 import type { MuscleGroup, Session } from '@/types'
+import { Counter } from '@/components/ui/animated-counter'
 
 const stagger: Variants = {
   animate: { transition: { staggerChildren: 0.08 } }
@@ -121,16 +122,22 @@ export default function HomeScreen() {
 
             {/* Stats row */}
             <div className="flex gap-7 mt-5 pt-4 border-t border-white/15">
-              {[
-                { num: sessions.length, lbl: 'Séances' },
-                { num: unlockedCards.size, lbl: 'Cartes' },
-                { num: streak || '—', lbl: 'Jours streak' },
-              ].map(({ num, lbl }) => (
-                <div key={lbl}>
-                  <div className="text-2xl font-bold font-mono text-white leading-none tracking-tight">{num}</div>
-                  <div className="text-[10px] text-white/50 uppercase tracking-[1.2px] mt-1">{lbl}</div>
-                </div>
-              ))}
+              <div>
+                <Counter end={sessions.length} fontSize={24} className="text-white tracking-tight" />
+                <div className="text-[10px] text-white/50 uppercase tracking-[1.2px] mt-1">Séances</div>
+              </div>
+              <div>
+                <Counter end={unlockedCards.size} fontSize={24} className="text-white tracking-tight" />
+                <div className="text-[10px] text-white/50 uppercase tracking-[1.2px] mt-1">Cartes</div>
+              </div>
+              <div>
+                {streak > 0 ? (
+                  <Counter end={streak} fontSize={24} className="text-white tracking-tight" />
+                ) : (
+                  <div className="text-2xl font-bold font-mono text-white leading-none tracking-tight" style={{ height: 32 }}>—</div>
+                )}
+                <div className="text-[10px] text-white/50 uppercase tracking-[1.2px] mt-1">Jours streak</div>
+              </div>
             </div>
           </div>
         </div>

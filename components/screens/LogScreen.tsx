@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, X, ChevronRight, AlertCircle, Camera, Copy, CopyPlus, LayoutGrid } from 'lucide-react'
 import { useApp } from '@/context/AppContext'
@@ -145,6 +145,40 @@ function ExoPicker({ type, onPick, onClose, getBest, allPrev }: {
   )
 }
 
+// ── Weight slider (isolated touch — never bubbles to swipe handler) ─
+function WeightSlider({ value, onChange, trackStyle }: {
+  value: number
+  onChange: (v: number) => void
+  trackStyle: React.CSSProperties
+}) {
+  const ref = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const stop = (e: TouchEvent) => e.stopPropagation()
+    el.addEventListener('touchstart', stop, { passive: true })
+    el.addEventListener('touchmove', stop, { passive: true })
+    el.addEventListener('touchend', stop, { passive: true })
+    return () => {
+      el.removeEventListener('touchstart', stop)
+      el.removeEventListener('touchmove', stop)
+      el.removeEventListener('touchend', stop)
+    }
+  }, [])
+
+  return (
+    <input
+      ref={ref}
+      type="range" min={0} max={250} step={2.5}
+      value={value}
+      onChange={e => onChange(+e.target.value)}
+      className="w-full h-1.5 rounded-full outline-none cursor-pointer appearance-none"
+      style={{ ...trackStyle, touchAction: 'pan-x' }}
+    />
+  )
+}
+
 // ── Set Row ───────────────────────────────────────────────────────
 function SetRow({ set, idx, accent, onWeightChange, onRepsChange, onDelete }: {
   set: { weight: number; reps: number }
@@ -196,14 +230,8 @@ function SetRow({ set, idx, accent, onWeightChange, onRepsChange, onDelete }: {
         </button>
       </div>
       {/* Weight slider */}
-      <div className="pl-9 pr-1">
-        <input
-          type="range" min={0} max={250} step={2.5}
-          value={set.weight}
-          onChange={e => onWeightChange(+e.target.value)}
-          className="w-full h-1.5 rounded-full outline-none cursor-pointer appearance-none"
-          style={trackStyle}
-        />
+      <div className="pl-9 pr-1" data-no-swipe>
+        <WeightSlider value={set.weight} onChange={onWeightChange} trackStyle={trackStyle} />
       </div>
     </motion.div>
   )
