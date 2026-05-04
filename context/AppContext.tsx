@@ -1,6 +1,7 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
+import { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import { scheduleBeep, cancelScheduledBeep, testBeep as testBeepImpl, unlockAudio } from '@/lib/audio'
 import type { User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import type { Session, MuscleGroup, Exercise } from '@/types'
@@ -125,8 +126,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [proOpen, setProOpen] = useState(false)
   const [restEndsAt, setRestEndsAt] = useState<number | null>(null)
   const [restDuration, setRestDuration] = useState(90)
-  const audioCtxRef = useRef<AudioContext | null>(null)
-  const scheduledOscRef = useRef<OscillatorNode[]>([])
 
   const openPro = useCallback(() => setProOpen(true), [])
   const closePro = useCallback(() => setProOpen(false), [])
@@ -138,120 +137,50 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!Number.isNaN(saved) && saved >= 15 && saved <= 600) setRestDuration(saved)
   }, [])
 
-  const ensureAudio = useCallback(() => {
-    if (typeof window === 'undefined') return null
-    if (!audioCtxRef.current) {
-      try {
-        const Ctx = (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext || window.AudioContext
-        if (!Ctx) return null
-        audioCtxRef.current = new Ctx()
-      } catch { return null }
-    }
-    const ctx = audioCtxRef.current
-    if (ctx && ctx.state === 'suspended') {
-      ctx.resume().catch(() => {})
-    }
-    return ctx
-  }, [])
-
-  // Unlock the audio context on the first user gesture (iOS requirement)
+  // Unlock the audio element on the first user gesture (iOS requirement)
   useEffect(() => {
     if (typeof window === 'undefined') return
-    const unlock = () => { ensureAudio() }
+    let done = false
+    const unlock = () => {
+      if (done) return
+      done = true
+      unlockAudio()
+      window.removeEventListener('touchstart', unlock)
+      window.removeEventListener('mousedown', unlock)
+    }
     window.addEventListener('touchstart', unlock, { passive: true })
     window.addEventListener('mousedown', unlock)
     return () => {
       window.removeEventListener('touchstart', unlock)
       window.removeEventListener('mousedown', unlock)
     }
-  }, [ensureAudio])
-
-  // Resume audio when the page becomes visible again (iOS suspends on background)
-  useEffect(() => {
-    if (typeof document === 'undefined') return
-    const handler = () => {
-      if (document.visibilityState === 'visible') ensureAudio()
-    }
-    document.addEventListener('visibilitychange', handler)
-    return () => document.removeEventListener('visibilitychange', handler)
-  }, [ensureAudio])
-
-  const cancelScheduledBeep = useCallback(() => {
-    scheduledOscRef.current.forEach(osc => { try { osc.stop(0) } catch {} })
-    scheduledOscRef.current = []
   }, [])
-
-  const scheduleBeep = useCallback((secondsFromNow: number) => {
-    cancelScheduledBeep()
-    const ctx = ensureAudio()
-    if (!ctx) return
-    const t = ctx.currentTime + Math.max(0, secondsFromNow)
-    const oscs: OscillatorNode[] = []
-    const beep = (freq: number, when: number, dur = 0.16) => {
-      try {
-        const osc = ctx.createOscillator()
-        const gain = ctx.createGain()
-        osc.type = 'sine'
-        osc.frequency.value = freq
-        gain.gain.setValueAtTime(0.0001, when)
-        gain.gain.exponentialRampToValueAtTime(0.4, when + 0.01)
-        gain.gain.exponentialRampToValueAtTime(0.0001, when + dur)
-        osc.connect(gain).connect(ctx.destination)
-        osc.start(when)
-        osc.stop(when + dur + 0.05)
-        oscs.push(osc)
-      } catch {}
-    }
-    beep(880, t)
-    beep(1100, t + 0.18)
-    beep(1320, t + 0.36, 0.24)
-    scheduledOscRef.current = oscs
-  }, [cancelScheduledBeep, ensureAudio])
 
   const startRest = useCallback((seconds?: number) => {
     const dur = seconds ?? restDuration
-    // Schedule the end beep NOW while we're still in the user's tap event.
-    // iOS needs the audio scheduling to happen inside the gesture context.
-    scheduleBeep(dur)
+    // scheduleBeep also unlocks the audio element synchronously inside this
+    // user gesture, then schedules a setTimeout for the end-of-rest beep.
+    scheduleBeep(dur * 1000)
     setRestEndsAt(Date.now() + dur * 1000)
-  }, [restDuration, scheduleBeep])
+  }, [restDuration])
 
   const stopRest = useCallback(() => {
     cancelScheduledBeep()
     setRestEndsAt(null)
-  }, [cancelScheduledBeep])
+  }, [])
 
   const addRest = useCallback((deltaSec: number) => {
     setRestEndsAt(prev => {
       if (!prev) return prev
       const next = Math.max(Date.now() + 1000, prev + deltaSec * 1000)
-      // Reschedule the beep for the new end time
-      scheduleBeep((next - Date.now()) / 1000)
+      scheduleBeep(next - Date.now())
       return next
     })
-  }, [scheduleBeep])
+  }, [])
 
   const testBeep = useCallback(() => {
-    const ctx = ensureAudio()
-    if (!ctx) return
-    const t = ctx.currentTime + 0.05
-    const beep = (freq: number, when: number, dur = 0.14) => {
-      try {
-        const osc = ctx.createOscillator()
-        const gain = ctx.createGain()
-        osc.type = 'sine'
-        osc.frequency.value = freq
-        gain.gain.setValueAtTime(0.0001, when)
-        gain.gain.exponentialRampToValueAtTime(0.4, when + 0.01)
-        gain.gain.exponentialRampToValueAtTime(0.0001, when + dur)
-        osc.connect(gain).connect(ctx.destination)
-        osc.start(when)
-        osc.stop(when + dur + 0.05)
-      } catch {}
-    }
-    beep(880, t)
-    beep(1100, t + 0.16)
-  }, [ensureAudio])
+    testBeepImpl()
+  }, [])
 
   const setDefaultRest = useCallback((seconds: number) => {
     const clamped = Math.max(15, Math.min(600, seconds))
