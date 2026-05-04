@@ -98,10 +98,8 @@ export default function AppShell() {
     let disabled = false
 
     function shouldSkipSwipe(target: EventTarget | null): boolean {
-      // Disable swipe entirely while editing a session — sliders / steppers
-      // / inputs need horizontal touch space without tab navigation hijacking it
-      if (tabRef.current === 'log') return true
       if (!(target instanceof Element)) return false
+      // Skip when interaction starts on horizontally-draggable controls
       if (target.closest('input[type="range"]')) return true
       if (target.closest('[data-no-swipe]')) return true
       return false
@@ -207,8 +205,21 @@ export default function AppShell() {
         className="sticky top-0 z-50 glass-strong flex items-center justify-between px-5 border-b border-white/[0.06]"
         style={{ paddingTop: 'max(16px, env(safe-area-inset-top, 16px))', paddingBottom: '16px' }}
       >
-        <div className="text-xl font-semibold tracking-tight">
-          Gym<span className="text-[#A78BFA] drop-shadow-[0_0_12px_rgba(139,92,246,0.6)]">Log</span>
+        <div className="flex items-center gap-2">
+          <div className="text-xl font-semibold tracking-tight">
+            Gym<span className="text-[#A78BFA] drop-shadow-[0_0_12px_rgba(139,92,246,0.6)]">Log</span>
+          </div>
+          {isPro && (
+            <span
+              className="text-[9px] font-extrabold tracking-[1.4px] text-white px-1.5 py-0.5 rounded-md uppercase"
+              style={{
+                background: 'linear-gradient(135deg,#7C3AED,#A78BFA)',
+                boxShadow: '0 0 12px rgba(139,92,246,0.5), inset 0 1px 0 rgba(255,255,255,0.18)',
+              }}
+            >
+              Pro
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-3">
           <span className="text-[11px] text-zinc-500 font-mono">
@@ -217,7 +228,8 @@ export default function AppShell() {
           <div ref={profileRef} className="relative">
             <button
               onClick={() => setProfileOpen(o => !o)}
-              className="w-8 h-8 rounded-full bg-[#1C1C1C] border border-[#A78BFA] flex items-center justify-center text-[13px] font-semibold text-[#A78BFA] transition-all duration-300 hover:shadow-[0_0_16px_rgba(139,92,246,0.4)] hover:scale-105 active:scale-95"
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-semibold transition-all duration-300 hover:shadow-[0_0_16px_rgba(139,92,246,0.5)] hover:scale-105 active:scale-95 ${isPro ? 'text-white border border-white/20' : 'bg-[#1C1C1C] border border-[#A78BFA] text-[#A78BFA]'}`}
+              style={isPro ? { background: 'linear-gradient(135deg,#A78BFA,#7C3AED)', boxShadow: '0 0 14px rgba(139,92,246,0.45), inset 0 1px 0 rgba(255,255,255,0.18)' } : undefined}
               aria-label="Profil"
             >
               {initials}

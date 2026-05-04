@@ -118,14 +118,36 @@ export default function ProScreen({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
-        {!showSuccess && (
-          <div className="relative mt-5 flex items-baseline gap-2">
-            <span className="text-[42px] font-extrabold text-white leading-none tracking-[-1.5px]">4,99€</span>
-            <span className="text-sm text-white/70">/ mois</span>
-            <span className="ml-auto text-[10px] font-bold text-white bg-white/15 backdrop-blur px-2.5 py-1 rounded-full border border-white/20">
-              7 jours offerts
-            </span>
-          </div>
+        {!showSuccess && !codeMode && (
+          <AnimatePresence mode="wait" initial={false}>
+            {compact ? (
+              <motion.div
+                key="header-compact"
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.18 }}
+                className="relative mt-4"
+              >
+                <CompactCard card={card} cardType={cardType} flipped={flipped} />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="header-price"
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.18 }}
+                className="relative mt-5 flex items-baseline gap-2"
+              >
+                <span className="text-[42px] font-extrabold text-white leading-none tracking-[-1.5px]">4,99€</span>
+                <span className="text-sm text-white/70">/ mois</span>
+                <span className="ml-auto text-[10px] font-bold text-white bg-white/15 backdrop-blur px-2.5 py-1 rounded-full border border-white/20">
+                  7 jours offerts
+                </span>
+              </motion.div>
+            )}
+          </AnimatePresence>
         )}
       </div>
 
@@ -162,36 +184,16 @@ export default function ProScreen({ onClose }: { onClose: () => void }) {
               </div>
             </div>
 
-            {/* Card preview — full or compact */}
-            <div className="sticky top-0 z-10 -mx-5 px-5 py-2 bg-[#0A0A0A]/90 backdrop-blur-md">
-              <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-[1.8px] mb-2 flex items-center gap-2">
-                <span className="w-[3px] h-[11px] rounded-full bg-[#A78BFA] shadow-[0_0_8px_rgba(139,92,246,0.5)] inline-block" />
-                Moyen de paiement
-              </p>
-              <AnimatePresence mode="wait" initial={false}>
-                {compact ? (
-                  <motion.div
-                    key="compact"
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    transition={{ duration: 0.18 }}
-                  >
-                    <CompactCard card={card} cardType={cardType} flipped={flipped} />
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="full"
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    transition={{ duration: 0.22 }}
-                  >
-                    <FullCard card={card} cardType={cardType} flipped={flipped} />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+            {/* Full card preview — only when no input is focused (otherwise the compact version sits in the header) */}
+            {!compact && (
+              <div>
+                <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-[1.8px] mb-3 flex items-center gap-2">
+                  <span className="w-[3px] h-[11px] rounded-full bg-[#A78BFA] shadow-[0_0_8px_rgba(139,92,246,0.5)] inline-block" />
+                  Moyen de paiement
+                </p>
+                <FullCard card={card} cardType={cardType} flipped={flipped} />
+              </div>
+            )}
 
             {/* Form */}
             <div className="card-glass rounded-2xl p-4 flex flex-col gap-4">
@@ -199,6 +201,10 @@ export default function ProScreen({ onClose }: { onClose: () => void }) {
                 <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-[1.4px] mb-1.5 block">Numéro de carte</label>
                 <input
                   inputMode="numeric"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  name="gymlog-number"
                   placeholder="1234 5678 9012 3456"
                   value={card.number}
                   onChange={e => update('number', e.target.value)}
@@ -211,6 +217,10 @@ export default function ProScreen({ onClose }: { onClose: () => void }) {
               <div>
                 <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-[1.4px] mb-1.5 block">Titulaire</label>
                 <input
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  name="gymlog-name"
                   placeholder="Jean Dupont"
                   value={card.name}
                   onChange={e => update('name', e.target.value)}
@@ -225,6 +235,10 @@ export default function ProScreen({ onClose }: { onClose: () => void }) {
                   <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-[1.4px] mb-1.5 block">Expiration</label>
                   <input
                     inputMode="numeric"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    name="gymlog-exp"
                     placeholder="MM/AA"
                     value={card.expiry}
                     onChange={e => update('expiry', e.target.value)}
@@ -237,6 +251,10 @@ export default function ProScreen({ onClose }: { onClose: () => void }) {
                   <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-[1.4px] mb-1.5 block">CVV</label>
                   <input
                     inputMode="numeric"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    name="gymlog-cvv"
                     placeholder="123"
                     value={card.cvv}
                     onChange={e => update('cvv', e.target.value)}
