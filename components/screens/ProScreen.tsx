@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { X, Check, Crown, Zap, BarChart2, Cloud, Sparkles, Calendar, Award, Headphones, KeyRound, AlertCircle } from 'lucide-react'
 import { useApp } from '@/context/AppContext'
 
@@ -41,13 +41,12 @@ function formatExpiry(value: string) {
 export default function ProScreen({ onClose }: { onClose: () => void }) {
   const { isPro, unlockPro, activatePro, disablePro } = useApp()
   const [card, setCard] = useState({ number: '', name: '', expiry: '', cvv: '' })
-  const [flipped, setFlipped] = useState(false)
   const [paying, setPaying] = useState(false)
   const [success, setSuccess] = useState(false)
-  const [focused, setFocused] = useState<keyof typeof card | null>(null)
   const [codeMode, setCodeMode] = useState(false)
   const [code, setCode] = useState('')
   const [codeError, setCodeError] = useState(false)
+  const [focused, setFocused] = useState<keyof typeof card | null>(null)
 
   function update(field: keyof typeof card, value: string) {
     let v = value
@@ -60,7 +59,7 @@ export default function ProScreen({ onClose }: { onClose: () => void }) {
 
   const cardType = getCardType(card.number)
   const valid = card.number.replace(/\s/g, '').length >= 12 && card.name.length > 2 && card.expiry.length === 5 && card.cvv.length >= 3
-  const compact = focused !== null
+  const showSuccess = success || (isPro && !codeMode)
 
   function pay() {
     if (!valid || paying) return
@@ -78,9 +77,6 @@ export default function ProScreen({ onClose }: { onClose: () => void }) {
     setCodeError(false)
     setSuccess(true)
   }
-
-  // Already-Pro state — show this immediately if user is Pro
-  const showSuccess = success || (isPro && !codeMode)
 
   return (
     <motion.div
@@ -119,35 +115,26 @@ export default function ProScreen({ onClose }: { onClose: () => void }) {
         </div>
 
         {!showSuccess && !codeMode && (
-          <AnimatePresence mode="wait" initial={false}>
-            {compact ? (
-              <motion.div
-                key="header-compact"
-                initial={{ opacity: 0, y: -8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.18 }}
-                className="relative mt-4"
-              >
-                <CompactCard card={card} cardType={cardType} flipped={flipped} />
-              </motion.div>
-            ) : (
-              <motion.div
-                key="header-price"
-                initial={{ opacity: 0, y: -8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.18 }}
-                className="relative mt-5 flex items-baseline gap-2"
-              >
-                <span className="text-[42px] font-extrabold text-white leading-none tracking-[-1.5px]">4,99€</span>
-                <span className="text-sm text-white/70">/ mois</span>
-                <span className="ml-auto text-[10px] font-bold text-white bg-white/15 backdrop-blur px-2.5 py-1 rounded-full border border-white/20">
-                  7 jours offerts
-                </span>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <>
+            <div className="relative mt-3 flex items-baseline gap-2">
+              <span className="text-[28px] font-extrabold text-white leading-none tracking-[-1px]">4,99€</span>
+              <span className="text-xs text-white/70">/ mois</span>
+              <span className="ml-auto text-[10px] font-bold text-white bg-white/15 backdrop-blur px-2.5 py-1 rounded-full border border-white/20">
+                7 jours offerts
+              </span>
+            </div>
+
+            {/* Editable card — always visible (in non-scrolling header) */}
+            <div className="relative mt-4">
+              <EditableCard
+                card={card}
+                update={update}
+                cardType={cardType}
+                focused={focused}
+                setFocused={setFocused}
+              />
+            </div>
+          </>
         )}
       </div>
 
@@ -164,108 +151,8 @@ export default function ProScreen({ onClose }: { onClose: () => void }) {
             onBack={() => { setCodeMode(false); setCode(''); setCodeError(false) }}
           />
         ) : (
-          <div className="px-5 pt-6 flex flex-col gap-5">
-            {/* Benefits */}
-            <div>
-              <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-[1.8px] mb-3 flex items-center gap-2">
-                <span className="w-[3px] h-[11px] rounded-full bg-[#A78BFA] shadow-[0_0_8px_rgba(139,92,246,0.5)] inline-block" />
-                Tout ce qui est inclus
-              </p>
-              <div className="card-glass rounded-2xl p-4 flex flex-col gap-3">
-                {BENEFITS.map(({ icon: Icon, text }) => (
-                  <div key={text} className="flex items-start gap-3">
-                    <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 border"
-                      style={{ background: 'rgba(139,92,246,0.12)', borderColor: 'rgba(139,92,246,0.22)' }}>
-                      <Icon size={14} strokeWidth={1.8} className="text-[#A78BFA]" />
-                    </div>
-                    <span className="text-[13px] text-zinc-200 leading-snug">{text}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Full card preview — only when no input is focused (otherwise the compact version sits in the header) */}
-            {!compact && (
-              <div>
-                <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-[1.8px] mb-3 flex items-center gap-2">
-                  <span className="w-[3px] h-[11px] rounded-full bg-[#A78BFA] shadow-[0_0_8px_rgba(139,92,246,0.5)] inline-block" />
-                  Moyen de paiement
-                </p>
-                <FullCard card={card} cardType={cardType} flipped={flipped} />
-              </div>
-            )}
-
-            {/* Form */}
-            <div className="card-glass rounded-2xl p-4 flex flex-col gap-4">
-              <div>
-                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-[1.4px] mb-1.5 block">Numéro de carte</label>
-                <input
-                  inputMode="numeric"
-                  autoComplete="off"
-                  autoCorrect="off"
-                  spellCheck={false}
-                  name="gymlog-number"
-                  placeholder="1234 5678 9012 3456"
-                  value={card.number}
-                  onChange={e => update('number', e.target.value)}
-                  onFocus={() => setFocused('number')}
-                  onBlur={() => setFocused(null)}
-                  className="w-full h-11 px-3 rounded-xl bg-[#1C1C1C] border border-white/[0.08] text-zinc-100 font-mono text-[15px] placeholder:text-zinc-600 focus:outline-none focus:border-[#A78BFA] focus:shadow-[0_0_0_3px_rgba(139,92,246,0.18)] transition-all"
-                />
-              </div>
-
-              <div>
-                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-[1.4px] mb-1.5 block">Titulaire</label>
-                <input
-                  autoComplete="off"
-                  autoCorrect="off"
-                  spellCheck={false}
-                  name="gymlog-name"
-                  placeholder="Jean Dupont"
-                  value={card.name}
-                  onChange={e => update('name', e.target.value)}
-                  onFocus={() => setFocused('name')}
-                  onBlur={() => setFocused(null)}
-                  className="w-full h-11 px-3 rounded-xl bg-[#1C1C1C] border border-white/[0.08] text-zinc-100 text-sm placeholder:text-zinc-600 uppercase focus:outline-none focus:border-[#A78BFA] focus:shadow-[0_0_0_3px_rgba(139,92,246,0.18)] transition-all"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-[1.4px] mb-1.5 block">Expiration</label>
-                  <input
-                    inputMode="numeric"
-                    autoComplete="off"
-                    autoCorrect="off"
-                    spellCheck={false}
-                    name="gymlog-exp"
-                    placeholder="MM/AA"
-                    value={card.expiry}
-                    onChange={e => update('expiry', e.target.value)}
-                    onFocus={() => setFocused('expiry')}
-                    onBlur={() => setFocused(null)}
-                    className="w-full h-11 px-3 rounded-xl bg-[#1C1C1C] border border-white/[0.08] text-zinc-100 font-mono text-sm placeholder:text-zinc-600 focus:outline-none focus:border-[#A78BFA] focus:shadow-[0_0_0_3px_rgba(139,92,246,0.18)] transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-[1.4px] mb-1.5 block">CVV</label>
-                  <input
-                    inputMode="numeric"
-                    autoComplete="off"
-                    autoCorrect="off"
-                    spellCheck={false}
-                    name="gymlog-cvv"
-                    placeholder="123"
-                    value={card.cvv}
-                    onChange={e => update('cvv', e.target.value)}
-                    onFocus={() => { setFocused('cvv'); setFlipped(true) }}
-                    onBlur={() => { setFocused(null); setFlipped(false) }}
-                    className="w-full h-11 px-3 rounded-xl bg-[#1C1C1C] border border-white/[0.08] text-zinc-100 font-mono text-sm placeholder:text-zinc-600 focus:outline-none focus:border-[#A78BFA] focus:shadow-[0_0_0_3px_rgba(139,92,246,0.18)] transition-all"
-                  />
-                </div>
-              </div>
-            </div>
-
+          <div className="px-5 pt-5 flex flex-col gap-5">
+            {/* Submit button — first thing under header */}
             <motion.button
               whileTap={valid && !paying ? { scale: 0.97 } : undefined}
               transition={{ type: 'spring', stiffness: 400, damping: 25 }}
@@ -295,16 +182,34 @@ export default function ProScreen({ onClose }: { onClose: () => void }) {
               )}
             </motion.button>
 
-            {/* Promo code link */}
             <button
               onClick={() => setCodeMode(true)}
-              className="flex items-center justify-center gap-2 text-[13px] text-zinc-400 hover:text-[#A78BFA] transition-colors py-2"
+              className="flex items-center justify-center gap-2 text-[13px] text-zinc-400 hover:text-[#A78BFA] transition-colors py-1"
             >
               <KeyRound size={14} strokeWidth={1.8} />
               J'ai un code d'invitation
             </button>
 
-            <p className="text-center text-[11px] text-zinc-600 leading-relaxed px-4 -mt-2">
+            {/* Benefits */}
+            <div>
+              <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-[1.8px] mb-3 flex items-center gap-2">
+                <span className="w-[3px] h-[11px] rounded-full bg-[#A78BFA] shadow-[0_0_8px_rgba(139,92,246,0.5)] inline-block" />
+                Tout ce qui est inclus
+              </p>
+              <div className="card-glass rounded-2xl p-4 flex flex-col gap-3">
+                {BENEFITS.map(({ icon: Icon, text }) => (
+                  <div key={text} className="flex items-start gap-3">
+                    <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 border"
+                      style={{ background: 'rgba(139,92,246,0.12)', borderColor: 'rgba(139,92,246,0.22)' }}>
+                      <Icon size={14} strokeWidth={1.8} className="text-[#A78BFA]" />
+                    </div>
+                    <span className="text-[13px] text-zinc-200 leading-snug">{text}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <p className="text-center text-[11px] text-zinc-600 leading-relaxed px-4">
               Aucun paiement réel n'est traité — démo uniquement.
               Annule à tout moment depuis tes réglages.
             </p>
@@ -315,141 +220,129 @@ export default function ProScreen({ onClose }: { onClose: () => void }) {
   )
 }
 
-// ── Sub-components ─────────────────────────────────────────────────
-
-function FullCard({ card, cardType, flipped }: {
+// ── Editable card — the card itself IS the form ─────────────────────
+function EditableCard({ card, update, cardType, focused, setFocused }: {
   card: { number: string; name: string; expiry: string; cvv: string }
+  update: (field: 'number' | 'name' | 'expiry' | 'cvv', value: string) => void
   cardType: string
-  flipped: boolean
+  focused: 'number' | 'name' | 'expiry' | 'cvv' | null
+  setFocused: (f: 'number' | 'name' | 'expiry' | 'cvv' | null) => void
 }) {
-  return (
-    <div className="relative h-[210px] w-full" style={{ perspective: 1200 }}>
-      <div
-        className="relative w-full h-full transition-transform duration-700"
-        style={{ transformStyle: 'preserve-3d', transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
-      >
-        {/* Front */}
-        <div
-          className="absolute inset-0 rounded-2xl p-5 flex flex-col justify-between overflow-hidden border"
-          style={{
-            backfaceVisibility: 'hidden',
-            WebkitBackfaceVisibility: 'hidden',
-            background: 'linear-gradient(135deg,#1E0B3D 0%,#3B0764 35%,#5B21B6 70%,#7C3AED 100%)',
-            borderColor: 'rgba(139,92,246,0.3)',
-            boxShadow: '0 20px 50px -12px rgba(91,33,182,0.55), inset 0 1px 0 rgba(255,255,255,0.12)',
-          }}
-        >
-          <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-white/10 blur-2xl pointer-events-none" />
-          <div className="absolute -left-8 -bottom-8 w-32 h-32 rounded-full bg-black/30 blur-2xl pointer-events-none" />
+  const inputBase = 'bg-transparent outline-none text-white placeholder:text-white/35 transition-shadow rounded-md'
 
-          <div className="relative flex justify-between items-start">
-            <div className="w-10 h-7 rounded-md bg-gradient-to-br from-yellow-300 to-yellow-600 flex items-center justify-center">
-              <div className="w-5 h-3.5 bg-yellow-200/80 rounded-sm" />
-            </div>
-            <CardLogo cardType={cardType} />
-          </div>
-
-          <div className="relative font-mono text-[19px] tracking-[0.18em] text-white">
-            {card.number || '•••• •••• •••• ••••'}
-          </div>
-
-          <div className="relative flex justify-between items-end">
-            <div className="min-w-0 mr-3">
-              <div className="text-[9px] font-bold text-white/50 uppercase tracking-[1.4px]">Titulaire</div>
-              <div className="text-[13px] font-medium text-white truncate mt-0.5">{card.name || 'NOM PRÉNOM'}</div>
-            </div>
-            <div>
-              <div className="text-[9px] font-bold text-white/50 uppercase tracking-[1.4px]">Expire</div>
-              <div className="text-[13px] font-mono text-white mt-0.5">{card.expiry || 'MM/AA'}</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Back */}
-        <div
-          className="absolute inset-0 rounded-2xl overflow-hidden border"
-          style={{
-            backfaceVisibility: 'hidden',
-            WebkitBackfaceVisibility: 'hidden',
-            transform: 'rotateY(180deg)',
-            background: 'linear-gradient(135deg,#1E0B3D 0%,#3B0764 50%,#5B21B6 100%)',
-            borderColor: 'rgba(139,92,246,0.3)',
-            boxShadow: '0 20px 50px -12px rgba(91,33,182,0.55), inset 0 1px 0 rgba(255,255,255,0.12)',
-          }}
-        >
-          <div className="w-full h-10 bg-black/80 mt-6" />
-          <div className="px-5 pt-6">
-            <div className="bg-white/95 h-9 rounded flex items-center justify-end px-3">
-              <span className="text-zinc-900 font-mono text-base">{card.cvv || '•••'}</span>
-            </div>
-            <div className="text-[10px] font-bold text-white/60 uppercase tracking-[1.4px] mt-2">CVV</div>
-          </div>
-          <div className="absolute bottom-4 right-5 text-[10px] font-bold text-white/50 uppercase tracking-[1.4px]">
-            GymLog Pro
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function CompactCard({ card, cardType, flipped }: {
-  card: { number: string; name: string; expiry: string; cvv: string }
-  cardType: string
-  flipped: boolean
-}) {
-  const masked = card.number || '•••• •••• •••• ••••'
-  const last4 = card.number.replace(/\s/g, '').slice(-4)
   return (
     <div
-      className="relative w-full h-[68px] rounded-2xl p-3 pl-4 flex items-center gap-3 overflow-hidden border"
+      className="rounded-2xl p-4 flex flex-col justify-between overflow-hidden border relative"
       style={{
-        background: 'linear-gradient(135deg,#1E0B3D 0%,#3B0764 50%,#5B21B6 100%)',
-        borderColor: 'rgba(139,92,246,0.3)',
-        boxShadow: '0 10px 28px -8px rgba(91,33,182,0.55), inset 0 1px 0 rgba(255,255,255,0.12)',
+        height: 178,
+        background: 'linear-gradient(135deg,#1E0B3D 0%,#3B0764 35%,#5B21B6 70%,#7C3AED 100%)',
+        borderColor: 'rgba(255,255,255,0.18)',
+        boxShadow: '0 16px 40px -12px rgba(15,5,40,0.7), inset 0 1px 0 rgba(255,255,255,0.18)',
       }}
     >
-      <div className="absolute -right-6 -top-6 w-20 h-20 rounded-full bg-white/10 blur-2xl pointer-events-none" />
+      <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-white/15 blur-2xl pointer-events-none" />
+      <div className="absolute -left-8 -bottom-8 w-32 h-32 rounded-full bg-black/30 blur-2xl pointer-events-none" />
 
-      <div className="w-9 h-7 rounded-md bg-gradient-to-br from-yellow-300 to-yellow-600 flex items-center justify-center flex-shrink-0 relative">
-        <div className="w-4 h-3 bg-yellow-200/80 rounded-sm" />
+      {/* Top row */}
+      <div className="relative flex justify-between items-start">
+        <div className="w-10 h-7 rounded-md bg-gradient-to-br from-yellow-300 to-yellow-600 flex items-center justify-center">
+          <div className="w-5 h-3.5 bg-yellow-200/80 rounded-sm" />
+        </div>
+        <CardLogo cardType={cardType} />
       </div>
 
-      <div className="flex-1 min-w-0 relative">
-        {flipped ? (
-          <>
-            <div className="text-[9px] font-bold text-white/50 uppercase tracking-[1.4px]">CVV</div>
-            <div className="text-[15px] font-mono text-white tracking-wider">{card.cvv || '•••'}</div>
-          </>
-        ) : (
-          <>
-            <div className="text-[9px] font-bold text-white/50 uppercase tracking-[1.4px]">
-              {last4 ? `Carte • ${last4}` : 'Numéro'}
-            </div>
-            <div className="text-[14px] font-mono text-white tracking-wider truncate">
-              {last4 ? `•••• ${last4}` : masked}
-            </div>
-          </>
-        )}
+      {/* Number */}
+      <div className="relative">
+        <input
+          type="text"
+          inputMode="numeric"
+          autoComplete="off"
+          autoCorrect="off"
+          spellCheck={false}
+          name="gymlog-number"
+          aria-label="Numéro de carte"
+          value={card.number}
+          onChange={e => update('number', e.target.value)}
+          onFocus={() => setFocused('number')}
+          onBlur={() => setFocused(null)}
+          placeholder="•••• •••• •••• ••••"
+          maxLength={19}
+          className={`${inputBase} w-full font-mono text-[18px] tracking-[0.16em] py-1 px-1 -mx-1 ${focused === 'number' ? 'bg-white/[0.08]' : ''}`}
+        />
       </div>
 
-      <div className="relative flex-shrink-0">
-        <CardLogo cardType={cardType} small />
+      {/* Bottom row */}
+      <div className="relative flex justify-between items-end gap-2">
+        <div className="flex-1 min-w-0">
+          <div className="text-[9px] font-bold text-white/55 uppercase tracking-[1.4px]">Titulaire</div>
+          <input
+            type="text"
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck={false}
+            name="gymlog-name"
+            aria-label="Nom du titulaire"
+            value={card.name}
+            onChange={e => update('name', e.target.value)}
+            onFocus={() => setFocused('name')}
+            onBlur={() => setFocused(null)}
+            placeholder="NOM PRÉNOM"
+            className={`${inputBase} w-full text-[13px] font-medium uppercase mt-0.5 py-1 px-1 -mx-1 ${focused === 'name' ? 'bg-white/[0.08]' : ''}`}
+          />
+        </div>
+        <div className="flex-shrink-0 w-[58px]">
+          <div className="text-[9px] font-bold text-white/55 uppercase tracking-[1.4px]">Expire</div>
+          <input
+            type="text"
+            inputMode="numeric"
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck={false}
+            name="gymlog-exp"
+            aria-label="Date d'expiration"
+            value={card.expiry}
+            onChange={e => update('expiry', e.target.value)}
+            onFocus={() => setFocused('expiry')}
+            onBlur={() => setFocused(null)}
+            placeholder="MM/AA"
+            maxLength={5}
+            className={`${inputBase} w-full text-[13px] font-mono mt-0.5 py-1 px-1 -mx-1 ${focused === 'expiry' ? 'bg-white/[0.08]' : ''}`}
+          />
+        </div>
+        <div className="flex-shrink-0 w-[44px]">
+          <div className="text-[9px] font-bold text-white/55 uppercase tracking-[1.4px]">CVV</div>
+          <input
+            type="text"
+            inputMode="numeric"
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck={false}
+            name="gymlog-cvv"
+            aria-label="Code CVV"
+            value={card.cvv}
+            onChange={e => update('cvv', e.target.value)}
+            onFocus={() => setFocused('cvv')}
+            onBlur={() => setFocused(null)}
+            placeholder="•••"
+            maxLength={4}
+            className={`${inputBase} w-full text-[13px] font-mono mt-0.5 py-1 px-1 -mx-1 ${focused === 'cvv' ? 'bg-white/[0.08]' : ''}`}
+          />
+        </div>
       </div>
     </div>
   )
 }
 
-function CardLogo({ cardType, small }: { cardType: string; small?: boolean }) {
-  if (cardType === 'visa') return <span className={`font-extrabold italic text-white tracking-wide ${small ? 'text-sm' : 'text-lg'}`}>VISA</span>
+function CardLogo({ cardType }: { cardType: string }) {
+  if (cardType === 'visa') return <span className="font-extrabold italic text-white tracking-wide text-base">VISA</span>
   if (cardType === 'mastercard') return (
     <div className="flex items-center">
-      <div className={small ? 'w-4 h-4 rounded-full bg-red-500/90' : 'w-5 h-5 rounded-full bg-red-500/90'} />
-      <div className={`${small ? 'w-4 h-4' : 'w-5 h-5'} rounded-full bg-yellow-500/90 -ml-2 mix-blend-screen`} />
+      <div className="w-5 h-5 rounded-full bg-red-500/90" />
+      <div className="w-5 h-5 rounded-full bg-yellow-500/90 -ml-2 mix-blend-screen" />
     </div>
   )
-  if (cardType === 'amex') return <span className={`font-extrabold text-white tracking-wider ${small ? 'text-sm' : 'text-base'}`}>AMEX</span>
-  return <span className={`font-bold text-white/50 uppercase tracking-[1.4px] ${small ? 'text-[9px]' : 'text-[10px]'}`}>GymLog</span>
+  if (cardType === 'amex') return <span className="font-extrabold text-white tracking-wider text-sm">AMEX</span>
+  return <span className="text-[10px] font-bold text-white/55 uppercase tracking-[1.4px]">GymLog</span>
 }
 
 function CodeView({ code, setCode, error, onSubmit, onBack }: {
@@ -475,6 +368,9 @@ function CodeView({ code, setCode, error, onSubmit, onBack }: {
       <div className="card-glass rounded-2xl p-4 flex flex-col gap-3">
         <input
           autoFocus
+          autoComplete="off"
+          autoCorrect="off"
+          spellCheck={false}
           value={code}
           onChange={e => setCode(e.target.value.toUpperCase())}
           placeholder="EX: GYMBROS"
