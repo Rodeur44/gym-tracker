@@ -2,11 +2,12 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, X, ChevronRight, AlertCircle, Camera, Copy, CopyPlus, LayoutGrid, Check } from 'lucide-react'
+import { Plus, X, ChevronRight, AlertCircle, Camera, Copy, CopyPlus, LayoutGrid, Check, Sparkles } from 'lucide-react'
 import { useApp } from '@/context/AppContext'
 import { TYPE_LBL, TAG_CLR, TAG_BG, EXO_BY_TYPE, WORKOUT_TEMPLATES } from '@/lib/constants'
 import type { WorkoutTemplate } from '@/lib/constants'
 import type { MuscleGroup, Exercise } from '@/types'
+import AISessionSheet from '@/components/screens/AISessionSheet'
 
 const MUSCLE_TABS: MuscleGroup[] = ['pec', 'dos', 'bras', 'jambes', 'cardio']
 
@@ -459,11 +460,12 @@ function TemplateSheet({ onClose, onPick, getBest }: {
 
 // ── Log Screen ────────────────────────────────────────────────────
 export default function LogScreen() {
-  const { currentExos, setCurrentExos, logType, setLogType, editMode, editSessionId, cancelEdit, saveSession, getBest, sessions } = useApp()
+  const { currentExos, setCurrentExos, logType, setLogType, editMode, editSessionId, cancelEdit, saveSession, getBest, sessions, isPro, openPro } = useApp()
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
   const [notes, setNotes] = useState('')
   const [pickerOpen, setPickerOpen] = useState(false)
   const [templatesOpen, setTemplatesOpen] = useState(false)
+  const [aiOpen, setAiOpen] = useState(false)
   const [error, setError] = useState('')
 
   const allPrev = [...new Set(sessions.flatMap(s => (s.exos || []).map(e => e.name)))]
@@ -558,16 +560,28 @@ export default function LogScreen() {
           ))}
         </div>
 
-        {/* Template trigger */}
-        <motion.button
-          whileTap={{ scale: 0.97 }}
-          transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-          onClick={() => setTemplatesOpen(true)}
-          className="flex items-center gap-2 self-start text-[12px] font-semibold text-zinc-500 px-3 py-2 rounded-xl border border-white/[0.06] bg-[#1C1C1C] hover:text-[#A78BFA] hover:border-[rgba(139,92,246,0.3)] transition-all"
-        >
-          <LayoutGrid size={14} strokeWidth={1.8} />
-          Utiliser un programme
-        </motion.button>
+        {/* Template + IA triggers */}
+        <div className="flex gap-2">
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+            onClick={() => setTemplatesOpen(true)}
+            className="flex items-center gap-2 text-[12px] font-semibold text-zinc-500 px-3 py-2 rounded-xl border border-white/[0.06] bg-[#1C1C1C] hover:text-[#A78BFA] hover:border-[rgba(139,92,246,0.3)] transition-all"
+          >
+            <LayoutGrid size={14} strokeWidth={1.8} />
+            Programme
+          </motion.button>
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+            onClick={() => isPro ? setAiOpen(true) : openPro()}
+            className="flex items-center gap-2 text-[12px] font-semibold px-3 py-2 rounded-xl border transition-all"
+            style={{ background: 'rgba(139,92,246,0.08)', borderColor: 'rgba(139,92,246,0.25)', color: '#A78BFA' }}
+          >
+            <Sparkles size={14} strokeWidth={1.8} />
+            IA{!isPro && ' ✦'}
+          </motion.button>
+        </div>
 
         {/* Exercise cards */}
         <AnimatePresence mode="popLayout">
@@ -654,6 +668,13 @@ export default function LogScreen() {
             onClose={() => setTemplatesOpen(false)}
             onPick={loadTemplate}
             getBest={getBest}
+          />
+        )}
+        {aiOpen && (
+          <AISessionSheet
+            defaultType={logType}
+            onClose={() => setAiOpen(false)}
+            onUse={exos => { setCurrentExos(exos); setAiOpen(false) }}
           />
         )}
       </AnimatePresence>
