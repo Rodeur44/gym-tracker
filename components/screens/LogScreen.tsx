@@ -8,6 +8,7 @@ import { TYPE_LBL, TAG_CLR, TAG_BG, EXO_BY_TYPE, WORKOUT_TEMPLATES } from '@/lib
 import type { WorkoutTemplate } from '@/lib/constants'
 import type { MuscleGroup, Exercise } from '@/types'
 import AISessionSheet from '@/components/screens/AISessionSheet'
+import StretchingScreen from '@/components/screens/StretchingScreen'
 
 const MUSCLE_TABS: MuscleGroup[] = ['pec', 'dos', 'bras', 'jambes', 'cardio']
 
@@ -466,6 +467,8 @@ export default function LogScreen() {
   const [pickerOpen, setPickerOpen] = useState(false)
   const [templatesOpen, setTemplatesOpen] = useState(false)
   const [aiOpen, setAiOpen] = useState(false)
+  const [stretchOpen, setStretchOpen] = useState(false)
+  const [stretchType, setStretchType] = useState<MuscleGroup>('pec')
   const [error, setError] = useState('')
 
   useEffect(() => { if (!isPro) setAiOpen(false) }, [isPro])
@@ -507,6 +510,8 @@ export default function LogScreen() {
     const ok = await saveSession({ date, type: logType, notes, exos: currentExos })
     if (ok) {
       setCurrentExos([]); setNotes(''); setDate(new Date().toISOString().slice(0, 10))
+      setStretchType(logType)
+      setStretchOpen(true)
     } else {
       setError('Erreur lors de la sauvegarde.')
     }
@@ -679,6 +684,15 @@ export default function LogScreen() {
             defaultType={logType}
             onClose={() => setAiOpen(false)}
             onUse={exos => { setCurrentExos(exos); setAiOpen(false) }}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {stretchOpen && (
+          <StretchingScreen
+            muscleGroup={stretchType}
+            onClose={() => setStretchOpen(false)}
           />
         )}
       </AnimatePresence>
