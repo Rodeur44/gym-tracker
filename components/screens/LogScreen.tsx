@@ -468,6 +468,8 @@ export default function LogScreen() {
   const [aiOpen, setAiOpen] = useState(false)
   const [error, setError] = useState('')
 
+  useEffect(() => { if (!isPro) setAiOpen(false) }, [isPro])
+
   const allPrev = [...new Set(sessions.flatMap(s => (s.exos || []).map(e => e.name)))]
   const accent = TAG_CLR[logType]
 
