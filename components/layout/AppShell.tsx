@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Variants } from 'framer-motion'
-import { Home, Plus, Clock, BarChart2, LayoutGrid, LogOut, Crown } from 'lucide-react'
+import { Home, Plus, Clock, BarChart2, LayoutGrid, LogOut, Crown, PersonStanding } from 'lucide-react'
 import { useApp } from '@/context/AppContext'
 import HomeScreen from '@/components/screens/HomeScreen'
 import LogScreen from '@/components/screens/LogScreen'
@@ -52,6 +52,16 @@ export default function AppShell() {
   tabRef.current = tab
 
   const { user, signOut, editMode, repeatPending, clearRepeat, isPro, proOpen, openPro, closePro } = useApp()
+
+  const [stretchEnabled, setStretchEnabled] = useState(true)
+  useEffect(() => {
+    setStretchEnabled(localStorage.getItem('gymlog_stretch_enabled') !== 'false')
+  }, [])
+  function toggleStretch() {
+    const next = !stretchEnabled
+    setStretchEnabled(next)
+    localStorage.setItem('gymlog_stretch_enabled', next ? 'true' : 'false')
+  }
 
   // ── Tab navigation with direction ────────────────────────────
   const goTo = useCallback((newTab: Tab) => {
@@ -262,6 +272,23 @@ export default function AppShell() {
                       </span>
                     )}
                   </button>
+                  <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-white/[0.06]">
+                    <span className="flex items-center gap-3 text-sm font-medium text-zinc-300">
+                      <PersonStanding size={16} strokeWidth={1.8} />
+                      Étirements post-séance
+                    </span>
+                    <button
+                      onClick={toggleStretch}
+                      aria-label="Activer ou désactiver les étirements"
+                      className="relative w-10 h-6 rounded-full transition-colors flex-shrink-0"
+                      style={{ background: stretchEnabled ? '#7C3AED' : 'rgba(255,255,255,0.12)' }}
+                    >
+                      <div
+                        className="absolute top-1 w-4 h-4 rounded-full bg-white transition-transform duration-200"
+                        style={{ transform: stretchEnabled ? 'translateX(20px)' : 'translateX(4px)' }}
+                      />
+                    </button>
+                  </div>
                   <button
                     onClick={() => { setProfileOpen(false); signOut() }}
                     className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-400 hover:bg-red-500/10 transition-colors"

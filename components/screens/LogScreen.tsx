@@ -510,8 +510,10 @@ export default function LogScreen() {
     const ok = await saveSession({ date, type: logType, notes, exos: currentExos })
     if (ok) {
       setCurrentExos([]); setNotes(''); setDate(new Date().toISOString().slice(0, 10))
-      setStretchType(logType)
-      setStretchOpen(true)
+      if (localStorage.getItem('gymlog_stretch_enabled') !== 'false') {
+        setStretchType(logType)
+        setStretchOpen(true)
+      }
     } else {
       setError('Erreur lors de la sauvegarde.')
     }
