@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useState, useCallback } from 'rea
 import { scheduleBeep, cancelScheduledBeep, testBeep as testBeepImpl, unlockAudio } from '@/lib/audio'
 import type { User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
-import type { Session, MuscleGroup, Exercise } from '@/types'
+import type { Session, MuscleGroup, Exercise, Measurement, MeasurementInput } from '@/types'
 import { MUSCLE_ORDER } from '@/lib/constants'
 import { validatePromo } from '@/lib/promo'
 
@@ -107,6 +107,10 @@ interface AppContextValue {
   addRest: (deltaSec: number) => void
   setDefaultRest: (seconds: number) => void
   testBeep: () => void
+  // Measurements
+  measurements: Measurement[]
+  saveMeasurement: (payload: MeasurementInput, id?: string) => Promise<boolean>
+  deleteMeasurement: (id: string) => Promise<boolean>
 }
 
 const AppContext = createContext<AppContextValue | null>(null)
@@ -116,6 +120,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [sessions, setSessions] = useState<Session[]>([])
   const [unlockedCards, setUnlockedCards] = useState<Set<string>>(new Set())
+  const [measurements, setMeasurements] = useState<Measurement[]>([])
   const [loading, setLoading] = useState(true)
   const [currentExos, setCurrentExos] = useState<Exercise[]>([])
   const [logType, setLogType] = useState<MuscleGroup>('pec')
@@ -207,12 +212,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const loadData = useCallback(async (userId: string) => {
-    const [{ data: s }, { data: c }] = await Promise.all([
+    const [{ data: s }, { data: c }, { data: m, error: mErr }] = await Promise.all([
       sb.from('sessions').select('*').eq('user_id', userId).order('date', { ascending: false }),
       sb.from('user_cards').select('card_id').eq('user_id', userId),
+      sb.from('measurements').select('*').eq('user_id', userId).order('date', { ascending: false }),
     ])
     setSessions((s as Session[]) || [])
     setUnlockedCards(new Set((c || []).map((x: { card_id: string }) => x.card_id)))
+    // Tolerate the case where the measurements table hasn't been created yet
+    if (mErr) setMeasurements([])
+    else setMeasurements((m as Measurement[]) || [])
   }, [sb])
 
   useEffect(() => {
@@ -307,8 +316,59 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = useCallback(async () => {
     await sb.auth.signOut()
-    setUser(null); setSessions([]); setUnlockedCards(new Set())
+    setUser(null); setSessions([]); setUnlockedCards(new Set()); setMeasurements([])
   }, [sb])
+
+  const saveMeasurement = useCallback(async (payload: MeasurementInput, id?: string) => {
+    if (!user) return false
+    if (id) {
+      // Optimistic update
+      const before = measurements.find(m => m.id === id)
+      setMeasurements(prev =>
+        prev.map(m => m.id === id ? { ...m, ...payload } : m)
+            .sort((a, b) => b.date.localeCompare(a.date))
+      )
+      const { error } = await sb.from('measurements').update(payload).eq('id', id).eq('user_id', user.id)
+      if (error) {
+        if (before) setMeasurements(prev => prev.map(m => m.id === id ? before : m))
+        return false
+      }
+      return true
+    }
+    // Insert: optimistic
+    const tempId = `temp-${Date.now()}`
+    const temp: Measurement = {
+      ...payload,
+      id: tempId,
+      user_id: user.id,
+      created_at: new Date().toISOString(),
+    }
+    setMeasurements(prev => [temp, ...prev].sort((a, b) => b.date.localeCompare(a.date)))
+    const { data, error } = await sb.from('measurements')
+      .insert({ ...payload, user_id: user.id })
+      .select().single()
+    if (error || !data) {
+      setMeasurements(prev => prev.filter(m => m.id !== tempId))
+      return false
+    }
+    setMeasurements(prev =>
+      prev.map(m => m.id === tempId ? (data as Measurement) : m)
+          .sort((a, b) => b.date.localeCompare(a.date))
+    )
+    return true
+  }, [user, measurements, sb])
+
+  const deleteMeasurement = useCallback(async (id: string) => {
+    if (!user) return false
+    const snapshot = measurements.find(m => m.id === id)
+    setMeasurements(prev => prev.filter(m => m.id !== id))
+    const { error } = await sb.from('measurements').delete().eq('id', id).eq('user_id', user.id)
+    if (error) {
+      if (snapshot) setMeasurements(prev => [snapshot, ...prev].sort((a, b) => b.date.localeCompare(a.date)))
+      return false
+    }
+    return true
+  }, [user, measurements, sb])
 
   const startEdit = useCallback((id: string) => {
     const s = sessions.find(x => x.id === id)
@@ -348,6 +408,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       proOpen, openPro, closePro,
       restActive, restEndsAt, restDuration,
       startRest, stopRest, addRest, setDefaultRest, testBeep,
+      measurements, saveMeasurement, deleteMeasurement,
     }}>
       {children}
     </AppContext.Provider>

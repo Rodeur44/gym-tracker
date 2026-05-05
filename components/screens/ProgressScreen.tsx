@@ -3,9 +3,12 @@
 import { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import type { Variants } from 'framer-motion'
-import { BarChart2, TrendingUp } from 'lucide-react'
+import { BarChart2, TrendingUp, Dumbbell, Ruler } from 'lucide-react'
 import { useApp } from '@/context/AppContext'
 import type { Session } from '@/types'
+import MeasurementsTab from './MeasurementsTab'
+
+type Tab = 'exos' | 'body'
 
 const stagger: Variants = { animate: { transition: { staggerChildren: 0.07 } } }
 const fadeUp: Variants = {
@@ -115,28 +118,9 @@ function WeeklyVolumeChart({ sessions }: { sessions: Session[] }) {
 export default function ProgressScreen() {
   const { sessions } = useApp()
   const [selectedExo, setSelectedExo] = useState<string | null>(null)
+  const [tab, setTab] = useState<Tab>('exos')
 
-  if (!sessions.length) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className="flex flex-col items-center justify-center min-h-[70vh] px-8 text-center"
-      >
-        <div className="w-20 h-20 rounded-[24px] flex items-center justify-center mb-6 border"
-          style={{ background: 'linear-gradient(135deg,rgba(109,40,217,0.15),rgba(139,92,246,0.06))', borderColor: 'rgba(139,92,246,0.2)', boxShadow: '0 0 40px -12px rgba(139,92,246,0.4)' }}>
-          <BarChart2 size={36} className="text-[#A78BFA]" />
-        </div>
-        <h3 className="text-lg font-semibold text-zinc-100 mb-2 tracking-tight">Aucun progrès encore</h3>
-        <p className="text-sm text-zinc-500 leading-relaxed max-w-[220px]">
-          Enregistre ta première séance avec des poids pour voir tes records et ton volume ici.
-        </p>
-      </motion.div>
-    )
-  }
-
-  // Build PRs map
+  // Build PRs map (used by exos view; computed regardless to keep hooks order stable)
   const map: Record<string, number> = {}
   sessions.forEach(s => (s.exos || []).forEach(e => {
     const w = Math.max(0, ...e.sets.map(st => st.weight || 0))
@@ -150,13 +134,6 @@ export default function ProgressScreen() {
     acc + s.exos.reduce((a, e) =>
       a + e.sets.reduce((x, st) => x + (st.weight || 0) * (st.reps || 0), 0), 0), 0)
 
-  const statCards = [
-    { val: sessions.length, lbl: 'Séances totales' },
-    { val: `${[...new Set(sessions.map(s => s.type))].length}/5`, lbl: 'Groupes entraînés' },
-    { val: top[0] ? `${top[0][1]}kg` : '—', lbl: top[0]?.[0] || 'Meilleur record' },
-    { val: `${Math.round(totalVol / 1000)}T`, lbl: 'Volume total soulevé' },
-  ]
-
   // Exercise list for selector (exercises with weight history)
   const exoNames = [...new Set(
     sessions.flatMap(s => s.exos
@@ -164,10 +141,10 @@ export default function ProgressScreen() {
       .map(e => e.name)
     )
   )]
-
   const activeExo = selectedExo || (exoNames[0] ?? null)
 
-  // Progression data for selected exercise
+  // Progression data for selected exercise — must be computed every render
+  // (hooks order must stay stable across the empty-state early return below)
   const progression = useMemo(() => {
     if (!activeExo) return []
     return sessions
@@ -181,17 +158,97 @@ export default function ProgressScreen() {
       .filter(d => d.weight > 0)
   }, [sessions, activeExo])
 
+  const tabsBar = (
+    <div className="px-4 pt-4">
+      <div className="flex gap-1 p-1 rounded-2xl bg-[#0F0F0F] border border-white/[0.06]">
+        <button
+          onClick={() => setTab('exos')}
+          className={`flex-1 h-10 rounded-xl text-[12px] font-semibold flex items-center justify-center gap-1.5 transition-all ${
+            tab === 'exos'
+              ? 'text-white'
+              : 'text-zinc-500 hover:text-zinc-300'
+          }`}
+          style={tab === 'exos' ? {
+            background: 'linear-gradient(135deg,#6D28D9,#7C3AED)',
+            boxShadow: '0 4px 16px -4px rgba(109,40,217,0.5),inset 0 1px 0 rgba(255,255,255,0.18)',
+          } : undefined}
+        >
+          <Dumbbell size={13} strokeWidth={1.8} />
+          Exercices
+        </button>
+        <button
+          onClick={() => setTab('body')}
+          className={`flex-1 h-10 rounded-xl text-[12px] font-semibold flex items-center justify-center gap-1.5 transition-all ${
+            tab === 'body'
+              ? 'text-white'
+              : 'text-zinc-500 hover:text-zinc-300'
+          }`}
+          style={tab === 'body' ? {
+            background: 'linear-gradient(135deg,#6D28D9,#7C3AED)',
+            boxShadow: '0 4px 16px -4px rgba(109,40,217,0.5),inset 0 1px 0 rgba(255,255,255,0.18)',
+          } : undefined}
+        >
+          <Ruler size={13} strokeWidth={1.8} />
+          Mensurations
+        </button>
+      </div>
+    </div>
+  )
+
+  if (tab === 'body') {
+    return (
+      <div className="pb-28">
+        {tabsBar}
+        <div className="px-4 pt-4">
+          <MeasurementsTab />
+        </div>
+      </div>
+    )
+  }
+
+  if (!sessions.length) {
+    return (
+      <div className="pb-28">
+        {tabsBar}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          className="flex flex-col items-center justify-center min-h-[60vh] px-8 text-center"
+        >
+          <div className="w-20 h-20 rounded-[24px] flex items-center justify-center mb-6 border"
+            style={{ background: 'linear-gradient(135deg,rgba(109,40,217,0.15),rgba(139,92,246,0.06))', borderColor: 'rgba(139,92,246,0.2)', boxShadow: '0 0 40px -12px rgba(139,92,246,0.4)' }}>
+            <BarChart2 size={36} className="text-[#A78BFA]" />
+          </div>
+          <h3 className="text-lg font-semibold text-zinc-100 mb-2 tracking-tight">Aucun progrès encore</h3>
+          <p className="text-sm text-zinc-500 leading-relaxed max-w-[220px]">
+            Enregistre ta première séance avec des poids pour voir tes records et ton volume ici.
+          </p>
+        </motion.div>
+      </div>
+    )
+  }
+
+  const statCards = [
+    { val: sessions.length, lbl: 'Séances totales' },
+    { val: `${[...new Set(sessions.map(s => s.type))].length}/5`, lbl: 'Groupes entraînés' },
+    { val: top[0] ? `${top[0][1]}kg` : '—', lbl: top[0]?.[0] || 'Meilleur record' },
+    { val: `${Math.round(totalVol / 1000)}T`, lbl: 'Volume total soulevé' },
+  ]
+
   const progressionDelta = progression.length >= 2
     ? +(progression[progression.length - 1].weight - progression[0].weight).toFixed(1)
     : null
 
   return (
-    <motion.div
-      variants={stagger}
-      initial="initial"
-      animate="animate"
-      className="px-4 pt-5 pb-28 flex flex-col gap-5"
-    >
+    <div className="pb-28">
+      {tabsBar}
+      <motion.div
+        variants={stagger}
+        initial="initial"
+        animate="animate"
+        className="px-4 pt-4 flex flex-col gap-5"
+      >
       {/* Stat cards */}
       <div className="grid grid-cols-2 gap-3">
         {statCards.map(({ val, lbl }) => (
@@ -287,6 +344,7 @@ export default function ProgressScreen() {
           ))}
         </div>
       </motion.div>
-    </motion.div>
+      </motion.div>
+    </div>
   )
 }
