@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Variants } from 'framer-motion'
-import { Plus, Ruler, Scale, TrendingUp, TrendingDown, Pencil, Trash2, X, Check, AlertCircle } from 'lucide-react'
+import { Plus, Ruler, Scale, TrendingUp, TrendingDown, Pencil, Trash2, X, Check, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react'
 import { useApp } from '@/context/AppContext'
 import type { Measurement, MeasurementInput } from '@/types'
 
@@ -97,7 +97,7 @@ function MeasurementSheet({
 }: {
   initial: Measurement | null
   onClose: () => void
-  onSubmit: (payload: MeasurementInput) => Promise<void>
+  onSubmit: (payload: MeasurementInput) => Promise<{ ok: boolean; error?: string }>
   onDelete?: () => Promise<void>
 }) {
   const today = new Date().toISOString().slice(0, 10)
@@ -113,18 +113,30 @@ function MeasurementSheet({
   const [notes, setNotes] = useState(initial?.notes ?? '')
   const [saving, setSaving] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  // Show all body measurements only on edit (where they may already exist) or
+  // when user explicitly expands. Default = quick mode (mass only).
+  const hasBodyValues = initial && FIELDS
+    .filter(f => f.group !== 'mass')
+    .some(f => initial[f.key] != null)
+  const [showDetails, setShowDetails] = useState<boolean>(!!hasBodyValues)
 
   function setField(k: string, v: string) {
-    // Allow only digits + optional dot/comma; convert comma to dot
     const cleaned = v.replace(',', '.').replace(/[^0-9.]/g, '')
-    // Avoid double dots
     const parts = cleaned.split('.')
     const final = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : cleaned
     setValues(p => ({ ...p, [k]: final }))
   }
 
+  function parseNum(s: string): number | null {
+    if (!s) return null
+    const n = parseFloat(s)
+    return Number.isFinite(n) ? n : null
+  }
+
   async function submit() {
     if (saving) return
+    setError(null)
     const payload: MeasurementInput = {
       date,
       weight: parseNum(values.weight),
@@ -138,15 +150,20 @@ function MeasurementSheet({
       thigh_right: parseNum(values.thigh_right),
       notes: notes.trim() || null,
     }
+    // Refuse to save a fully-empty measurement
+    const hasAnyValue = Object.entries(payload).some(([k, v]) =>
+      k !== 'date' && k !== 'notes' && v != null
+    )
+    if (!hasAnyValue) {
+      setError('Renseigne au moins une mesure (poids, MG, etc.) avant de sauvegarder.')
+      return
+    }
     setSaving(true)
-    await onSubmit(payload)
+    const result = await onSubmit(payload)
     setSaving(false)
-  }
-
-  function parseNum(s: string): number | null {
-    if (!s) return null
-    const n = parseFloat(s)
-    return Number.isFinite(n) ? n : null
+    if (!result.ok) {
+      setError(result.error ?? 'Sauvegarde impossible. Réessaie dans un instant.')
+    }
   }
 
   return (
@@ -164,16 +181,16 @@ function MeasurementSheet({
         exit={{ y: '100%' }}
         transition={{ type: 'spring', stiffness: 320, damping: 36 }}
         onClick={e => e.stopPropagation()}
-        className="w-full max-w-[430px] rounded-t-3xl pt-3 pb-6 border-t border-white/[0.08] flex flex-col max-h-[92vh]"
+        className="w-full max-w-[430px] rounded-t-3xl pt-3 max-h-[92vh] overflow-y-auto"
         style={{
           background: '#141414',
-          paddingBottom: 'calc(24px + env(safe-area-inset-bottom, 0px))',
+          paddingBottom: 'calc(20px + env(safe-area-inset-bottom, 0px))',
         }}
       >
         <div className="w-12 h-1 rounded-full bg-white/15 mx-auto mb-3" />
 
         {/* Header */}
-        <div className="px-5 pb-3 flex items-center justify-between">
+        <div className="px-5 pb-4 flex items-center justify-between">
           <div>
             <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-[1.6px]">
               {initial ? 'Modifier' : 'Nouvelle mesure'}
@@ -189,10 +206,9 @@ function MeasurementSheet({
           </button>
         </div>
 
-        {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto px-5 pb-2">
+        <div className="px-5 flex flex-col gap-4">
           {/* Date */}
-          <div className="mb-4">
+          <div>
             <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-[1.4px] mb-1.5 block">Date</label>
             <input
               type="date"
@@ -203,37 +219,69 @@ function MeasurementSheet({
             />
           </div>
 
-          {/* Mass section */}
-          <SectionHeader icon={Scale} label="Masse" />
-          <div className="grid grid-cols-2 gap-3 mb-5">
-            {FIELDS.filter(f => f.group === 'mass').map(f => (
-              <NumField key={f.key as string} field={f} value={values[f.key as string]} onChange={v => setField(f.key as string, v)} />
-            ))}
+          {/* Mass — always visible, the essentials */}
+          <div>
+            <SectionHeader icon={Scale} label="Masse" hint="Tu peux ne renseigner que ces 2 valeurs" />
+            <div className="grid grid-cols-2 gap-3">
+              {FIELDS.filter(f => f.group === 'mass').map(f => (
+                <NumField key={f.key as string} field={f} value={values[f.key as string]} onChange={v => setField(f.key as string, v)} />
+              ))}
+            </div>
           </div>
 
-          <SectionHeader icon={Ruler} label="Tronc" />
-          <div className="grid grid-cols-2 gap-3 mb-5">
-            {FIELDS.filter(f => f.group === 'torso').map(f => (
-              <NumField key={f.key as string} field={f} value={values[f.key as string]} onChange={v => setField(f.key as string, v)} />
-            ))}
-          </div>
+          {/* Toggle for body measurements */}
+          <button
+            onClick={() => setShowDetails(s => !s)}
+            className="flex items-center justify-between w-full h-11 px-4 rounded-xl bg-[#1C1C1C] border border-white/[0.06] text-[13px] font-semibold text-zinc-300 active:scale-[0.99] transition-transform"
+          >
+            <span className="flex items-center gap-2">
+              <Ruler size={14} strokeWidth={1.8} className="text-[#A78BFA]" />
+              Mensurations détaillées (cm)
+            </span>
+            {showDetails ? <ChevronUp size={16} strokeWidth={1.8} /> : <ChevronDown size={16} strokeWidth={1.8} />}
+          </button>
 
-          <SectionHeader icon={Ruler} label="Bras" />
-          <div className="grid grid-cols-2 gap-3 mb-5">
-            {FIELDS.filter(f => f.group === 'arms').map(f => (
-              <NumField key={f.key as string} field={f} value={values[f.key as string]} onChange={v => setField(f.key as string, v)} />
-            ))}
-          </div>
+          <AnimatePresence initial={false}>
+            {showDetails && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                className="overflow-hidden"
+              >
+                <div className="flex flex-col gap-4 pb-1">
+                  <div>
+                    <SectionHeader icon={Ruler} label="Tronc" />
+                    <div className="grid grid-cols-2 gap-3">
+                      {FIELDS.filter(f => f.group === 'torso').map(f => (
+                        <NumField key={f.key as string} field={f} value={values[f.key as string]} onChange={v => setField(f.key as string, v)} />
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <SectionHeader icon={Ruler} label="Bras" />
+                    <div className="grid grid-cols-2 gap-3">
+                      {FIELDS.filter(f => f.group === 'arms').map(f => (
+                        <NumField key={f.key as string} field={f} value={values[f.key as string]} onChange={v => setField(f.key as string, v)} />
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <SectionHeader icon={Ruler} label="Jambes" />
+                    <div className="grid grid-cols-2 gap-3">
+                      {FIELDS.filter(f => f.group === 'legs').map(f => (
+                        <NumField key={f.key as string} field={f} value={values[f.key as string]} onChange={v => setField(f.key as string, v)} />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-          <SectionHeader icon={Ruler} label="Jambes" />
-          <div className="grid grid-cols-2 gap-3 mb-5">
-            {FIELDS.filter(f => f.group === 'legs').map(f => (
-              <NumField key={f.key as string} field={f} value={values[f.key as string]} onChange={v => setField(f.key as string, v)} />
-            ))}
-          </div>
-
-          <div className="mb-2">
-            <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-[1.4px] mb-1.5 block">Notes</label>
+          <div>
+            <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-[1.4px] mb-1.5 block">Notes (facultatif)</label>
             <textarea
               rows={2}
               value={notes}
@@ -243,17 +291,24 @@ function MeasurementSheet({
             />
           </div>
 
+          {error && (
+            <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-[12px] text-red-300 leading-relaxed flex items-start gap-2">
+              <AlertCircle size={14} strokeWidth={1.8} className="flex-shrink-0 mt-px" />
+              <div className="flex-1">{error}</div>
+            </div>
+          )}
+
           {onDelete && !confirmDelete && (
             <button
               onClick={() => setConfirmDelete(true)}
-              className="w-full mt-4 h-11 rounded-xl border border-red-500/20 bg-red-500/5 text-red-400 text-sm font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+              className="h-11 rounded-xl border border-red-500/20 bg-red-500/5 text-red-400 text-sm font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
             >
               <Trash2 size={14} strokeWidth={1.8} />
               Supprimer cette mesure
             </button>
           )}
           {onDelete && confirmDelete && (
-            <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/8 p-3">
+            <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3">
               <div className="flex items-center gap-2 text-[12px] text-red-300 mb-2">
                 <AlertCircle size={13} strokeWidth={1.8} />
                 Supprimer cette mesure ?
@@ -274,16 +329,14 @@ function MeasurementSheet({
               </div>
             </div>
           )}
-        </div>
 
-        {/* Save button */}
-        <div className="px-5 pt-3 border-t border-white/[0.04]">
+          {/* Save button */}
           <motion.button
             whileTap={{ scale: 0.97 }}
             transition={{ type: 'spring', stiffness: 400, damping: 25 }}
             onClick={submit}
             disabled={saving}
-            className="w-full rounded-2xl text-[15px] font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-50"
+            className="w-full rounded-2xl text-[15px] font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-50 mt-1"
             style={{
               height: 50,
               background: 'linear-gradient(135deg,#6D28D9,#7C3AED 50%,#8B5CF6)',
@@ -309,11 +362,18 @@ function MeasurementSheet({
   )
 }
 
-function SectionHeader({ icon: Icon, label }: { icon: React.ComponentType<{ size: number; strokeWidth: number; className: string }>; label: string }) {
+function SectionHeader({ icon: Icon, label, hint }: {
+  icon: React.ComponentType<{ size: number; strokeWidth: number; className: string }>
+  label: string
+  hint?: string
+}) {
   return (
-    <div className="flex items-center gap-2 mb-2 mt-1">
-      <Icon size={12} strokeWidth={1.8} className="text-[#A78BFA]" />
-      <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-[1.6px]">{label}</span>
+    <div className="mb-2">
+      <div className="flex items-center gap-2">
+        <Icon size={12} strokeWidth={1.8} className="text-[#A78BFA]" />
+        <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-[1.6px]">{label}</span>
+      </div>
+      {hint && <p className="text-[11px] text-zinc-600 mt-0.5 ml-5">{hint}</p>}
     </div>
   )
 }
@@ -406,8 +466,12 @@ export default function MeasurementsTab() {
               initial={sheet.edit}
               onClose={() => setSheet({ open: false, edit: null })}
               onSubmit={async (p) => {
-                const ok = await saveMeasurement(p, sheet.edit?.id)
-                if (ok) setSheet({ open: false, edit: null })
+                const res = await saveMeasurement(p, sheet.edit?.id)
+                if (res.ok) {
+                  setSheet({ open: false, edit: null })
+                  return { ok: true }
+                }
+                return { ok: false, error: res.error }
               }}
               onDelete={sheet.edit ? async () => {
                 const ok = await deleteMeasurement(sheet.edit!.id)
@@ -537,8 +601,12 @@ export default function MeasurementsTab() {
             initial={sheet.edit}
             onClose={() => setSheet({ open: false, edit: null })}
             onSubmit={async (p) => {
-              const ok = await saveMeasurement(p, sheet.edit?.id)
-              if (ok) setSheet({ open: false, edit: null })
+              const res = await saveMeasurement(p, sheet.edit?.id)
+              if (res.ok) {
+                setSheet({ open: false, edit: null })
+                return { ok: true }
+              }
+              return { ok: false, error: res.error }
             }}
             onDelete={sheet.edit ? async () => {
               const ok = await deleteMeasurement(sheet.edit!.id)

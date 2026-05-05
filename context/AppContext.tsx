@@ -109,7 +109,7 @@ interface AppContextValue {
   testBeep: () => void
   // Measurements
   measurements: Measurement[]
-  saveMeasurement: (payload: MeasurementInput, id?: string) => Promise<boolean>
+  saveMeasurement: (payload: MeasurementInput, id?: string) => Promise<{ ok: boolean; error?: string }>
   deleteMeasurement: (id: string) => Promise<boolean>
 }
 
@@ -320,9 +320,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [sb])
 
   const saveMeasurement = useCallback(async (payload: MeasurementInput, id?: string) => {
-    if (!user) return false
+    if (!user) return { ok: false, error: 'Tu dois être connecté pour sauvegarder.' }
+
+    const friendly = (e: { code?: string; message?: string }) => {
+      if (e.code === '42P01' || /relation .* does not exist/i.test(e.message || '')) {
+        return 'La table "measurements" n\'a pas encore été créée dans Supabase. Va dans le SQL Editor et exécute la migration que je t\'ai donnée, puis réessaie.'
+      }
+      if (e.code === '42501' || /permission denied/i.test(e.message || '')) {
+        return 'Permission refusée par Supabase (RLS). Vérifie que les policies de la table measurements ont bien été créées.'
+      }
+      return e.message || 'Sauvegarde impossible. Vérifie ta connexion.'
+    }
+
     if (id) {
-      // Optimistic update
       const before = measurements.find(m => m.id === id)
       setMeasurements(prev =>
         prev.map(m => m.id === id ? { ...m, ...payload } : m)
@@ -331,11 +341,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const { error } = await sb.from('measurements').update(payload).eq('id', id).eq('user_id', user.id)
       if (error) {
         if (before) setMeasurements(prev => prev.map(m => m.id === id ? before : m))
-        return false
+        return { ok: false, error: friendly(error) }
       }
-      return true
+      return { ok: true }
     }
-    // Insert: optimistic
+
     const tempId = `temp-${Date.now()}`
     const temp: Measurement = {
       ...payload,
@@ -349,13 +359,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       .select().single()
     if (error || !data) {
       setMeasurements(prev => prev.filter(m => m.id !== tempId))
-      return false
+      return { ok: false, error: error ? friendly(error) : 'Aucune donnée renvoyée.' }
     }
     setMeasurements(prev =>
       prev.map(m => m.id === tempId ? (data as Measurement) : m)
           .sort((a, b) => b.date.localeCompare(a.date))
     )
-    return true
+    return { ok: true }
   }, [user, measurements, sb])
 
   const deleteMeasurement = useCallback(async (id: string) => {
