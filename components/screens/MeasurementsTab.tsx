@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Variants } from 'framer-motion'
-import { Plus, Ruler, Scale, TrendingUp, TrendingDown, Pencil, Trash2, X, Check, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react'
+import { Plus, Ruler, Scale, TrendingUp, TrendingDown, Pencil, Trash2, X, Check, AlertCircle, ChevronDown, ChevronUp, Info } from 'lucide-react'
 import { useApp } from '@/context/AppContext'
 import type { Measurement, MeasurementInput } from '@/types'
 
@@ -168,6 +168,7 @@ function MeasurementSheet({
 
   return (
     <motion.div
+      data-no-swipe
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -181,10 +182,13 @@ function MeasurementSheet({
         exit={{ y: '100%' }}
         transition={{ type: 'spring', stiffness: 320, damping: 36 }}
         onClick={e => e.stopPropagation()}
-        className="w-full max-w-[430px] rounded-t-3xl pt-3 max-h-[92vh] overflow-y-auto"
+        className="w-full max-w-[430px] rounded-t-3xl pt-3 overflow-y-auto"
         style={{
           background: '#141414',
+          maxHeight: '92dvh',
           paddingBottom: 'calc(20px + env(safe-area-inset-bottom, 0px))',
+          WebkitOverflowScrolling: 'touch',
+          overscrollBehavior: 'contain',
         }}
       >
         <div className="w-12 h-1 rounded-full bg-white/15 mx-auto mb-3" />
@@ -221,11 +225,19 @@ function MeasurementSheet({
 
           {/* Mass — always visible, the essentials */}
           <div>
-            <SectionHeader icon={Scale} label="Masse" hint="Tu peux ne renseigner que ces 2 valeurs" />
+            <SectionHeader icon={Scale} label="Masse" hint="Le poids suffit. Le % MG est totalement facultatif." />
             <div className="grid grid-cols-2 gap-3">
-              {FIELDS.filter(f => f.group === 'mass').map(f => (
-                <NumField key={f.key as string} field={f} value={values[f.key as string]} onChange={v => setField(f.key as string, v)} />
-              ))}
+              <NumField
+                field={FIELDS.find(f => f.key === 'weight')!}
+                value={values.weight}
+                onChange={v => setField('weight', v)}
+              />
+              <NumField
+                field={FIELDS.find(f => f.key === 'body_fat')!}
+                value={values.body_fat}
+                onChange={v => setField('body_fat', v)}
+                helpText="Mesuré avec un impédancemètre (balance connectée), des calipers, ou laisse vide."
+              />
             </div>
           </div>
 
@@ -378,16 +390,30 @@ function SectionHeader({ icon: Icon, label, hint }: {
   )
 }
 
-function NumField({ field, value, onChange }: {
+function NumField({ field, value, onChange, helpText }: {
   field: { key: string; label: string; unit: string }
   value: string
   onChange: (v: string) => void
+  helpText?: string
 }) {
+  const [showHelp, setShowHelp] = useState(false)
   return (
     <div>
-      <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-[1.4px] mb-1 block">
-        {field.label}
-      </label>
+      <div className="flex items-center gap-1.5 mb-1">
+        <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-[1.4px]">
+          {field.label}
+        </label>
+        {helpText && (
+          <button
+            type="button"
+            onClick={() => setShowHelp(s => !s)}
+            aria-label="Aide"
+            className="w-4 h-4 rounded-full flex items-center justify-center text-zinc-600 hover:text-[#A78BFA] active:scale-90 transition-all"
+          >
+            <Info size={12} strokeWidth={1.8} />
+          </button>
+        )}
+      </div>
       <div className="relative">
         <input
           type="text"
@@ -401,6 +427,11 @@ function NumField({ field, value, onChange }: {
           {field.unit}
         </span>
       </div>
+      {helpText && showHelp && (
+        <p className="text-[11px] text-zinc-500 leading-snug mt-1.5 px-0.5">
+          {helpText}
+        </p>
+      )}
     </div>
   )
 }
