@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, X, ChevronRight, AlertCircle, Camera, Copy, CopyPlus, LayoutGrid, Check, Sparkles } from 'lucide-react'
+import { Plus, X, ChevronRight, AlertCircle, Camera, Copy, CopyPlus, LayoutGrid, Check, Sparkles, Lock } from 'lucide-react'
 import { useApp } from '@/context/AppContext'
 import { TYPE_LBL, TAG_CLR, TAG_BG, EXO_BY_TYPE, WORKOUT_TEMPLATES } from '@/lib/constants'
 import type { WorkoutTemplate } from '@/lib/constants'
@@ -578,10 +578,12 @@ export default function LogScreen() {
             transition={{ type: 'spring', stiffness: 400, damping: 25 }}
             onClick={() => isPro ? setAiOpen(true) : openPro()}
             className="flex items-center gap-2 text-[12px] font-semibold px-3 py-2 rounded-xl border transition-all"
-            style={{ background: 'rgba(139,92,246,0.08)', borderColor: 'rgba(139,92,246,0.25)', color: '#A78BFA' }}
+            style={isPro
+              ? { background: 'rgba(139,92,246,0.08)', borderColor: 'rgba(139,92,246,0.25)', color: '#A78BFA' }
+              : { background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.08)', color: '#52525b' }}
           >
-            <Sparkles size={14} strokeWidth={1.8} />
-            IA{!isPro && ' ✦'}
+            {isPro ? <Sparkles size={14} strokeWidth={1.8} /> : <Lock size={14} strokeWidth={1.8} />}
+            IA {!isPro && <span className="text-[10px] font-bold tracking-wide text-zinc-600">PRO</span>}
           </motion.button>
         </div>
 
