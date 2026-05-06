@@ -45,6 +45,10 @@ export function RestTimer() {
   const remaining = restEndsAt && restActive ? Math.max(0, Math.ceil((restEndsAt - now) / 1000)) : 0
   const progress = restEndsAt && restActive ? Math.max(0, Math.min(1, 1 - remaining / restDuration)) : 0
   const justFinished = restActive && remaining === 0
+  const isLow = remaining <= 10 && remaining > 0 && !justFinished
+
+  const arcColor = justFinished ? '#10B981' : isLow ? '#F87171' : 'url(#arc-grad)'
+  const arcColorSolid = justFinished ? '#10B981' : isLow ? '#F87171' : '#A78BFA'
 
   return (
     <>
@@ -89,17 +93,25 @@ export function RestTimer() {
             style={{
               background: justFinished
                 ? 'linear-gradient(135deg,#059669,#10B981)'
+                : isLow
+                ? 'linear-gradient(135deg,#B91C1C,#EF4444)'
                 : 'linear-gradient(135deg,#6D28D9,#7C3AED)',
               boxShadow: justFinished
                 ? '0 8px 28px -6px rgba(16,185,129,0.6),0 0 28px rgba(16,185,129,0.45)'
+                : isLow
+                ? '0 8px 28px -6px rgba(239,68,68,0.6),0 0 24px rgba(239,68,68,0.4),inset 0 1px 0 rgba(255,255,255,0.18)'
                 : '0 8px 28px -6px rgba(109,40,217,0.6),0 0 24px rgba(139,92,246,0.45),inset 0 1px 0 rgba(255,255,255,0.18)',
             }}
             aria-label={justFinished ? 'Repos terminé' : 'Voir le timer'}
           >
             {/* Progress fill behind text */}
             <div
-              className="absolute inset-y-0 left-0 bg-white/20 pointer-events-none"
-              style={{ width: `${progress * 100}%`, transition: 'width 200ms linear' }}
+              className="absolute inset-y-0 left-0 pointer-events-none rounded-full"
+              style={{
+                width: `${progress * 100}%`,
+                background: isLow ? 'rgba(248,113,113,0.25)' : 'rgba(255,255,255,0.18)',
+                transition: 'width 200ms linear, background 400ms ease',
+              }}
             />
             <Timer size={16} strokeWidth={1.8} className="relative" />
             <span className="relative font-mono">{justFinished ? 'TERMINÉ' : fmt(remaining)}</span>
@@ -143,24 +155,68 @@ export function RestTimer() {
 
               {/* Circular progress */}
               <div className="relative mx-auto mt-4 w-[200px] h-[200px]">
+                {/* Outer glow when low time */}
+                {isLow && (
+                  <motion.div
+                    animate={{ opacity: [0.3, 0.7, 0.3] }}
+                    transition={{ repeat: Infinity, duration: 1, ease: 'easeInOut' }}
+                    className="absolute inset-0 rounded-full pointer-events-none"
+                    style={{ boxShadow: '0 0 40px 8px rgba(248,113,113,0.25)' }}
+                  />
+                )}
                 <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
-                  <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="6" />
+                  <defs>
+                    <linearGradient id="arc-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#6D28D9" />
+                      <stop offset="100%" stopColor="#A78BFA" />
+                    </linearGradient>
+                    <filter id="arc-glow" x="-20%" y="-20%" width="140%" height="140%">
+                      <feGaussianBlur stdDeviation="2.5" result="blur" />
+                      <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                    </filter>
+                  </defs>
+                  {/* Track */}
+                  <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="5" />
+                  {/* Glow layer */}
                   <circle
                     cx="50" cy="50" r="44" fill="none"
-                    stroke={justFinished ? '#10B981' : '#A78BFA'}
-                    strokeWidth="6"
+                    stroke={arcColorSolid}
+                    strokeWidth="8"
                     strokeLinecap="round"
                     strokeDasharray={2 * Math.PI * 44}
                     strokeDashoffset={(1 - progress) * 2 * Math.PI * 44}
-                    style={{ transition: 'stroke-dashoffset 200ms linear, stroke 300ms ease' }}
+                    opacity="0.35"
+                    filter="url(#arc-glow)"
+                    style={{ transition: 'stroke-dashoffset 200ms linear, stroke 400ms ease' }}
+                  />
+                  {/* Main arc */}
+                  <circle
+                    cx="50" cy="50" r="44" fill="none"
+                    stroke={arcColor}
+                    strokeWidth="5"
+                    strokeLinecap="round"
+                    strokeDasharray={2 * Math.PI * 44}
+                    strokeDashoffset={(1 - progress) * 2 * Math.PI * 44}
+                    style={{ transition: 'stroke-dashoffset 200ms linear, stroke 400ms ease' }}
                   />
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-[44px] font-extrabold text-white font-mono leading-none tracking-tight">
+                  <motion.span
+                    key={justFinished ? 'done' : 'counting'}
+                    initial={justFinished ? { scale: 0.6, opacity: 0 } : false}
+                    animate={justFinished ? { scale: 1, opacity: 1 } : isLow ? { scale: [1, 1.04, 1] } : {}}
+                    transition={justFinished
+                      ? { type: 'spring', stiffness: 400, damping: 20 }
+                      : isLow ? { repeat: Infinity, duration: 1, ease: 'easeInOut' } : {}
+                    }
+                    className="text-[44px] font-extrabold font-mono leading-none tracking-tight"
+                    style={{ color: justFinished ? '#10B981' : isLow ? '#F87171' : 'white' }}
+                  >
                     {justFinished ? '✓' : fmt(remaining)}
-                  </span>
-                  <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-[1.6px] mt-1.5">
-                    {justFinished ? 'C\'est reparti' : `sur ${fmt(restDuration)}`}
+                  </motion.span>
+                  <span className="text-[10px] font-bold uppercase tracking-[1.6px] mt-1.5"
+                    style={{ color: justFinished ? 'rgba(16,185,129,0.7)' : isLow ? 'rgba(248,113,113,0.6)' : 'rgb(113,113,122)' }}>
+                    {justFinished ? "C'est reparti" : `sur ${fmt(restDuration)}`}
                   </span>
                 </div>
               </div>
