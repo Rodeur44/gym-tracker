@@ -554,18 +554,18 @@ export default function LogScreen() {
             type="date"
             value={date}
             onChange={e => setDate(e.target.value)}
-            className="bg-[#1C1C1C] border border-white/[0.06] rounded-xl px-3 py-1.5 text-[13px] font-mono text-zinc-300 outline-none focus:border-[#A78BFA] transition-all"
+            className="bg-[#1C1C1C] border border-white/[0.06] rounded-xl px-3 py-1.5 text-[13px] font-mono text-zinc-300 outline-none focus:border-[#A78BFA] transition-all text-center"
           />
         </div>
 
         {/* Type pills */}
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+        <div className="grid grid-cols-5 gap-1.5">
           {MUSCLE_TABS.map(t => (
             <motion.button
               key={t}
               whileTap={{ scale: 0.94 }}
               onClick={() => setLogType(t)}
-              className={`flex-shrink-0 px-4 py-2.5 rounded-full border-[1.5px] text-[13px] font-semibold transition-all ${logType === t ? 'shadow-lg' : 'border-white/[0.06] bg-[#1C1C1C] text-zinc-500'}`}
+              className={`py-2.5 rounded-full border-[1.5px] text-[13px] font-semibold transition-all text-center ${logType === t ? 'shadow-lg' : 'border-white/[0.06] bg-[#1C1C1C] text-zinc-500'}`}
               style={logType === t ? { borderColor: accent, background: TAG_BG[t], color: accent, boxShadow: `0 0 16px ${accent}55` } : {}}
             >
               {TYPE_LBL[t].split(' ')[0]}
