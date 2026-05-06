@@ -601,13 +601,25 @@ export default function LogScreen() {
         {/* Exercise cards */}
         <AnimatePresence mode="popLayout">
           {currentExos.length === 0 ? (
-            <motion.div
+            <motion.button
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-center py-10 px-6 rounded-2xl border-[1.5px] border-dashed border-white/10 text-zinc-600 text-sm leading-relaxed"
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setPickerOpen(true)}
+              className="w-full py-10 px-6 rounded-2xl border-[1.5px] border-dashed flex flex-col items-center gap-3 transition-all hover:border-[#A78BFA]/40 hover:bg-[rgba(139,92,246,0.04)] group"
+              style={{ borderColor: 'rgba(255,255,255,0.08)' }}
             >
-              Appuie sur <strong className="text-zinc-400">+ Ajouter un exercice</strong><br />pour démarrer ta séance
-            </motion.div>
+              <div
+                className="w-12 h-12 rounded-2xl flex items-center justify-center transition-all group-hover:scale-110"
+                style={{ background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.2)' }}
+              >
+                <Plus size={22} strokeWidth={1.8} className="text-[#A78BFA]" />
+              </div>
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-[15px] font-semibold text-zinc-300">Ajouter ton premier exercice</span>
+                <span className="text-[12px] text-zinc-600">Appuie ici pour démarrer ta séance</span>
+              </div>
+            </motion.button>
           ) : (
             currentExos.map((exo, i) => (
               <ExoCard

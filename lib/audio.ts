@@ -11,17 +11,25 @@ let expectedBeepAt: number | null = null
 
 const SOURCE = '/sounds/timer-end.wav'
 
-// When the PWA is foregrounded after a long suspension, iOS fires all expired
-// setTimeout callbacks immediately. The audio context is still suspended at
-// that point, so the queued play() executes on the first user gesture instead.
-// Cancelling any stale beep on visibilitychange (which fires BEFORE pending
-// timers on resume) prevents this ghost sound.
+// When the PWA is foregrounded after suspension, iOS fires any expired
+// setTimeout callbacks immediately, but the audio context is still suspended.
+// The pending play() then executes on the first user gesture — a ghost sound.
+//
+// Fix: on visibilitychange → visible we (a) cancel stale scheduled beeps and
+// (b) pause/reset the audio element which aborts any iOS-queued play() promise.
+// Both actions fire before the pending timer callbacks in the event loop.
 if (typeof document !== 'undefined') {
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && expectedBeepAt !== null) {
-      if (Date.now() > expectedBeepAt + 1000) {
-        cancelScheduledBeep()
-      }
+    if (document.visibilityState !== 'visible') return
+    const now = Date.now()
+    // Cancel scheduled beep if it already expired
+    if (expectedBeepAt !== null && now > expectedBeepAt + 500) {
+      cancelScheduledBeep()
+    }
+    // Pause+reset the element — this aborts any pending iOS play() promise
+    // so the audio cannot play on the next user gesture
+    if (audio) {
+      try { audio.pause(); audio.currentTime = 0 } catch {}
     }
   })
 }
@@ -43,34 +51,29 @@ function getAudio(): HTMLAudioElement | null {
 export function unlockAudio() {
   const el = getAudio()
   if (!el || unlocked) return
-  el.muted = true
+  el.volume = 0
   const promise = el.play()
   if (promise && typeof promise.then === 'function') {
     promise.then(() => {
       el.pause()
       el.currentTime = 0
-      el.muted = false
+      el.volume = 1
       unlocked = true
     }).catch(() => {
-      // Autoplay rejected — try again next gesture
-      el.muted = false
+      el.volume = 1
     })
   } else {
-    // Older browsers — assume play succeeded synchronously
     el.pause()
     el.currentTime = 0
-    el.muted = false
+    el.volume = 1
     unlocked = true
   }
 }
 
 // Play immediately (used by Test button + scheduled callbacks).
 export function playBeep() {
-  // Skip stale beeps: if the expected fire time is more than 3 s in the past,
-  // this fired because iOS resumed a suspended PWA and ran the expired timeout
-  // immediately. The audio context was suspended too, so this would silently
-  // queue and play on the first user gesture — wrong behaviour.
-  if (expectedBeepAt !== null && Date.now() - expectedBeepAt > 3000) {
+  // Skip stale beeps: fired late because iOS resumed a suspended PWA.
+  if (expectedBeepAt !== null && Date.now() - expectedBeepAt > 1000) {
     expectedBeepAt = null
     return
   }
