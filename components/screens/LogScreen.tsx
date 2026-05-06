@@ -22,6 +22,34 @@ function ExoPicker({ type, onPick, onClose, getBest, allPrev }: {
 }) {
   const [q, setQ] = useState('')
   const clr = TAG_CLR[type]
+  const backdropRef = useRef<HTMLDivElement>(null)
+
+  // Isolate all touch events inside this modal from the AppShell swipe handler.
+  // data-no-swipe alone doesn't work because AppShell uses native listeners.
+  useEffect(() => {
+    const el = backdropRef.current
+    if (!el) return
+    const stop = (e: TouchEvent) => e.stopPropagation()
+    el.addEventListener('touchstart', stop, { passive: true })
+    el.addEventListener('touchmove', stop, { passive: true })
+    return () => {
+      el.removeEventListener('touchstart', stop)
+      el.removeEventListener('touchmove', stop)
+    }
+  }, [])
+
+  // iOS scroll lock: position:fixed is more reliable than overflow:hidden
+  useEffect(() => {
+    const y = window.scrollY
+    document.body.style.cssText += `;position:fixed;top:-${y}px;width:100%;overflow-y:scroll`
+    return () => {
+      document.body.style.position = ''
+      document.body.style.top = ''
+      document.body.style.width = ''
+      document.body.style.overflowY = ''
+      window.scrollTo(0, y)
+    }
+  }, [])
 
   const recent = allPrev.slice(0, 6)
   const pool = EXO_BY_TYPE[type]
@@ -54,12 +82,9 @@ function ExoPicker({ type, onPick, onClose, getBest, allPrev }: {
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+    <div
+      ref={backdropRef}
       className="fixed inset-0 bg-black/70 backdrop-blur-xl z-50 flex items-end justify-center"
-      data-no-swipe
       onClick={onClose}
     >
       <motion.div
@@ -68,7 +93,7 @@ function ExoPicker({ type, onPick, onClose, getBest, allPrev }: {
         exit={{ y: 60, opacity: 0 }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         onClick={e => e.stopPropagation()}
-        className="w-full max-w-[430px] bg-[#141414] border border-white/[0.08] rounded-t-3xl max-h-[80dvh] overflow-hidden flex flex-col"
+        className="w-full max-w-[430px] bg-[#141414] border border-white/[0.08] rounded-t-3xl max-h-[85vh] overflow-hidden flex flex-col"
       >
         <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mt-4 mb-4 flex-shrink-0" />
         <div className="px-4 mb-3 flex-shrink-0">
@@ -143,7 +168,7 @@ function ExoPicker({ type, onPick, onClose, getBest, allPrev }: {
           )}
         </div>
       </motion.div>
-    </motion.div>
+    </div>
   )
 }
 

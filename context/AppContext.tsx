@@ -137,6 +137,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (typeof window === 'undefined') return
+    // Cancel any beep left over from a suspended PWA session
+    cancelScheduledBeep()
     setIsPro(localStorage.getItem('gymlog_pro') === '1')
     const saved = parseInt(localStorage.getItem('gymlog_rest_default') || '', 10)
     if (!Number.isNaN(saved) && saved >= 15 && saved <= 600) setRestDuration(saved)
