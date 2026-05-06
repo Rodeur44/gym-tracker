@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import type { Variants } from 'framer-motion'
 import { Home, Plus, Clock, BarChart2, LayoutGrid, LogOut, Crown, PersonStanding, ShieldCheck } from 'lucide-react'
 import { useApp } from '@/context/AppContext'
+import { createClient } from '@/lib/supabase/client'
 import HomeScreen from '@/components/screens/HomeScreen'
 import LogScreen from '@/components/screens/LogScreen'
 import HistoryScreen from '@/components/screens/HistoryScreen'
@@ -58,6 +59,23 @@ export default function AppShell() {
 
   const [adminOpen, setAdminOpen] = useState(false)
   const isAdmin = user?.email === ADMIN_EMAIL
+
+  // Pseudo prompt — shown once for users with no display_name (e.g. Google OAuth)
+  const [pseudoOpen, setPseudoOpen] = useState(false)
+  const [pseudoInput, setPseudoInput] = useState('')
+  const [pseudoLoading, setPseudoLoading] = useState(false)
+  useEffect(() => {
+    if (user && !user.user_metadata?.display_name) setPseudoOpen(true)
+  }, [user])
+  async function savePseudo() {
+    const val = pseudoInput.trim()
+    if (!val) return
+    setPseudoLoading(true)
+    const sb = createClient()
+    await sb.auth.updateUser({ data: { display_name: val } })
+    setPseudoOpen(false)
+    setPseudoLoading(false)
+  }
 
   const [stretchEnabled, setStretchEnabled] = useState(true)
   useEffect(() => {
@@ -392,6 +410,62 @@ export default function AppShell() {
 
       {/* Rest timer — only visible on the Séance tab */}
       {tab === 'log' && <RestTimer />}
+
+      {/* Pseudo prompt for Google / OAuth users with no display_name */}
+      <AnimatePresence>
+        {pseudoOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[90] bg-black/80 backdrop-blur-xl flex items-center justify-center px-6"
+          >
+            <motion.div
+              initial={{ scale: 0.92, y: 24 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.92, y: 24 }}
+              transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+              className="w-full max-w-[340px] rounded-3xl p-6 border"
+              style={{
+                background: 'linear-gradient(180deg,#181818,#111)',
+                borderColor: 'rgba(139,92,246,0.25)',
+                boxShadow: '0 30px 60px -12px rgba(0,0,0,0.7), 0 0 60px -20px rgba(139,92,246,0.35)',
+              }}
+            >
+              <div
+                className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4"
+                style={{ background: 'linear-gradient(135deg,rgba(109,40,217,0.25),rgba(139,92,246,0.15))', border: '1px solid rgba(139,92,246,0.25)' }}
+              >
+                <span className="text-2xl">👤</span>
+              </div>
+              <h2 className="text-[17px] font-semibold text-white text-center tracking-tight mb-1">Choisis ton pseudo</h2>
+              <p className="text-sm text-zinc-500 text-center mb-5 leading-relaxed">
+                Il apparaîtra sur tes stats et dans le classement.
+              </p>
+              <input
+                type="text"
+                placeholder="Pseudo"
+                value={pseudoInput}
+                onChange={e => setPseudoInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') savePseudo() }}
+                autoFocus
+                maxLength={24}
+                className="w-full bg-[#1C1C1C] border border-white/[0.06] rounded-2xl px-4 py-3.5 text-[15px] text-white placeholder:text-zinc-600 focus:border-[#A78BFA] focus:ring-4 focus:ring-[rgba(139,92,246,0.12)] outline-none transition-all mb-3"
+              />
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={savePseudo}
+                disabled={pseudoLoading || !pseudoInput.trim()}
+                className="w-full py-3.5 rounded-2xl font-semibold text-[15px] text-white disabled:opacity-50 transition-all"
+                style={{ background: 'linear-gradient(135deg,#6D28D9,#7C3AED)', boxShadow: '0 8px 24px -6px rgba(109,40,217,0.5)' }}
+              >
+                {pseudoLoading ? '…' : 'Valider'}
+              </motion.button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
