@@ -26,8 +26,10 @@ function ExoPicker({ type, onPick, onClose, getBest, allPrev }: {
 
   const recent = allPrev.slice(0, 6)
   const pool = EXO_BY_TYPE[type]
-  const suggested = pool.filter(n => !allPrev.includes(n))
-  const displayed = suggested.length ? suggested : pool
+  // Unseen exercises first, already-done ones after — list is always complete
+  const unseen = pool.filter(n => !allPrev.includes(n))
+  const done = pool.filter(n => allPrev.includes(n))
+  const displayed = [...unseen, ...done]
 
   const filtered = q
     ? [...new Set([...allPrev, ...Object.values(EXO_BY_TYPE).flat()])].filter(n => n.toLowerCase().includes(q.toLowerCase())).slice(0, 12)
@@ -132,9 +134,9 @@ function ExoPicker({ type, onPick, onClose, getBest, allPrev }: {
                 </>
               )}
 
-              {/* Suggérés */}
+              {/* Tous les exercices du groupe */}
               <div className="text-[10px] font-bold text-zinc-600 uppercase tracking-[1.2px] mb-1 mt-2">
-                Suggérés — {TYPE_LBL[type]}
+                {TYPE_LBL[type]}
               </div>
               {displayed.map(n => <ExoRow key={n} name={n} />)}
             </>
