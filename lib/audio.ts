@@ -1,94 +1,70 @@
-// Rest-timer audio helper — uses HTML5 <audio> with the iOS unlock pattern.
+// Rest-timer audio helper — Web Audio API.
 //
-// iOS Safari only allows audio playback after a user gesture has called
-// .play() on the element at least once. After that initial unlock, any
-// future .play() call works (including from setTimeout / outside gestures).
+// Uses AudioContext + OscillatorNode instead of HTMLAudioElement to avoid
+// the iOS PWA ghost-sound bug: on iOS, a pending el.play() promise gets
+// queued by the OS and fires on the next user gesture after the app is
+// foregrounded. OscillatorNode nodes are created fresh for each beep and
+// have no persistent promise state, so there is nothing to queue.
 
-let audio: HTMLAudioElement | null = null
-let unlocked = false
+let ctx: AudioContext | null = null
 let scheduledTimeout: number | null = null
 let expectedBeepAt: number | null = null
 
-const SOURCE = '/sounds/timer-end.wav'
-
-// When the PWA is foregrounded after suspension, iOS fires any expired
-// setTimeout callbacks immediately, but the audio context is still suspended.
-// The pending play() then executes on the first user gesture — a ghost sound.
-//
-// Fix: on visibilitychange → visible we (a) cancel stale scheduled beeps and
-// (b) pause/reset the audio element which aborts any iOS-queued play() promise.
-// Both actions fire before the pending timer callbacks in the event loop.
-if (typeof document !== 'undefined') {
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState !== 'visible') return
-    const now = Date.now()
-    // Cancel scheduled beep if it already expired
-    if (expectedBeepAt !== null && now > expectedBeepAt + 500) {
-      cancelScheduledBeep()
-    }
-    // Pause+reset the element — this aborts any pending iOS play() promise
-    // so the audio cannot play on the next user gesture
-    if (audio) {
-      try { audio.pause(); audio.currentTime = 0 } catch {}
-    }
-  })
-}
-
-function getAudio(): HTMLAudioElement | null {
+function getCtx(): AudioContext | null {
   if (typeof window === 'undefined') return null
-  if (!audio) {
-    audio = new Audio(SOURCE)
-    audio.preload = 'auto'
-    audio.loop = false
-    audio.volume = 1
+  if (!ctx) {
+    ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)()
   }
-  return audio
+  return ctx
 }
 
-// Unlock the audio element. Must be called from a user gesture (touchstart,
-// click, etc.). Plays the file silently and immediately pauses to satisfy
-// iOS's policy.
+// Must be called from a user gesture (touchstart / click) to satisfy iOS
+// audio policy. After this the context stays 'running' until the app is
+// backgrounded, at which point iOS suspends it automatically.
 export function unlockAudio() {
-  const el = getAudio()
-  if (!el || unlocked) return
-  el.volume = 0
-  const promise = el.play()
-  if (promise && typeof promise.then === 'function') {
-    promise.then(() => {
-      el.pause()
-      el.currentTime = 0
-      el.volume = 1
-      unlocked = true
-    }).catch(() => {
-      el.volume = 1
-    })
-  } else {
-    el.pause()
-    el.currentTime = 0
-    el.volume = 1
-    unlocked = true
+  const c = getCtx()
+  if (!c) return
+  if (c.state === 'suspended') {
+    c.resume().catch(() => {})
   }
 }
 
-// Play immediately (used by Test button + scheduled callbacks).
+function doPlayBeep() {
+  const c = getCtx()
+  // Context is 'suspended' when the PWA is backgrounded — returning here
+  // prevents ghost sounds when expired setTimeout callbacks fire on resume.
+  if (!c || c.state !== 'running') return
+
+  try {
+    const now = c.currentTime
+    // Two-tone chime: 880 Hz then 1100 Hz, 120 ms apart
+    ;([880, 1100] as const).forEach((freq, i) => {
+      const osc = c.createOscillator()
+      const gain = c.createGain()
+      osc.connect(gain)
+      gain.connect(c.destination)
+      osc.type = 'sine'
+      osc.frequency.value = freq
+      const t = now + i * 0.12
+      gain.gain.setValueAtTime(0, t)
+      gain.gain.linearRampToValueAtTime(0.38, t + 0.02)
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.45)
+      osc.start(t)
+      osc.stop(t + 0.45)
+    })
+  } catch {}
+}
+
 export function playBeep() {
-  // Skip stale beeps: fired late because iOS resumed a suspended PWA.
+  // Stale beep: fired late because iOS resumed a suspended PWA
   if (expectedBeepAt !== null && Date.now() - expectedBeepAt > 1000) {
     expectedBeepAt = null
     return
   }
   expectedBeepAt = null
-  const el = getAudio()
-  if (!el) return
-  try {
-    el.currentTime = 0
-    const p = el.play()
-    if (p && typeof p.catch === 'function') p.catch(() => {})
-  } catch {}
+  doPlayBeep()
 }
 
-// Schedule the beep to fire after `delayMs`. Replaces any previous schedule.
-// Must be called from a user gesture so the audio element is unlocked.
 export function scheduleBeep(delayMs: number) {
   cancelScheduledBeep()
   unlockAudio()
@@ -111,9 +87,7 @@ export function cancelScheduledBeep() {
   expectedBeepAt = null
 }
 
-// Test play (Tester le son button) — also unlocks if needed.
 export function testBeep() {
   unlockAudio()
-  // Slight delay so the unlock-pause settles before the test play
   window.setTimeout(playBeep, 50)
 }

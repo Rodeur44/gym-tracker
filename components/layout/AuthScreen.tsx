@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 
 export default function AuthScreen() {
@@ -14,7 +14,7 @@ export default function AuthScreen() {
   const [loading, setLoading] = useState(false)
 
   async function handleAuth() {
-    if (!email || !password) { setMsg({ text: 'Remplis tous les champs.', type: 'error' }); return }
+    if (!email || !password || (mode === 'signup' && !name.trim())) { setMsg({ text: 'Remplis tous les champs.', type: 'error' }); return }
     setLoading(true); setMsg(null)
     if (mode === 'login') {
       const { error } = await sb.auth.signInWithPassword({ email, password })
@@ -74,17 +74,26 @@ export default function AuthScreen() {
             onChange={e => setPassword(e.target.value)}
             className="w-full bg-[#1C1C1C] border border-white/[0.06] rounded-2xl px-4 py-3.5 text-[15px] text-white placeholder:text-zinc-600 focus:border-[#A78BFA] focus:ring-4 focus:ring-[rgba(139,92,246,0.12)] outline-none transition-all"
           />
-          {mode === 'signup' && (
-            <motion.input
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              type="text"
-              placeholder="Ton prénom"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              className="w-full bg-[#1C1C1C] border border-white/[0.06] rounded-2xl px-4 py-3.5 text-[15px] text-white placeholder:text-zinc-600 focus:border-[#A78BFA] focus:ring-4 focus:ring-[rgba(139,92,246,0.12)] outline-none transition-all"
-            />
-          )}
+          <AnimatePresence>
+            {mode === 'signup' && (
+              <motion.div
+                key="pseudo-field"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 54 }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+                style={{ overflow: 'hidden' }}
+              >
+                <input
+                  type="text"
+                  placeholder="Pseudo"
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  className="w-full bg-[#1C1C1C] border border-white/[0.06] rounded-2xl px-4 py-3.5 text-[15px] text-white placeholder:text-zinc-600 focus:border-[#A78BFA] focus:ring-4 focus:ring-[rgba(139,92,246,0.12)] outline-none transition-all"
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
           <motion.button
             whileTap={{ scale: 0.97 }}
             onClick={handleAuth}
