@@ -22,34 +22,6 @@ function ExoPicker({ type, onPick, onClose, getBest, allPrev }: {
 }) {
   const [q, setQ] = useState('')
   const clr = TAG_CLR[type]
-  const backdropRef = useRef<HTMLDivElement>(null)
-
-  // Isolate all touch events inside this modal from the AppShell swipe handler.
-  // data-no-swipe alone doesn't work because AppShell uses native listeners.
-  useEffect(() => {
-    const el = backdropRef.current
-    if (!el) return
-    const stop = (e: TouchEvent) => e.stopPropagation()
-    el.addEventListener('touchstart', stop, { passive: true })
-    el.addEventListener('touchmove', stop, { passive: true })
-    return () => {
-      el.removeEventListener('touchstart', stop)
-      el.removeEventListener('touchmove', stop)
-    }
-  }, [])
-
-  // iOS scroll lock: position:fixed is more reliable than overflow:hidden
-  useEffect(() => {
-    const y = window.scrollY
-    document.body.style.cssText += `;position:fixed;top:-${y}px;width:100%;overflow-y:scroll`
-    return () => {
-      document.body.style.position = ''
-      document.body.style.top = ''
-      document.body.style.width = ''
-      document.body.style.overflowY = ''
-      window.scrollTo(0, y)
-    }
-  }, [])
 
   const recent = allPrev.slice(0, 6)
   const pool = EXO_BY_TYPE[type]
@@ -83,7 +55,7 @@ function ExoPicker({ type, onPick, onClose, getBest, allPrev }: {
 
   return (
     <div
-      ref={backdropRef}
+      data-no-swipe
       className="fixed inset-0 bg-black/70 backdrop-blur-xl z-50 flex items-end justify-center"
       onClick={onClose}
     >

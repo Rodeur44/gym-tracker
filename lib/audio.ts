@@ -7,6 +7,7 @@
 let audio: HTMLAudioElement | null = null
 let unlocked = false
 let scheduledTimeout: number | null = null
+let expectedBeepAt: number | null = null
 
 const SOURCE = '/sounds/timer-end.wav'
 
@@ -50,6 +51,15 @@ export function unlockAudio() {
 
 // Play immediately (used by Test button + scheduled callbacks).
 export function playBeep() {
+  // Skip stale beeps: if the expected fire time is more than 3 s in the past,
+  // this fired because iOS resumed a suspended PWA and ran the expired timeout
+  // immediately. The audio context was suspended too, so this would silently
+  // queue and play on the first user gesture — wrong behaviour.
+  if (expectedBeepAt !== null && Date.now() - expectedBeepAt > 3000) {
+    expectedBeepAt = null
+    return
+  }
+  expectedBeepAt = null
   const el = getAudio()
   if (!el) return
   try {
@@ -64,6 +74,7 @@ export function playBeep() {
 export function scheduleBeep(delayMs: number) {
   cancelScheduledBeep()
   unlockAudio()
+  expectedBeepAt = Date.now() + delayMs
   if (delayMs <= 0) {
     playBeep()
     return
@@ -79,6 +90,7 @@ export function cancelScheduledBeep() {
     window.clearTimeout(scheduledTimeout)
     scheduledTimeout = null
   }
+  expectedBeepAt = null
 }
 
 // Test play (Tester le son button) — also unlocks if needed.
