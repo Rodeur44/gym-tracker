@@ -108,7 +108,7 @@ export default function HomeScreen() {
       {/* Hero next-card */}
       <motion.div variants={fadeUp}>
         <div className="rounded-3xl p-6 relative overflow-hidden"
-          style={{ background: 'linear-gradient(135deg,#6D28D9 0%,#7C3AED 40%,#8B5CF6 75%,#A78BFA 100%)', boxShadow: '0 30px 60px -16px rgba(109,40,217,0.6),0 0 0 1px rgba(139,92,246,0.4),inset 0 1px 0 rgba(255,255,255,0.15)' }}>
+          style={{ background: 'linear-gradient(135deg,#6D28D9 0%,#7C3AED 40%,#8B5CF6 75%,#A78BFA 100%)', boxShadow: '0 30px 60px -16px rgba(109,40,217,0.6),0 0 0 1px rgba(139,92,246,0.4),inset 0 1px 0 rgba(255,255,255,0.15)', WebkitMaskImage: '-webkit-radial-gradient(white, black)' }}>
           {/* Glow orbs */}
           <div className="absolute -right-10 -top-12 w-44 h-44 rounded-full bg-white/25 blur-2xl pointer-events-none" />
           <div className="absolute -left-8 -bottom-12 w-36 h-36 rounded-full bg-black/20 blur-2xl pointer-events-none" />

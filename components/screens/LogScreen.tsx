@@ -150,10 +150,11 @@ function ExoPicker({ type, onPick, onClose, getBest, allPrev }: {
 }
 
 // ── Weight slider (isolated touch — never bubbles to swipe handler) ─
-function WeightSlider({ value, onChange, trackStyle }: {
+function WeightSlider({ value, onChange, trackStyle, max = 250 }: {
   value: number
   onChange: (v: number) => void
   trackStyle: React.CSSProperties
+  max?: number
 }) {
   const ref = useRef<HTMLInputElement>(null)
 
@@ -174,7 +175,7 @@ function WeightSlider({ value, onChange, trackStyle }: {
   return (
     <input
       ref={ref}
-      type="range" min={0} max={250} step={2.5}
+      type="range" min={0} max={max} step={2.5}
       value={value}
       onChange={e => onChange(+e.target.value)}
       className="w-full h-1.5 rounded-full outline-none cursor-pointer appearance-none"
@@ -184,17 +185,26 @@ function WeightSlider({ value, onChange, trackStyle }: {
 }
 
 // ── Set Row ───────────────────────────────────────────────────────
-function SetRow({ set, idx, accent, onWeightChange, onRepsChange, onDelete }: {
+function SetRow({ set, idx, accent, onWeightChange, onRepsChange, onDelete, sliderMax }: {
   set: { weight: number; reps: number }
   idx: number
   accent: string
   onWeightChange: (v: number) => void
   onRepsChange: (delta: number) => void
+  sliderMax: number
   onDelete: () => void
 }) {
   const { startRest } = useApp()
-  const pct = (set.weight / 250 * 100).toFixed(1)
+  const [editingWeight, setEditingWeight] = useState(false)
+  const [weightInput, setWeightInput] = useState(String(set.weight))
+  const pct = (set.weight / sliderMax * 100).toFixed(1)
   const trackStyle = { background: `linear-gradient(to right,${accent} ${pct}%,#1C1C1C ${pct}%)` }
+
+  function commitWeight() {
+    const v = parseFloat(weightInput)
+    onWeightChange(isNaN(v) || v < 0 ? 0 : Math.min(v, 999))
+    setEditingWeight(false)
+  }
 
   return (
     <motion.div
@@ -209,15 +219,31 @@ function SetRow({ set, idx, accent, onWeightChange, onRepsChange, onDelete }: {
         <div className="w-[26px] h-[26px] rounded-[8px] bg-[#1C1C1C] border border-white/[0.06] flex items-center justify-center text-[11px] font-bold text-zinc-500 font-mono flex-shrink-0">
           {idx + 1}
         </div>
-        {/* Poids */}
-        <div className="flex items-baseline gap-1 min-w-[72px]">
-          <span className="text-[22px] font-bold font-mono text-white leading-none tracking-tight">
-            {set.weight > 0 ? set.weight : '—'}
-          </span>
-          <span className="text-[10px] text-zinc-500 uppercase tracking-wide">
-            {set.weight > 0 ? 'KG' : 'CORPS'}
-          </span>
-        </div>
+        {/* Poids — tap pour saisir manuellement */}
+        {editingWeight ? (
+          <input
+            autoFocus
+            type="number" inputMode="decimal" min={0} max={999} step={0.5}
+            value={weightInput}
+            onChange={e => setWeightInput(e.target.value)}
+            onBlur={commitWeight}
+            onKeyDown={e => e.key === 'Enter' && commitWeight()}
+            className="w-[72px] text-[22px] font-bold font-mono text-white leading-none tracking-tight bg-transparent border-b border-[#A78BFA] outline-none text-center"
+          />
+        ) : (
+          <button
+            onClick={() => { setWeightInput(String(set.weight)); setEditingWeight(true) }}
+            className="flex items-baseline gap-1 min-w-[72px] active:opacity-60 transition-opacity"
+            aria-label="Modifier le poids"
+          >
+            <span className="text-[22px] font-bold font-mono text-white leading-none tracking-tight">
+              {set.weight > 0 ? set.weight : '—'}
+            </span>
+            <span className="text-[10px] text-zinc-500 uppercase tracking-wide">
+              {set.weight > 0 ? 'KG' : 'CORPS'}
+            </span>
+          </button>
+        )}
         <span className="text-xs text-zinc-600 font-mono flex-shrink-0">×</span>
         {/* Reps stepper */}
         <div className="flex items-center bg-[#1C1C1C] border border-white/[0.06] rounded-xl overflow-hidden flex-1 hover:border-white/10 transition-all">
@@ -244,14 +270,14 @@ function SetRow({ set, idx, accent, onWeightChange, onRepsChange, onDelete }: {
       </div>
       {/* Weight slider */}
       <div className="pl-9 pr-1" data-no-swipe>
-        <WeightSlider value={set.weight} onChange={onWeightChange} trackStyle={trackStyle} />
+        <WeightSlider value={set.weight} onChange={v => { onWeightChange(v); setWeightInput(String(v)) }} trackStyle={trackStyle} max={sliderMax} />
       </div>
     </motion.div>
   )
 }
 
 // ── Exo Card ──────────────────────────────────────────────────────
-function ExoCard({ exo, idx, accent, getBest, onChange, onDelete, onDuplicate }: {
+function ExoCard({ exo, idx, accent, getBest, onChange, onDelete, onDuplicate, type }: {
   exo: Exercise
   idx: number
   accent: string
@@ -259,7 +285,9 @@ function ExoCard({ exo, idx, accent, getBest, onChange, onDelete, onDuplicate }:
   onChange: (updated: Exercise) => void
   onDelete: () => void
   onDuplicate: () => void
+  type: MuscleGroup
 }) {
+  const sliderMax = type === 'jambes' ? 500 : 250
   const pr = getBest(exo.name)
   const maxW = Math.max(0, ...exo.sets.map(s => s.weight || 0))
   const isRecord = pr > 0 && maxW > pr
@@ -355,6 +383,7 @@ function ExoCard({ exo, idx, accent, getBest, onChange, onDelete, onDuplicate }:
               set={set}
               idx={si}
               accent={accent}
+              sliderMax={sliderMax}
               onWeightChange={v => updateSet(si, 'weight', v)}
               onRepsChange={delta => updateSet(si, 'reps', (set.reps || 1) + delta)}
               onDelete={() => removeSet(si)}
@@ -627,6 +656,7 @@ export default function LogScreen() {
                 exo={exo}
                 idx={i}
                 accent={accent}
+                type={logType}
                 getBest={getBest}
                 onChange={updated => updateExo(i, updated)}
                 onDelete={() => removeExo(i)}

@@ -99,16 +99,26 @@ export async function POST(req: NextRequest) {
         responseMimeType: 'application/json',
         responseSchema: SCHEMA,
         temperature: 0.7,
-        maxOutputTokens: 1200,
+        maxOutputTokens: 2048,
       },
     })
 
     const text = res.text
     if (!text) {
-      return NextResponse.json({ error: 'Réponse IA vide.' }, { status: 502 })
+      return NextResponse.json({ error: 'Réponse IA vide. Réessaie.' }, { status: 502 })
     }
 
-    const parsed = JSON.parse(text)
+    let parsed: unknown
+    try {
+      parsed = JSON.parse(text)
+    } catch {
+      // Gemini truncated the JSON (e.g. hit token limit mid-output). Return a
+      // user-friendly message instead of crashing.
+      return NextResponse.json(
+        { error: 'La réponse IA était incomplète. Réessaie ou réduis la durée de séance.' },
+        { status: 502 }
+      )
+    }
     return NextResponse.json(parsed, { headers: { 'Cache-Control': 'no-store' } })
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Erreur IA inconnue.'
