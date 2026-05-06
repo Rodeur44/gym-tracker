@@ -6,7 +6,6 @@ import type { Variants } from 'framer-motion'
 import { X, ChevronRight, Trophy } from 'lucide-react'
 import type { MuscleGroup } from '@/types'
 import { TAG_CLR, TAG_BG, TYPE_LBL } from '@/lib/constants'
-import { ILLUSTRATIONS } from '@/lib/stretch-illustrations'
 
 interface Stretch {
   name: string
@@ -101,9 +100,7 @@ export default function StretchingScreen({ muscleGroup, onClose }: Props) {
   const current = stretches[index]
   const accent = TAG_CLR[muscleGroup]
   const progress = 1 - timeLeft / current.duration
-  const circumference = 2 * Math.PI * 30
-
-  const Illustration = ILLUSTRATIONS[current.illustrationId]
+  const circumference = 2 * Math.PI * 48
 
   const next = useCallback(() => {
     if (index < stretches.length - 1) {
@@ -171,7 +168,7 @@ export default function StretchingScreen({ muscleGroup, onClose }: Props) {
       </div>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 gap-5">
+      <div className="flex-1 flex flex-col items-center justify-center px-6 gap-6">
         <AnimatePresence mode="wait">
           {!done ? (
             <motion.div
@@ -181,55 +178,44 @@ export default function StretchingScreen({ muscleGroup, onClose }: Props) {
               animate="visible"
               exit="exit"
               transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              className="w-full flex flex-col items-center gap-4"
+              className="w-full flex flex-col items-center gap-6"
             >
-              {/* Illustration */}
-              <div
-                className="w-36 h-36 rounded-3xl flex items-center justify-center p-4 flex-shrink-0"
-                style={{
-                  background: `linear-gradient(135deg, ${accent}18, ${accent}08)`,
-                  border: `1px solid ${accent}28`,
-                  boxShadow: `0 0 30px -10px ${accent}55`,
-                  color: accent,
-                }}
-              >
-                {Illustration && <Illustration color={accent} />}
+              {/* Timer ring — central, prominent */}
+              <div className="relative w-40 h-40">
+                <svg className="w-40 h-40 -rotate-90" viewBox="0 0 108 108">
+                  <circle cx="54" cy="54" r="48" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="6" />
+                  <circle
+                    cx="54" cy="54" r="48" fill="none"
+                    stroke={accent}
+                    strokeWidth="6"
+                    strokeLinecap="round"
+                    strokeDasharray={circumference}
+                    strokeDashoffset={circumference * (1 - progress)}
+                    style={{ transition: 'stroke-dashoffset 1s linear', filter: `drop-shadow(0 0 8px ${accent}99)` }}
+                  />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
+                  <span className="text-5xl font-bold font-mono text-white leading-none">{timeLeft}</span>
+                  <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-[2px]">sec</span>
+                </div>
               </div>
 
               {/* Stretch name */}
-              <h3 className="text-[20px] font-semibold tracking-tight text-white text-center leading-tight max-w-[260px]">
-                {current.name}
-              </h3>
+              <div className="flex flex-col items-center gap-2 text-center">
+                <h3 className="text-[22px] font-semibold tracking-tight text-white leading-tight max-w-[280px]">
+                  {current.name}
+                </h3>
+                <p className="text-sm text-zinc-500 leading-relaxed max-w-[260px]">
+                  {current.tip}
+                </p>
+              </div>
 
-              {/* Tip */}
-              <p className="text-sm text-zinc-500 text-center leading-relaxed max-w-[270px]">
-                {current.tip}
-              </p>
-
-              {/* Timer ring + counter row */}
-              <div className="flex items-center gap-5">
-                <div className="relative w-16 h-16">
-                  <svg className="w-16 h-16 -rotate-90" viewBox="0 0 68 68">
-                    <circle cx="34" cy="34" r="30" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="5" />
-                    <circle
-                      cx="34" cy="34" r="30" fill="none"
-                      stroke={accent}
-                      strokeWidth="5"
-                      strokeLinecap="round"
-                      strokeDasharray={circumference}
-                      strokeDashoffset={circumference * (1 - progress)}
-                      style={{ transition: 'stroke-dashoffset 1s linear', filter: `drop-shadow(0 0 5px ${accent}88)` }}
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-xl font-bold font-mono text-white leading-none">{timeLeft}</span>
-                    <span className="text-[9px] text-zinc-500 uppercase tracking-wide">sec</span>
-                  </div>
-                </div>
-
-                <div className="text-[12px] text-zinc-600">
-                  Étirement {index + 1} / {stretches.length}
-                </div>
+              {/* Counter */}
+              <div
+                className="px-4 py-1.5 rounded-full text-[12px] font-semibold"
+                style={{ background: `${accent}18`, color: accent, border: `1px solid ${accent}30` }}
+              >
+                {index + 1} / {stretches.length}
               </div>
             </motion.div>
           ) : (

@@ -23,11 +23,6 @@ function ExoPicker({ type, onPick, onClose, getBest, allPrev }: {
   const [q, setQ] = useState('')
   const clr = TAG_CLR[type]
 
-  useEffect(() => {
-    document.body.style.overflow = 'hidden'
-    return () => { document.body.style.overflow = '' }
-  }, [])
-
   const recent = allPrev.slice(0, 6)
   const pool = EXO_BY_TYPE[type]
   const suggested = pool.filter(n => !allPrev.includes(n))
@@ -73,12 +68,11 @@ function ExoPicker({ type, onPick, onClose, getBest, allPrev }: {
         exit={{ y: 60, opacity: 0 }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         onClick={e => e.stopPropagation()}
-        className="w-full max-w-[430px] bg-[#141414] border border-white/[0.08] rounded-t-3xl max-h-[85vh] overflow-hidden flex flex-col"
+        className="w-full max-w-[430px] bg-[#141414] border border-white/[0.08] rounded-t-3xl max-h-[80dvh] overflow-hidden flex flex-col"
       >
         <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mt-4 mb-4 flex-shrink-0" />
         <div className="px-4 mb-3 flex-shrink-0">
           <input
-            autoFocus
             type="text"
             value={q}
             onChange={e => setQ(e.target.value)}
@@ -86,7 +80,7 @@ function ExoPicker({ type, onPick, onClose, getBest, allPrev }: {
             className="w-full bg-[#1C1C1C] border border-white/[0.06] rounded-2xl px-4 py-3 text-sm text-white placeholder:text-zinc-600 focus:border-[#A78BFA] focus:ring-4 focus:ring-[rgba(139,92,246,0.12)] outline-none transition-all"
           />
         </div>
-        <div className="overflow-y-auto flex-1 px-4 pb-10">
+        <div className="overflow-y-auto flex-1 px-4 pb-10" style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
           {filtered ? (
             <>
               {filtered.map(n => <ExoRow key={n} name={n} />)}
