@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Variants } from 'framer-motion'
-import { Home, Plus, Clock, BarChart2, LayoutGrid, LogOut, Crown, PersonStanding, ShieldCheck } from 'lucide-react'
+import { Home, Plus, Clock, BarChart2, LayoutGrid, LogOut, Crown, PersonStanding, ShieldCheck, Pencil } from 'lucide-react'
 import { useApp } from '@/context/AppContext'
 import { createClient } from '@/lib/supabase/client'
 import HomeScreen from '@/components/screens/HomeScreen'
@@ -282,6 +282,17 @@ export default function AppShell() {
                     <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-[1.4px]">Connecté en tant que</p>
                     <p className="text-sm font-medium text-zinc-200 mt-0.5 truncate">{user?.email}</p>
                   </div>
+                  <button
+                    onClick={() => {
+                      setProfileOpen(false)
+                      setPseudoInput(user?.user_metadata?.display_name || '')
+                      setPseudoOpen(true)
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-zinc-300 hover:bg-white/[0.04] transition-colors border-b border-white/[0.06]"
+                  >
+                    <Pencil size={16} strokeWidth={1.8} />
+                    Modifier le pseudo
+                  </button>
                   <button
                     onClick={() => { setProfileOpen(false); openPro() }}
                     className="w-full flex items-center justify-between gap-3 px-4 py-3 text-sm font-medium text-[#A78BFA] hover:bg-[#A78BFA]/10 transition-colors border-b border-white/[0.06]"
