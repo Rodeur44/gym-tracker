@@ -23,6 +23,11 @@ function ExoPicker({ type, onPick, onClose, getBest, allPrev }: {
   const [q, setQ] = useState('')
   const clr = TAG_CLR[type]
 
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [])
+
   const recent = allPrev.slice(0, 6)
   const pool = EXO_BY_TYPE[type]
   const suggested = pool.filter(n => !allPrev.includes(n))
@@ -59,6 +64,7 @@ function ExoPicker({ type, onPick, onClose, getBest, allPrev }: {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 bg-black/70 backdrop-blur-xl z-50 flex items-end justify-center"
+      data-no-swipe
       onClick={onClose}
     >
       <motion.div
@@ -403,6 +409,7 @@ function TemplateSheet({ onClose, onPick, getBest }: {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 bg-black/70 backdrop-blur-xl z-50 flex items-end justify-center"
+      data-no-swipe
       onClick={onClose}
     >
       <motion.div
@@ -472,6 +479,7 @@ export default function LogScreen() {
   const [error, setError] = useState('')
 
   useEffect(() => { if (!isPro) setAiOpen(false) }, [isPro])
+  useEffect(() => { if (currentExos.length > 0) setError('') }, [currentExos])
 
   const allPrev = [...new Set(sessions.flatMap(s => (s.exos || []).map(e => e.name)))]
   const accent = TAG_CLR[logType]

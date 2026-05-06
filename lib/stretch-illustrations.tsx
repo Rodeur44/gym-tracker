@@ -1,442 +1,457 @@
 'use client'
 
-import type { FC, ReactNode } from 'react'
+import type { FC } from 'react'
 
 type P = { color: string }
 
-function Svg({ color, children }: P & { children: ReactNode }) {
+// Filled capsule (limb) between two points — the building block of every figure
+function Limb({ x1, y1, x2, y2, w = 7 }: { x1: number | string; y1: number | string; x2: number | string; y2: number | string; w?: number }) {
+  const [_x1, _y1, _x2, _y2] = [Number(x1), Number(y1), Number(x2), Number(y2)]
+  const dx = _x2 - _x1, dy = _y2 - _y1
+  const len = Math.sqrt(dx * dx + dy * dy)
+  const angle = Math.atan2(dy, dx) * (180 / Math.PI)
+  const cx = (_x1 + _x2) / 2, cy = (_y1 + _y2) / 2
   return (
-    <svg viewBox="0 0 100 100" fill="none" width="100%" height="100%">
-      <g stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-        {children}
-      </g>
+    <rect
+      x={cx - len / 2} y={cy - w / 2}
+      width={len} height={w} rx={w / 2}
+      transform={`rotate(${angle},${cx},${cy})`}
+    />
+  )
+}
+
+// Ground line for floor poses
+function Floor({ color }: { color: string }) {
+  return <line x1="8" y1="93" x2="92" y2="93" stroke={color} strokeWidth="2" strokeOpacity="0.2" strokeLinecap="round" />
+}
+
+// Reusable standing base: head + torso
+function StandHead() { return <circle cx="50" cy="10" r="7" /> }
+function StandTorso() { return <Limb x1="50" y1="17" x2="50" y2="58" w={14} /> }
+function StandLegs() {
+  return (
+    <>
+      <Limb x1="46" y1="58" x2="40" y2="76" w={8} />
+      <Limb x1="40" y1="76" x2="37" y2="92" w={6} />
+      <Limb x1="54" y1="58" x2="60" y2="76" w={8} />
+      <Limb x1="60" y1="76" x2="63" y2="92" w={6} />
+    </>
+  )
+}
+
+function Svg({ color, children }: P & { children: React.ReactNode }) {
+  return (
+    <svg viewBox="0 0 100 100" fill={color} width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+      {children}
     </svg>
   )
 }
 
-// ── Shared sub-components (inherit stroke from parent <g>) ────────
-
-function StdHead() { return <circle cx="50" cy="12" r="7" /> }
-function StdBody() { return <line x1="50" y1="19" x2="50" y2="60" /> }
-function StdLegs() {
-  return (
-    <>
-      <line x1="50" y1="60" x2="41" y2="88" />
-      <line x1="50" y1="60" x2="59" y2="88" />
-    </>
-  )
-}
-function Ground() {
-  return <line x1="8" y1="91" x2="92" y2="91" strokeOpacity="0.2" />
-}
-
-// ── 1. Pec doorway stretch ────────────────────────────────────────
+// ── 1. Doorway pec stretch ────────────────────────────────────────
 export const PecDoor: FC<P> = ({ color }) => (
   <Svg color={color}>
     {/* door frames */}
-    <line x1="10" y1="0" x2="10" y2="95" strokeOpacity="0.2" strokeDasharray="3,3" />
-    <line x1="90" y1="0" x2="90" y2="95" strokeOpacity="0.2" strokeDasharray="3,3" />
-    <StdHead />
-    <StdBody />
-    {/* arms: upper arm horizontal, forearm up against door */}
-    <line x1="50" y1="27" x2="13" y2="27" />
-    <line x1="13" y1="27" x2="13" y2="10" />
-    <line x1="50" y1="27" x2="87" y2="27" />
-    <line x1="87" y1="27" x2="87" y2="10" />
-    <StdLegs />
+    <line x1="10" y1="2" x2="10" y2="95" stroke={color} strokeWidth="3" strokeOpacity="0.2" strokeLinecap="round" />
+    <line x1="90" y1="2" x2="90" y2="95" stroke={color} strokeWidth="3" strokeOpacity="0.2" strokeLinecap="round" />
+    <StandHead />
+    <StandTorso />
+    {/* upper arms horizontal */}
+    <Limb x1="43" y1="25" x2="13" y2="25" w={6} />
+    <Limb x1="57" y1="25" x2="87" y2="25" w={6} />
+    {/* forearms vertical (against door) */}
+    <Limb x1="13" y1="25" x2="13" y2="10" w={5} />
+    <Limb x1="87" y1="25" x2="87" y2="10" w={5} />
+    <StandLegs />
   </Svg>
 )
 
 // ── 2. Lying arms cross (croix au sol) ───────────────────────────
 export const LyingCross: FC<P> = ({ color }) => (
   <Svg color={color}>
-    <Ground />
-    {/* body horizontal, head on left */}
-    <circle cx="10" cy="64" r="6" />
-    <line x1="16" y1="64" x2="80" y2="64" />
-    {/* arms spread perpendicular from shoulders (x≈30) */}
-    <line x1="32" y1="64" x2="28" y2="38" />
-    <line x1="32" y1="64" x2="28" y2="90" />
-    {/* legs spread from hips (x≈72) */}
-    <line x1="72" y1="64" x2="80" y2="50" />
-    <line x1="72" y1="64" x2="80" y2="78" />
+    <Floor color={color} />
+    {/* lying horizontally, head left */}
+    <circle cx="9" cy="64" r="6" />
+    <Limb x1="15" y1="64" x2="75" y2="64" w={13} />
+    {/* arms spread perpendicular upward/downward */}
+    <Limb x1="35" y1="64" x2="30" y2="40" w={6} />
+    <Limb x1="35" y1="64" x2="30" y2="88" w={5} />
+    {/* legs slightly apart */}
+    <Limb x1="75" y1="64" x2="83" y2="52" w={7} />
+    <Limb x1="75" y1="64" x2="83" y2="76" w={7} />
   </Svg>
 )
 
-// ── 3. Cross-body shoulder stretch ───────────────────────────────
+// ── 3. Cross-body shoulder ────────────────────────────────────────
 export const CrossArm: FC<P> = ({ color }) => (
   <Svg color={color}>
-    <StdHead />
-    <StdBody />
-    {/* right arm crossing chest to left */}
-    <line x1="50" y1="27" x2="68" y2="27" />
-    <line x1="68" y1="27" x2="22" y2="36" />
-    {/* left arm bent, hand holding right arm at elbow */}
-    <line x1="50" y1="27" x2="32" y2="30" />
-    <line x1="32" y1="30" x2="28" y2="42" />
-    <StdLegs />
+    <StandHead />
+    <StandTorso />
+    {/* right arm crossing to the left */}
+    <Limb x1="57" y1="26" x2="72" y2="26" w={6} />
+    <Limb x1="72" y1="26" x2="24" y2="34" w={5} />
+    {/* left forearm holding the right arm */}
+    <Limb x1="43" y1="26" x2="30" y2="26" w={6} />
+    <Limb x1="30" y1="26" x2="32" y2="40" w={5} />
+    <StandLegs />
   </Svg>
 )
 
 // ── 4. Hands clasped behind back ─────────────────────────────────
 export const HandsBehind: FC<P> = ({ color }) => (
   <Svg color={color}>
-    <StdHead />
-    <StdBody />
-    {/* arms going behind lower back, hands meeting */}
-    <line x1="50" y1="27" x2="30" y2="32" />
-    <line x1="30" y1="32" x2="38" y2="58" />
-    <line x1="50" y1="27" x2="70" y2="32" />
-    <line x1="70" y1="32" x2="62" y2="58" />
-    {/* clasped hands indicator */}
-    <circle cx="50" cy="60" r="3" />
-    <StdLegs />
+    <StandHead />
+    <StandTorso />
+    {/* both arms swept behind and down, hands meeting at lower back */}
+    <Limb x1="43" y1="26" x2="28" y2="30" w={6} />
+    <Limb x1="28" y1="30" x2="42" y2="55" w={5} />
+    <Limb x1="57" y1="26" x2="72" y2="30" w={6} />
+    <Limb x1="72" y1="30" x2="58" y2="55" w={5} />
+    {/* clasped hands */}
+    <circle cx="50" cy="57" r="4" />
+    <StandLegs />
   </Svg>
 )
 
 // ── 5. Child's pose ───────────────────────────────────────────────
 export const ChildPose: FC<P> = ({ color }) => (
   <Svg color={color}>
-    <Ground />
-    {/* side view facing right: butt left, head right */}
-    {/* heels/feet on left */}
-    <line x1="18" y1="78" x2="22" y2="68" />
-    <line x1="22" y1="68" x2="28" y2="58" />
-    {/* spine goes forward-right */}
-    <line x1="28" y1="58" x2="65" y2="50" />
-    {/* arms extended right */}
-    <line x1="60" y1="51" x2="80" y2="49" />
-    <line x1="60" y1="53" x2="80" y2="56" />
-    {/* head resting forward */}
-    <circle cx="83" cy="56" r="6" />
-    {/* knees on floor */}
-    <line x1="28" y1="58" x2="32" y2="75" />
-    <line x1="22" y1="68" x2="35" y2="78" />
+    <Floor color={color} />
+    {/* kneeling: butt on heels (right), torso forward (left), arms extended */}
+    {/* heels & shins */}
+    <Limb x1="22" y1="80" x2="30" y2="66" w={7} />
+    <Limb x1="30" y1="66" x2="42" y2="56" w={8} />
+    {/* torso going forward-left */}
+    <Limb x1="42" y1="56" x2="72" y2="49" w={13} />
+    {/* arms extended forward */}
+    <Limb x1="66" y1="47" x2="86" y2="44" w={5} />
+    <Limb x1="66" y1="51" x2="86" y2="54" w={5} />
+    {/* head resting low */}
+    <circle cx="88" cy="49" r="6" />
   </Svg>
 )
 
-// ── 6. Cat stretch (all fours, back rounded) ─────────────────────
+// ── 6. Cat stretch (all fours, rounded back) ─────────────────────
 export const CatStretch: FC<P> = ({ color }) => (
   <Svg color={color}>
-    <Ground />
-    {/* side view — on all fours */}
-    {/* back arched upward (cat shape) */}
-    <path d="M 20,60 Q 50,30 80,60" fill="none" />
+    <Floor color={color} />
+    {/* front arms */}
+    <Limb x1="22" y1="60" x2="22" y2="80" w={6} />
+    {/* back legs */}
+    <Limb x1="78" y1="60" x2="78" y2="80" w={6} />
+    {/* arched spine as a wide limb with curve approximated */}
+    <Limb x1="22" y1="60" x2="38" y2="50" w={12} />
+    <Limb x1="38" y1="50" x2="62" y2="50" w={12} />
+    <Limb x1="62" y1="50" x2="78" y2="60" w={12} />
     {/* head down */}
-    <circle cx="18" cy="66" r="6" />
-    <line x1="18" y1="60" x2="20" y2="60" />
-    {/* arms (front) */}
-    <line x1="22" y1="60" x2="22" y2="80" />
-    {/* legs (back) */}
-    <line x1="78" y1="60" x2="78" y2="80" />
-    {/* indicate back knee */}
-    <line x1="62" y1="60" x2="62" y2="78" />
+    <circle cx="17" cy="57" r="6" />
+    <Limb x1="17" y1="63" x2="22" y2="66" w={5} />
   </Svg>
 )
 
 // ── 7. Lateral bend / lat stretch standing ───────────────────────
 export const SideBend: FC<P> = ({ color }) => (
   <Svg color={color}>
-    {/* body leaning left */}
-    <circle cx="52" cy="12" r="7" />
-    <path d="M 52,19 Q 50,40 44,60" fill="none" />
-    {/* right arm raised up and over */}
-    <line x1="59" y1="26" x2="68" y2="27" />
-    <line x1="68" y1="27" x2="60" y2="10" />
-    {/* left arm down along side */}
-    <line x1="47" y1="26" x2="36" y2="28" />
-    <line x1="36" y1="28" x2="30" y2="42" />
+    {/* body leaning right */}
+    <circle cx="54" cy="10" r="7" />
+    <Limb x1="54" y1="17" x2="56" y2="58" w={14} />
+    {/* right arm raised up and over toward left */}
+    <Limb x1="63" y1="24" x2="74" y2="24" w={6} />
+    <Limb x1="74" y1="24" x2="68" y2="8"  w={5} />
+    {/* left arm relaxed along body */}
+    <Limb x1="47" y1="26" x2="36" y2="28" w={6} />
+    <Limb x1="36" y1="28" x2="30" y2="44" w={5} />
     {/* legs */}
-    <line x1="44" y1="60" x2="36" y2="88" />
-    <line x1="44" y1="60" x2="54" y2="88" />
+    <Limb x1="52" y1="58" x2="44" y2="77" w={8} />
+    <Limb x1="44" y1="77" x2="40" y2="93" w={6} />
+    <Limb x1="60" y1="58" x2="66" y2="77" w={8} />
+    <Limb x1="66" y1="77" x2="68" y2="93" w={6} />
   </Svg>
 )
 
 // ── 8. Seated spinal twist ───────────────────────────────────────
 export const SeatedTwist: FC<P> = ({ color }) => (
   <Svg color={color}>
-    <Ground />
-    <StdHead />
-    <StdBody />
-    {/* right arm crossing over to left side */}
-    <line x1="50" y1="27" x2="68" y2="28" />
-    <line x1="68" y1="28" x2="28" y2="45" />
+    <Floor color={color} />
+    <circle cx="50" cy="10" r="7" />
+    <Limb x1="50" y1="17" x2="50" y2="56" w={14} />
+    {/* right arm crossing over to push left knee */}
+    <Limb x1="57" y1="25" x2="68" y2="26" w={6} />
+    <Limb x1="68" y1="26" x2="30" y2="45" w={5} />
     {/* left arm behind for support */}
-    <line x1="50" y1="27" x2="32" y2="28" />
-    <line x1="32" y1="28" x2="22" y2="44" />
-    {/* legs: one extended, one bent */}
-    <line x1="50" y1="60" x2="30" y2="65" />
-    <line x1="30" y1="65" x2="15" y2="78" />
-    <line x1="50" y1="60" x2="68" y2="65" />
-    <line x1="68" y1="65" x2="72" y2="80" />
+    <Limb x1="43" y1="25" x2="28" y2="26" w={6} />
+    <Limb x1="28" y1="26" x2="18" y2="46" w={5} />
+    {/* legs: one extended left, one bent right */}
+    <Limb x1="44" y1="56" x2="22" y2="65" w={8} />
+    <Limb x1="22" y1="65" x2="14" y2="80" w={6} />
+    <Limb x1="56" y1="56" x2="70" y2="65" w={8} />
+    <Limb x1="70" y1="65" x2="74" y2="80" w={6} />
   </Svg>
 )
 
 // ── 9. Knees to chest (lying) ────────────────────────────────────
 export const KneesChest: FC<P> = ({ color }) => (
   <Svg color={color}>
-    <Ground />
-    {/* lying on back, head on left */}
-    <circle cx="10" cy="68" r="6" />
-    <line x1="16" y1="68" x2="60" y2="68" />
-    {/* both knees pulled to chest */}
-    <line x1="60" y1="68" x2="52" y2="50" />
-    <line x1="52" y1="50" x2="38" y2="50" />
-    <line x1="60" y1="68" x2="56" y2="48" />
-    <line x1="56" y1="48" x2="42" y2="48" />
-    {/* arms holding knees */}
-    <line x1="28" y1="65" x2="40" y2="52" />
-    <line x1="28" y1="71" x2="40" y2="58" />
+    <Floor color={color} />
+    {/* lying on back, head left */}
+    <circle cx="9" cy="68" r="6" />
+    <Limb x1="15" y1="68" x2="65" y2="68" w={13} />
+    {/* both knees pulled up toward chest */}
+    <Limb x1="65" y1="68" x2="54" y2="50" w={8} />
+    <Limb x1="54" y1="50" x2="40" y2="48" w={6} />
+    <Limb x1="65" y1="68" x2="58" y2="48" w={8} />
+    <Limb x1="58" y1="48" x2="44" y2="44" w={6} />
+    {/* arms hugging knees */}
+    <Limb x1="25" y1="64" x2="42" y2="50" w={5} />
+    <Limb x1="25" y1="72" x2="42" y2="58" w={5} />
   </Svg>
 )
 
 // ── 10. Tricep overhead stretch ───────────────────────────────────
 export const TricepStretch: FC<P> = ({ color }) => (
   <Svg color={color}>
-    <StdHead />
-    <StdBody />
-    {/* right arm bent overhead: upper arm up, forearm behind head */}
-    <line x1="50" y1="27" x2="58" y2="28" />
-    <line x1="58" y1="28" x2="62" y2="10" />
-    <line x1="62" y1="10" x2="54" y2="22" />
+    <StandHead />
+    <StandTorso />
+    {/* right arm: upper arm goes up, forearm bends behind head */}
+    <Limb x1="57" y1="26" x2="64" y2="26" w={6} />
+    <Limb x1="64" y1="26" x2="66" y2="9"  w={5} />
+    <Limb x1="66" y1="9"  x2="54" y2="20" w={5} />
     {/* left arm reaching up to push right elbow */}
-    <line x1="50" y1="27" x2="35" y2="25" />
-    <line x1="35" y1="25" x2="40" y2="12" />
-    <StdLegs />
+    <Limb x1="43" y1="26" x2="32" y2="24" w={6} />
+    <Limb x1="32" y1="24" x2="42" y2="10" w={5} />
+    <StandLegs />
   </Svg>
 )
 
 // ── 11. Bicep wall stretch ────────────────────────────────────────
 export const BicepWall: FC<P> = ({ color }) => (
   <Svg color={color}>
-    {/* wall on right */}
-    <line x1="88" y1="0" x2="88" y2="100" strokeOpacity="0.25" strokeDasharray="3,3" />
-    <StdHead />
-    <StdBody />
-    {/* right arm straight back onto wall, hand at wall */}
-    <line x1="50" y1="27" x2="70" y2="28" />
-    <line x1="70" y1="28" x2="85" y2="28" />
+    {/* wall */}
+    <line x1="88" y1="0" x2="88" y2="100" stroke={color} strokeWidth="3" strokeOpacity="0.2" strokeLinecap="round" />
+    <StandHead />
+    <StandTorso />
+    {/* right arm fully extended back onto wall */}
+    <Limb x1="57" y1="26" x2="72" y2="26" w={6} />
+    <Limb x1="72" y1="26" x2="85" y2="26" w={5} />
     {/* left arm relaxed */}
-    <line x1="50" y1="27" x2="32" y2="28" />
-    <line x1="32" y1="28" x2="24" y2="42" />
-    <StdLegs />
+    <Limb x1="43" y1="26" x2="30" y2="26" w={6} />
+    <Limb x1="30" y1="26" x2="22" y2="42" w={5} />
+    <StandLegs />
   </Svg>
 )
 
-// ── 12. Wrist extension (forearm stretch) ────────────────────────
+// ── 12. Wrist extension (forearm) ────────────────────────────────
 export const WristExtension: FC<P> = ({ color }) => (
   <Svg color={color}>
-    <StdHead />
-    <StdBody />
+    <StandHead />
+    <StandTorso />
     {/* right arm extended forward */}
-    <line x1="50" y1="27" x2="66" y2="27" />
-    <line x1="66" y1="27" x2="82" y2="27" />
-    {/* wrist bent back: hand goes up */}
-    <line x1="82" y1="27" x2="86" y2="16" />
-    {/* left arm bent, pushing right wrist */}
-    <line x1="50" y1="27" x2="34" y2="27" />
-    <line x1="34" y1="27" x2="76" y2="22" />
-    <StdLegs />
+    <Limb x1="57" y1="26" x2="70" y2="26" w={6} />
+    <Limb x1="70" y1="26" x2="84" y2="26" w={5} />
+    {/* wrist bent upward */}
+    <Limb x1="84" y1="26" x2="88" y2="15" w={4} />
+    {/* left arm reaching to push right wrist */}
+    <Limb x1="43" y1="26" x2="30" y2="24" w={6} />
+    <Limb x1="30" y1="24" x2="80" y2="20" w={4} />
+    <StandLegs />
   </Svg>
 )
 
 // ── 13. Low lunge (hip flexor) ───────────────────────────────────
 export const LowLunge: FC<P> = ({ color }) => (
   <Svg color={color}>
-    <Ground />
-    {/* side view, facing right */}
-    <circle cx="45" cy="13" r="7" />
-    <line x1="45" y1="20" x2="45" y2="52" />
-    {/* right arm on front knee */}
-    <line x1="52" y1="28" x2="62" y2="68" />
-    {/* left arm on back side */}
-    <line x1="38" y1="28" x2="30" y2="42" />
-    {/* front leg (right): knee bent 90° */}
-    <line x1="45" y1="52" x2="60" y2="65" />
-    <line x1="60" y1="65" x2="60" y2="88" />
-    {/* back leg: knee on floor */}
-    <line x1="45" y1="52" x2="28" y2="65" />
-    <line x1="28" y1="65" x2="24" y2="88" />
+    <Floor color={color} />
+    {/* torso upright, centered between legs */}
+    <circle cx="46" cy="13" r="7" />
+    <Limb x1="46" y1="20" x2="46" y2="52" w={13} />
+    {/* arms on thighs / relaxed */}
+    <Limb x1="52" y1="28" x2="62" y2="42" w={5} />
+    <Limb x1="40" y1="28" x2="32" y2="42" w={5} />
+    {/* front leg (right): thigh forward, shin vertical */}
+    <Limb x1="52" y1="52" x2="63" y2="65" w={8} />
+    <Limb x1="63" y1="65" x2="63" y2="90" w={6} />
+    {/* back leg (left): thigh back, knee on floor */}
+    <Limb x1="40" y1="52" x2="26" y2="65" w={8} />
+    <Limb x1="26" y1="65" x2="22" y2="88" w={6} />
   </Svg>
 )
 
 // ── 14. Standing forward bend (hamstrings) ───────────────────────
 export const ForwardBend: FC<P> = ({ color }) => (
   <Svg color={color}>
-    <Ground />
-    {/* side view: legs straight, bending forward */}
-    {/* feet and straight legs */}
-    <line x1="38" y1="90" x2="42" y2="58" />
-    <line x1="52" y1="90" x2="56" y2="58" />
-    {/* hips */}
-    <line x1="42" y1="58" x2="56" y2="58" />
-    {/* torso bent forward to the right */}
-    <line x1="49" y1="58" x2="78" y2="55" />
-    {/* arms hanging down */}
-    <line x1="74" y1="56" x2="68" y2="80" />
-    <line x1="74" y1="56" x2="80" y2="80" />
-    {/* head hanging */}
-    <circle cx="82" cy="52" r="6" />
+    <Floor color={color} />
+    {/* straight legs standing */}
+    <Limb x1="36" y1="90" x2="38" y2="72" w={7} />
+    <Limb x1="38" y1="72" x2="42" y2="56" w={8} />
+    <Limb x1="52" y1="90" x2="54" y2="72" w={7} />
+    <Limb x1="54" y1="72" x2="58" y2="56" w={8} />
+    {/* torso bent forward (horizontal toward right) */}
+    <Limb x1="50" y1="56" x2="76" y2="52" w={13} />
+    {/* arms hanging toward floor */}
+    <Limb x1="72" y1="52" x2="68" y2="74" w={5} />
+    <Limb x1="72" y1="52" x2="78" y2="74" w={5} />
+    {/* head hanging down */}
+    <circle cx="80" cy="48" r="6" />
   </Svg>
 )
 
 // ── 15. Pigeon pose ───────────────────────────────────────────────
 export const PigeonPose: FC<P> = ({ color }) => (
   <Svg color={color}>
-    <Ground />
-    {/* front leg bent on floor */}
-    <line x1="30" y1="82" x2="40" y2="65" />
-    <line x1="40" y1="65" x2="50" y2="52" />
+    <Floor color={color} />
+    {/* front leg bent at 90° on floor */}
+    <Limb x1="28" y1="82" x2="38" y2="65" w={7} />
+    <Limb x1="38" y1="65" x2="50" y2="52" w={8} />
     {/* back leg extended behind */}
-    <line x1="50" y1="52" x2="65" y2="65" />
-    <line x1="65" y1="65" x2="78" y2="82" />
-    {/* torso upright */}
-    <line x1="50" y1="52" x2="48" y2="22" />
-    {/* head */}
-    <circle cx="48" cy="15" r="7" />
-    {/* arms forward/supporting */}
-    <line x1="48" y1="28" x2="34" y2="30" />
-    <line x1="34" y1="30" x2="26" y2="46" />
-    <line x1="48" y1="28" x2="62" y2="30" />
-    <line x1="62" y1="30" x2="68" y2="46" />
+    <Limb x1="50" y1="52" x2="66" y2="65" w={8} />
+    <Limb x1="66" y1="65" x2="80" y2="82" w={6} />
+    {/* upright torso */}
+    <Limb x1="50" y1="52" x2="49" y2="22" w={13} />
+    <circle cx="49" cy="15" r="7" />
+    {/* arms forward/down supporting */}
+    <Limb x1="43" y1="28" x2="32" y2="30" w={5} />
+    <Limb x1="32" y1="30" x2="24" y2="48" w={5} />
+    <Limb x1="55" y1="28" x2="66" y2="30" w={5} />
+    <Limb x1="66" y1="30" x2="72" y2="48" w={5} />
   </Svg>
 )
 
 // ── 16. Standing quad stretch ────────────────────────────────────
 export const QuadStretch: FC<P> = ({ color }) => (
   <Svg color={color}>
-    <StdHead />
-    <StdBody />
-    {/* one arm out for balance */}
-    <line x1="50" y1="27" x2="32" y2="28" />
-    <line x1="32" y1="28" x2="18" y2="40" />
-    {/* other arm reaching back to hold raised foot */}
-    <line x1="50" y1="27" x2="68" y2="27" />
-    <line x1="68" y1="27" x2="74" y2="55" />
-    {/* standing leg */}
-    <line x1="50" y1="60" x2="44" y2="90" />
-    {/* raised leg bent behind: thigh down, shin up */}
-    <line x1="50" y1="60" x2="60" y2="72" />
-    <line x1="60" y1="72" x2="66" y2="52" />
-    {/* hand touching raised foot */}
-    <line x1="74" y1="55" x2="67" y2="52" />
+    <Floor color={color} />
+    <StandHead />
+    <StandTorso />
+    {/* left arm out for balance */}
+    <Limb x1="43" y1="26" x2="28" y2="26" w={6} />
+    <Limb x1="28" y1="26" x2="18" y2="40" w={5} />
+    {/* right arm reaching back to hold foot */}
+    <Limb x1="57" y1="26" x2="70" y2="26" w={6} />
+    <Limb x1="70" y1="26" x2="76" y2="52" w={5} />
+    {/* standing (left) leg */}
+    <Limb x1="46" y1="58" x2="42" y2="78" w={8} />
+    <Limb x1="42" y1="78" x2="40" y2="92" w={6} />
+    {/* raised (right) leg: thigh going back, shin up */}
+    <Limb x1="54" y1="58" x2="64" y2="70" w={8} />
+    <Limb x1="64" y1="70" x2="68" y2="50" w={6} />
+    {/* hand meeting foot */}
+    <circle cx="70" cy="50" r="3" />
   </Svg>
 )
 
 // ── 17. Calf stretch against wall ────────────────────────────────
 export const CalfWall: FC<P> = ({ color }) => (
   <Svg color={color}>
-    {/* wall */}
-    <line x1="88" y1="0" x2="88" y2="100" strokeOpacity="0.25" strokeDasharray="3,3" />
-    <Ground />
-    {/* body leaning into wall */}
-    <circle cx="50" cy="14" r="7" />
-    <line x1="52" y1="21" x2="62" y2="50" />
+    <line x1="88" y1="0" x2="88" y2="100" stroke={color} strokeWidth="3" strokeOpacity="0.2" strokeLinecap="round" />
+    <Floor color={color} />
+    {/* body leaning forward toward wall */}
+    <circle cx="48" cy="13" r="7" />
+    <Limb x1="50" y1="20" x2="56" y2="52" w={13} />
     {/* arms on wall */}
-    <line x1="58" y1="30" x2="78" y2="38" />
-    <line x1="58" y1="30" x2="82" y2="30" />
+    <Limb x1="56" y1="28" x2="68" y2="26" w={5} />
+    <Limb x1="68" y1="26" x2="84" y2="32" w={5} />
     {/* front leg bent */}
-    <line x1="62" y1="50" x2="68" y2="65" />
-    <line x1="68" y1="65" x2="66" y2="88" />
+    <Limb x1="58" y1="52" x2="64" y2="68" w={8} />
+    <Limb x1="64" y1="68" x2="62" y2="90" w={6} />
     {/* back leg straight, heel down */}
-    <line x1="62" y1="50" x2="48" y2="60" />
-    <line x1="48" y1="60" x2="40" y2="88" />
+    <Limb x1="50" y1="52" x2="40" y2="65" w={8} />
+    <Limb x1="40" y1="65" x2="32" y2="90" w={6} />
   </Svg>
 )
 
-// ── 18. Butterfly stretch (seated) ───────────────────────────────
+// ── 18. Butterfly (adductors) ─────────────────────────────────────
 export const Butterfly: FC<P> = ({ color }) => (
   <Svg color={color}>
-    <Ground />
-    <circle cx="50" cy="12" r="7" />
-    <line x1="50" y1="19" x2="50" y2="55" />
-    {/* left knee out and down, foot to center */}
-    <line x1="50" y1="55" x2="22" y2="70" />
-    <line x1="22" y1="70" x2="45" y2="83" />
-    {/* right knee out and down, foot to center */}
-    <line x1="50" y1="55" x2="78" y2="70" />
-    <line x1="78" y1="70" x2="55" y2="83" />
+    <Floor color={color} />
+    <circle cx="50" cy="10" r="7" />
+    <Limb x1="50" y1="17" x2="50" y2="54" w={13} />
+    {/* left leg: thigh out and down, foot toward center */}
+    <Limb x1="44" y1="54" x2="20" y2="70" w={8} />
+    <Limb x1="20" y1="70" x2="44" y2="83" w={6} />
+    {/* right leg: symmetric */}
+    <Limb x1="56" y1="54" x2="80" y2="70" w={8} />
+    <Limb x1="80" y1="70" x2="56" y2="83" w={6} />
     {/* soles touching */}
-    <line x1="45" y1="83" x2="55" y2="83" />
-    {/* arms pressing knees */}
-    <line x1="50" y1="35" x2="30" y2="40" />
-    <line x1="30" y1="40" x2="22" y2="70" />
-    <line x1="50" y1="35" x2="70" y2="40" />
-    <line x1="70" y1="40" x2="78" y2="70" />
+    <Limb x1="44" y1="83" x2="56" y2="83" w={5} />
+    {/* arms pressing knees down */}
+    <Limb x1="43" y1="35" x2="28" y2="38" w={5} />
+    <Limb x1="28" y1="38" x2="20" y2="70" w={4} />
+    <Limb x1="57" y1="35" x2="72" y2="38" w={5} />
+    <Limb x1="72" y1="38" x2="80" y2="70" w={4} />
   </Svg>
 )
 
 // ── 19. Lying spinal twist ────────────────────────────────────────
 export const LyingTwist: FC<P> = ({ color }) => (
   <Svg color={color}>
-    <Ground />
-    {/* lying on back, head on left */}
-    <circle cx="10" cy="62" r="6" />
-    <line x1="16" y1="62" x2="72" y2="62" />
-    {/* arms spread: one up, one down */}
-    <line x1="30" y1="62" x2="25" y2="42" />
-    <line x1="72" y1="62" x2="68" y2="48" />
-    {/* right knee crossed over to left side */}
-    <line x1="72" y1="62" x2="78" y2="72" />
-    <line x1="78" y1="72" x2="60" y2="82" />
-    {/* straight left leg */}
-    <line x1="72" y1="62" x2="82" y2="56" />
+    <Floor color={color} />
+    {/* lying on back, head left */}
+    <circle cx="9" cy="60" r="6" />
+    <Limb x1="15" y1="60" x2="70" y2="60" w={13} />
+    {/* top arm spread out */}
+    <Limb x1="32" y1="60" x2="28" y2="40" w={5} />
+    {/* bottom arm spread out other side */}
+    <Limb x1="32" y1="60" x2="28" y2="80" w={5} />
+    {/* left leg straight */}
+    <Limb x1="70" y1="60" x2="82" y2="52" w={8} />
+    <Limb x1="82" y1="52" x2="90" y2="46" w={6} />
+    {/* right knee crossed over to left */}
+    <Limb x1="70" y1="60" x2="76" y2="74" w={8} />
+    <Limb x1="76" y1="74" x2="55" y2="82" w={6} />
   </Svg>
 )
 
 // ── 20. Hip rotation standing ────────────────────────────────────
 export const HipCircle: FC<P> = ({ color }) => (
   <Svg color={color}>
-    <StdHead />
-    <StdBody />
+    <StandHead />
+    <StandTorso />
     {/* hands on hips */}
-    <line x1="50" y1="35" x2="34" y2="40" />
-    <line x1="34" y1="40" x2="38" y2="52" />
-    <line x1="50" y1="35" x2="66" y2="40" />
-    <line x1="66" y1="40" x2="62" y2="52" />
-    {/* hip rotation arc indicator */}
-    <path d="M 38,55 A 14,8 0 0 1 62,55" fill="none" strokeOpacity="0.6" />
-    <line x1="62" y1="55" x2="58" y2="50" />
-    <StdLegs />
+    <Limb x1="43" y1="34" x2="30" y2="38" w={5} />
+    <Limb x1="30" y1="38" x2="36" y2="52" w={5} />
+    <Limb x1="57" y1="34" x2="70" y2="38" w={5} />
+    <Limb x1="70" y1="38" x2="64" y2="52" w={5} />
+    {/* hip rotation arc */}
+    <path d="M 36,54 A 16,9 0 0 1 64,54" fill="none" stroke={color} strokeWidth="2.5" strokeOpacity="0.5" strokeLinecap="round" />
+    <Limb x1="63" y1="54" x2="59" y2="47" w={3} />
+    <StandLegs />
   </Svg>
 )
 
 // ── 21. Wrist rotation (poignets) ────────────────────────────────
 export const WristRotation: FC<P> = ({ color }) => (
   <Svg color={color}>
-    <StdHead />
-    <StdBody />
+    <StandHead />
+    <StandTorso />
     {/* arms extended forward */}
-    <line x1="50" y1="27" x2="32" y2="28" />
-    <line x1="32" y1="28" x2="18" y2="30" />
-    <line x1="50" y1="27" x2="68" y2="28" />
-    <line x1="68" y1="28" x2="82" y2="30" />
-    {/* rotation circles at wrists */}
-    <circle cx="15" cy="30" r="5" strokeOpacity="0.5" />
-    <circle cx="85" cy="30" r="5" strokeOpacity="0.5" />
-    <line x1="15" y1="25" x2="18" y2="22" />
-    <line x1="85" y1="25" x2="82" y2="22" />
-    <StdLegs />
+    <Limb x1="43" y1="26" x2="28" y2="26" w={6} />
+    <Limb x1="28" y1="26" x2="14" y2="30" w={5} />
+    <Limb x1="57" y1="26" x2="72" y2="26" w={6} />
+    <Limb x1="72" y1="26" x2="86" y2="30" w={5} />
+    {/* wrist rotation circles */}
+    <circle cx="12" cy="30" r="5" fillOpacity="0.3" />
+    <circle cx="88" cy="30" r="5" fillOpacity="0.3" />
+    <Limb x1="12" y1="25" x2="15" y2="20" w={2.5} />
+    <Limb x1="88" y1="25" x2="85" y2="20" w={2.5} />
+    <StandLegs />
   </Svg>
 )
 
-// ── 22. Overhead arm stretch (bicep raised) ──────────────────────
+// ── 22. One arm overhead ──────────────────────────────────────────
 export const ArmOverhead: FC<P> = ({ color }) => (
   <Svg color={color}>
-    <StdHead />
-    <StdBody />
-    {/* one arm straight overhead */}
-    <line x1="50" y1="27" x2="56" y2="28" />
-    <line x1="56" y1="28" x2="60" y2="10" />
-    {/* other arm relaxed */}
-    <line x1="50" y1="27" x2="32" y2="28" />
-    <line x1="32" y1="28" x2="24" y2="44" />
-    <StdLegs />
+    <StandHead />
+    <StandTorso />
+    {/* right arm straight up overhead */}
+    <Limb x1="57" y1="26" x2="64" y2="26" w={6} />
+    <Limb x1="64" y1="26" x2="68" y2="8"  w={5} />
+    {/* left arm relaxed down */}
+    <Limb x1="43" y1="26" x2="30" y2="28" w={6} />
+    <Limb x1="30" y1="28" x2="22" y2="44" w={5} />
+    <StandLegs />
   </Svg>
 )
 
 // ── Illustration map ──────────────────────────────────────────────
-
 export const ILLUSTRATIONS: Record<string, FC<P>> = {
   pec_door: PecDoor,
   pec_lying: LyingCross,
