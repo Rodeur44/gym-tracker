@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, X, ChevronRight, AlertCircle, Camera, Copy, CopyPlus, LayoutGrid, Check, Sparkles, Lock } from 'lucide-react'
 import { useApp } from '@/context/AppContext'
@@ -53,7 +54,7 @@ function ExoPicker({ type, onPick, onClose, getBest, allPrev }: {
     )
   }
 
-  return (
+  const sheet = (
     <div
       data-no-swipe
       className="fixed inset-0 bg-black/70 backdrop-blur-xl z-50 flex items-end justify-center"
@@ -65,7 +66,7 @@ function ExoPicker({ type, onPick, onClose, getBest, allPrev }: {
         exit={{ y: 60, opacity: 0 }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         onClick={e => e.stopPropagation()}
-        className="w-full max-w-[430px] bg-[#141414] border border-white/[0.08] rounded-t-3xl max-h-[85vh] overflow-hidden flex flex-col"
+        className="w-full max-w-[430px] bg-[#141414] border border-white/[0.08] rounded-t-3xl h-[85vh] overflow-hidden flex flex-col"
       >
         <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mt-4 mb-4 flex-shrink-0" />
         <div className="px-4 mb-3 flex-shrink-0">
@@ -142,6 +143,8 @@ function ExoPicker({ type, onPick, onClose, getBest, allPrev }: {
       </motion.div>
     </div>
   )
+  if (typeof document === 'undefined') return null
+  return createPortal(sheet, document.body)
 }
 
 // ── Weight slider (isolated touch — never bubbles to swipe handler) ─

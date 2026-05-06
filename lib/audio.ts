@@ -11,6 +11,21 @@ let expectedBeepAt: number | null = null
 
 const SOURCE = '/sounds/timer-end.wav'
 
+// When the PWA is foregrounded after a long suspension, iOS fires all expired
+// setTimeout callbacks immediately. The audio context is still suspended at
+// that point, so the queued play() executes on the first user gesture instead.
+// Cancelling any stale beep on visibilitychange (which fires BEFORE pending
+// timers on resume) prevents this ghost sound.
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && expectedBeepAt !== null) {
+      if (Date.now() > expectedBeepAt + 1000) {
+        cancelScheduledBeep()
+      }
+    }
+  })
+}
+
 function getAudio(): HTMLAudioElement | null {
   if (typeof window === 'undefined') return null
   if (!audio) {
