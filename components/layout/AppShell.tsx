@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Variants } from 'framer-motion'
-import { Home, Plus, Clock, BarChart2, LayoutGrid, LogOut, Crown, PersonStanding } from 'lucide-react'
+import { Home, Plus, Clock, BarChart2, LayoutGrid, LogOut, Crown, PersonStanding, ShieldCheck } from 'lucide-react'
 import { useApp } from '@/context/AppContext'
 import HomeScreen from '@/components/screens/HomeScreen'
 import LogScreen from '@/components/screens/LogScreen'
@@ -11,7 +11,10 @@ import HistoryScreen from '@/components/screens/HistoryScreen'
 import ProgressScreen from '@/components/screens/ProgressScreen'
 import CardsScreen from '@/components/screens/CardsScreen'
 import ProScreen from '@/components/screens/ProScreen'
+import AdminScreen from '@/components/screens/AdminScreen'
 import { RestTimer } from '@/components/ui/RestTimer'
+
+const ADMIN_EMAIL = 'enbordigoni@gmail.com'
 
 type Tab = 'home' | 'log' | 'history' | 'prog' | 'cards'
 
@@ -52,6 +55,9 @@ export default function AppShell() {
   tabRef.current = tab
 
   const { user, signOut, editMode, repeatPending, clearRepeat, isPro, proOpen, openPro, closePro } = useApp()
+
+  const [adminOpen, setAdminOpen] = useState(false)
+  const isAdmin = user?.email === ADMIN_EMAIL
 
   const [stretchEnabled, setStretchEnabled] = useState(true)
   useEffect(() => {
@@ -289,6 +295,15 @@ export default function AppShell() {
                       />
                     </button>
                   </div>
+                  {isAdmin && (
+                    <button
+                      onClick={() => { setProfileOpen(false); setAdminOpen(true) }}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-amber-400 hover:bg-amber-500/10 transition-colors border-b border-white/[0.06]"
+                    >
+                      <ShieldCheck size={16} strokeWidth={1.8} />
+                      Admin — utilisateurs
+                    </button>
+                  )}
                   <button
                     onClick={() => { setProfileOpen(false); signOut() }}
                     className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-400 hover:bg-red-500/10 transition-colors"
@@ -368,6 +383,11 @@ export default function AppShell() {
       {/* Pro subscription modal */}
       <AnimatePresence>
         {proOpen && <ProScreen onClose={closePro} />}
+      </AnimatePresence>
+
+      {/* Admin modal */}
+      <AnimatePresence>
+        {adminOpen && <AdminScreen onClose={() => setAdminOpen(false)} />}
       </AnimatePresence>
 
       {/* Rest timer — only visible on the Séance tab */}

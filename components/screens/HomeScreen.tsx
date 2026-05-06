@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import type { Variants } from 'framer-motion'
 import { Zap, Crown, Sparkles, ChevronRight } from 'lucide-react'
@@ -26,6 +26,14 @@ export default function HomeScreen() {
   const nt = getNextType()
   const streak = getStreak()
   const last = sessions[0]
+
+  const [userCount, setUserCount] = useState<number | null>(null)
+  useEffect(() => {
+    fetch('/api/stats/count')
+      .then(r => r.json())
+      .then(d => { if (typeof d.total === 'number') setUserCount(d.total) })
+      .catch(() => {})
+  }, [])
 
   const aiSuggestion = useMemo(() => {
     const mainGroups: MuscleGroup[] = ['pec', 'dos', 'bras', 'jambes']
@@ -136,8 +144,14 @@ export default function HomeScreen() {
                 ) : (
                   <div className="text-2xl font-bold font-mono text-white leading-none tracking-tight" style={{ height: 32 }}>—</div>
                 )}
-                <div className="text-[10px] text-white/50 uppercase tracking-[1.2px] mt-1">Jours streak</div>
+                <div className="text-[10px] text-white/50 uppercase tracking-[1.2px] mt-1">Streak</div>
               </div>
+              {userCount !== null && userCount > 1 && (
+                <div className="ml-auto text-right">
+                  <Counter end={userCount} fontSize={24} className="text-white tracking-tight" />
+                  <div className="text-[10px] text-white/50 uppercase tracking-[1.2px] mt-1">Membres</div>
+                </div>
+              )}
             </div>
           </div>
         </div>
