@@ -35,10 +35,10 @@ export const EXO_BY_TYPE: Record<MuscleGroup, string[]> = {
 const BASE_IMG_URL = 'https://xaysrudxlbfannwwcgmk.supabase.co/storage/v1/object/public/badges/'
 
 export const CARDS: GymCard[] = [
-  { id: 'master_squat', name: 'Maître du Squat', cond: '1RM > 1.5x Poids', rarity: 'epic', image: BASE_IMG_URL + 'master__squat.png' },
-  { id: 'master_bench', name: 'Roi du Bench', cond: '1RM > 1.2x Poids', rarity: 'epic', image: BASE_IMG_URL + 'master_bench.png' },
-  { id: 'master_deadlift', name: 'Titan du Deadlift', cond: '1RM > 2x Poids', rarity: 'epic', image: BASE_IMG_URL + 'master_deadlift.png' },
-  { id: 'big_three', name: 'Élite des 3 Grands', cond: 'Squat+Bench+Dead', rarity: 'legendary', image: BASE_IMG_URL + 'big_three.png' },
+  { id: 'master_squat', name: 'Maître du Squat', cond: 'Squat ≥ 100kg', rarity: 'epic', image: BASE_IMG_URL + 'master__squat.png' },
+  { id: 'master_bench', name: 'Roi du Bench', cond: 'Bench ≥ 80kg', rarity: 'epic', image: BASE_IMG_URL + 'master_bench.png' },
+  { id: 'master_deadlift', name: 'Titan du Deadlift', cond: 'Deadlift ≥ 120kg', rarity: 'epic', image: BASE_IMG_URL + 'master_deadlift.png' },
+  { id: 'big_three', name: 'Élite des 3 Grands', cond: 'Squat + Bench + Deadlift', rarity: 'legendary', image: BASE_IMG_URL + 'big_three.png' },
   { id: 'volume_chest', name: 'Sculpteur Pecs', cond: 'Volume > 50T', rarity: 'rare', image: BASE_IMG_URL + 'volume_chest.png' },
   { id: 'volume_back', name: 'Guerrier du Dos', cond: '10 000 Tractions', rarity: 'rare', image: BASE_IMG_URL + 'volume_back.png' },
   { id: 'volume_legs', name: 'Légende Leg Day', cond: 'Volume > 150T', rarity: 'rare', image: BASE_IMG_URL + 'volume_legs.png' },

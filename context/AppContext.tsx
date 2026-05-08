@@ -33,6 +33,16 @@ function checkUnlocks(allSessions: Session[], currentUnlocked: Set<string>): str
         .reduce((acc, set) => acc + (set.reps || 0), 0)
     ))
 
+  const maxWeightForKeyword = (keyword: string) =>
+    Math.max(0, ...allSessions.flatMap(s =>
+      s.exos
+        .filter(e => e.name.toLowerCase().includes(keyword))
+        .flatMap(e => e.sets.map(st => st.weight || 0))
+    ))
+
+  const hasExercise = (keyword: string) =>
+    allSessions.some(s => s.exos.some(e => e.name.toLowerCase().includes(keyword)))
+
   const computeStreak = () => {
     const dates = new Set(allSessions.map(s => s.date))
     let count = 0
@@ -60,6 +70,15 @@ function checkUnlocks(allSessions: Session[], currentUnlocked: Set<string>): str
   if (!has('reps_dips') && maxRepsInOneSession('dip') >= 100) newCards.push('reps_dips')
 
   if (!has('goal_muscleup') && totalRepsForKeyword('muscle') >= 1) newCards.push('goal_muscleup')
+
+  if (!has('master_squat') && maxWeightForKeyword('squat') >= 100) newCards.push('master_squat')
+  if (!has('master_bench') && (maxWeightForKeyword('bench') >= 80 || maxWeightForKeyword('développé couché') >= 80)) newCards.push('master_bench')
+  if (!has('master_deadlift') && (maxWeightForKeyword('deadlift') >= 120 || maxWeightForKeyword('soulevé de terre') >= 120)) newCards.push('master_deadlift')
+  if (!has('big_three') &&
+    (hasExercise('squat') || hasExercise('back squat')) &&
+    (hasExercise('bench') || hasExercise('développé couché')) &&
+    (hasExercise('deadlift') || hasExercise('soulevé de terre'))
+  ) newCards.push('big_three')
 
   return newCards
 }
