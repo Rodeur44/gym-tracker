@@ -402,7 +402,7 @@ function ExoCard({ exo, idx, accent, getBest, onChange, onDelete, onDuplicate, t
                 style={{ background: `linear-gradient(135deg,${accent}99,${accent}cc)`, boxShadow: `0 4px 16px -6px ${accent}88` }}
               >
                 <Plus size={16} strokeWidth={2} />
-                Nouvelle rep
+                Nouvelle série
               </motion.button>
               <motion.button
                 onClick={addSet}
