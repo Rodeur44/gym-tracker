@@ -219,8 +219,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       sb.from('user_cards').select('card_id').eq('user_id', userId),
       sb.from('measurements').select('*').eq('user_id', userId).order('date', { ascending: false }),
     ])
-    setSessions((s as Session[]) || [])
-    setUnlockedCards(new Set((c || []).map((x: { card_id: string }) => x.card_id)))
+    const loadedSessions = (s as Session[]) || []
+    const existingCards = new Set((c || []).map((x: { card_id: string }) => x.card_id))
+    setSessions(loadedSessions)
+    setUnlockedCards(existingCards)
+    // Unlock cards earned from existing sessions (e.g. first load after feature was added)
+    const newCards = checkUnlocks(loadedSessions, existingCards)
+    if (newCards.length > 0) {
+      await sb.from('user_cards').insert(newCards.map(id => ({ user_id: userId, card_id: id })))
+      setUnlockedCards(new Set([...existingCards, ...newCards]))
+    }
     // Tolerate the case where the measurements table hasn't been created yet
     if (mErr) setMeasurements([])
     else setMeasurements((m as Measurement[]) || [])
