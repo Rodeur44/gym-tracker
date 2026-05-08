@@ -394,27 +394,24 @@ function ExoCard({ exo, idx, accent, getBest, onChange, onDelete, onDuplicate, t
           {exo.sets.length > 0 ? (
             <>
               <motion.button
-                onClick={addSet}
-                whileTap={{ scale: 0.96 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-                aria-label="Dupliquer la dernière série"
-                className="flex-1 py-3 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2"
-                style={{ background: `linear-gradient(135deg,${accent}99,${accent}cc)`, boxShadow: `0 4px 16px -6px ${accent}88` }}
-              >
-                <Copy size={14} strokeWidth={1.8} />
-                {exo.sets[exo.sets.length - 1].weight > 0
-                  ? `${exo.sets[exo.sets.length - 1].weight}kg`
-                  : 'corps'}{' '}
-                × {exo.sets[exo.sets.length - 1].reps}
-              </motion.button>
-              <motion.button
                 onClick={() => onChange({ ...exo, sets: [...exo.sets, { weight: 0, reps: 10 }] })}
                 whileTap={{ scale: 0.96 }}
                 transition={{ type: 'spring', stiffness: 400, damping: 25 }}
                 aria-label="Nouvelle série vierge"
-                className="w-12 py-3 rounded-xl border-dashed border-[1.5px] border-white/10 text-zinc-600 flex items-center justify-center hover:border-white/20 hover:text-zinc-400 transition-all"
+                className="flex-1 h-11 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2"
+                style={{ background: `linear-gradient(135deg,${accent}99,${accent}cc)`, boxShadow: `0 4px 16px -6px ${accent}88` }}
               >
-                <Plus size={14} strokeWidth={1.8} />
+                <Plus size={16} strokeWidth={2} />
+                Nouvelle série
+              </motion.button>
+              <motion.button
+                onClick={addSet}
+                whileTap={{ scale: 0.96 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                aria-label="Dupliquer la dernière série"
+                className="flex-1 h-11 rounded-xl border border-white/[0.08] text-zinc-400 flex items-center justify-center gap-2 bg-white/[0.03] hover:bg-white/[0.06] transition-all"
+              >
+                <Copy size={14} strokeWidth={1.8} />
               </motion.button>
             </>
           ) : (
