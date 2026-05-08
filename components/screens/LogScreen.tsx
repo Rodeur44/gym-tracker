@@ -363,9 +363,9 @@ function ExoCard({ exo, idx, accent, getBest, onChange, onDelete, onDuplicate, t
             whileTap={{ scale: 0.9 }}
             transition={{ type: 'spring', stiffness: 400, damping: 25 }}
             aria-label="Dupliquer l'exercice en bas de liste"
-            className="w-8 h-8 rounded-full bg-[#1C1C1C] border border-white/[0.06] flex items-center justify-center text-zinc-500 hover:text-[#A78BFA] hover:border-[#A78BFA]/30 transition-all duration-200"
+            className="w-7 h-7 flex items-center justify-center text-zinc-600 hover:text-zinc-400 transition-all duration-200"
           >
-            <CopyPlus size={14} strokeWidth={1.8} />
+            <CopyPlus size={13} strokeWidth={1.5} />
           </motion.button>
           <button onClick={onDelete} aria-label="Supprimer l'exercice"
             className="w-8 h-8 rounded-full bg-[#1C1C1C] border border-white/[0.06] flex items-center justify-center text-zinc-500 flex-shrink-0 hover:text-red-400 hover:border-red-400/30 active:rotate-90 active:bg-red-500 active:text-white transition-all duration-200">
@@ -391,31 +391,44 @@ function ExoCard({ exo, idx, accent, getBest, onChange, onDelete, onDuplicate, t
           ))}
         </AnimatePresence>
         <div className="flex gap-2 mt-3 mb-4">
-          {exo.sets.length > 0 && (
+          {exo.sets.length > 0 ? (
+            <>
+              <motion.button
+                onClick={addSet}
+                whileTap={{ scale: 0.96 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                aria-label="Dupliquer la dernière série"
+                className="flex-1 py-3 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2"
+                style={{ background: `linear-gradient(135deg,${accent}99,${accent}cc)`, boxShadow: `0 4px 16px -6px ${accent}88` }}
+              >
+                <Copy size={14} strokeWidth={1.8} />
+                {exo.sets[exo.sets.length - 1].weight > 0
+                  ? `${exo.sets[exo.sets.length - 1].weight}kg`
+                  : 'corps'}{' '}
+                × {exo.sets[exo.sets.length - 1].reps}
+              </motion.button>
+              <motion.button
+                onClick={() => onChange({ ...exo, sets: [...exo.sets, { weight: 0, reps: 10 }] })}
+                whileTap={{ scale: 0.96 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                aria-label="Nouvelle série vierge"
+                className="w-12 py-3 rounded-xl border-dashed border-[1.5px] border-white/10 text-zinc-600 flex items-center justify-center hover:border-white/20 hover:text-zinc-400 transition-all"
+              >
+                <Plus size={14} strokeWidth={1.8} />
+              </motion.button>
+            </>
+          ) : (
             <motion.button
-              onClick={addSet}
+              onClick={() => onChange({ ...exo, sets: [...exo.sets, { weight: 0, reps: 10 }] })}
               whileTap={{ scale: 0.96 }}
               transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-              className="flex-1 py-3 rounded-xl border border-white/[0.08] text-xs font-semibold text-[#A78BFA] flex items-center justify-center gap-2 bg-[rgba(139,92,246,0.06)] hover:bg-[rgba(139,92,246,0.1)] active:bg-[rgba(139,92,246,0.14)] transition-colors"
+              aria-label="Ajouter une série"
+              className="flex-1 py-3 rounded-xl border-dashed border-[1.5px] border-white/10 text-xs font-semibold text-zinc-600 flex items-center justify-center gap-1.5 hover:border-white/20 hover:text-zinc-400 transition-all"
             >
-              <Copy size={13} strokeWidth={1.8} />
-              Dupliquer ·{' '}
-              {exo.sets[exo.sets.length - 1].weight > 0
-                ? `${exo.sets[exo.sets.length - 1].weight}kg`
-                : 'corps'}{' '}
-              × {exo.sets[exo.sets.length - 1].reps}
+              <Plus size={13} strokeWidth={1.8} />
+              Ajouter une série
             </motion.button>
           )}
-          <motion.button
-            onClick={() => onChange({ ...exo, sets: [...exo.sets, { weight: 0, reps: 10 }] })}
-            whileTap={{ scale: 0.96 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-            className={`py-3 rounded-xl border-dashed border-[1.5px] border-white/10 text-xs font-semibold text-zinc-600 flex items-center justify-center gap-1.5 hover:border-white/20 hover:text-zinc-400 transition-all ${exo.sets.length > 0 ? 'px-3' : 'flex-1'}`}
-            aria-label="Nouvelle série vierge"
-          >
-            <Plus size={13} strokeWidth={1.8} />
-            {exo.sets.length === 0 ? 'Ajouter une série' : ''}
-          </motion.button>
         </div>
       </div>
     </motion.div>

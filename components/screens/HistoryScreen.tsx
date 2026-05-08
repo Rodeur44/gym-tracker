@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Clock, Trash2, Pencil, RotateCcw } from 'lucide-react'
 import { useApp } from '@/context/AppContext'
@@ -9,6 +9,24 @@ import type { MuscleGroup, Session } from '@/types'
 
 function fmtDate(d: string) {
   return new Date(d + 'T12:00:00').toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+}
+
+function fmtWeekday(d: string) {
+  return new Date(d + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short' }).replace('.', '').toUpperCase()
+}
+
+function fmtDay(d: string) {
+  return new Date(d + 'T12:00:00').getDate().toString().padStart(2, '0')
+}
+
+function calcVolume(s: Session): number {
+  return s.exos.reduce((acc, e) =>
+    acc + e.sets.reduce((a, st) => a + (st.weight || 0) * (st.reps || 0), 0), 0)
+}
+
+function fmtVol(vol: number): string {
+  if (vol === 0) return '—'
+  return vol >= 1000 ? `${(vol / 1000).toFixed(1)}T` : `${vol}kg`
 }
 
 function DetailModal({ session, onClose, onEdit, onDelete, onRepeat }: {
@@ -36,7 +54,6 @@ function DetailModal({ session, onClose, onEdit, onDelete, onRepeat }: {
         className="w-full max-w-[430px] bg-[#141414] border border-white/[0.08] rounded-t-3xl flex flex-col"
         style={{ maxHeight: 'calc(80vh - 80px)', marginBottom: 'calc(70px + env(safe-area-inset-bottom, 0px))' }}
       >
-        {/* Header — fixe */}
         <div className="flex-shrink-0 px-6 pt-5 pb-4">
           <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-5" />
           <div className="flex items-center justify-between">
@@ -48,7 +65,6 @@ function DetailModal({ session, onClose, onEdit, onDelete, onRepeat }: {
           </div>
         </div>
 
-        {/* Contenu — scrollable */}
         <div className="flex-1 overflow-y-auto px-6 pb-2">
           <div className="flex flex-col gap-1">
             {(session.exos || []).map((e, i) => (
@@ -69,7 +85,6 @@ function DetailModal({ session, onClose, onEdit, onDelete, onRepeat }: {
           </div>
         </div>
 
-        {/* Footer — toujours visible */}
         <div className="flex-shrink-0 px-6 pt-3 pb-6 border-t border-white/[0.05] flex flex-col gap-2">
           <motion.button
             whileTap={{ scale: 0.97 }}
@@ -109,6 +124,20 @@ export default function HistoryScreen() {
   const { sessions, deleteSession, startEdit, repeatSession } = useApp()
   const [selected, setSelected] = useState<Session | null>(null)
 
+  const grouped = useMemo(() => {
+    const sorted = [...sessions].sort((a, b) => b.date.localeCompare(a.date))
+    const map = new Map<string, Session[]>()
+    sorted.forEach(s => {
+      const d = new Date(s.date + 'T12:00:00')
+      const key = d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+      if (!map.has(key)) map.set(key, [])
+      map.get(key)!.push(s)
+    })
+    return Array.from(map.entries())
+  }, [sessions])
+
+  const totalVol = useMemo(() => fmtVol(sessions.reduce((acc, s) => acc + calcVolume(s), 0)), [sessions])
+
   async function handleDelete() {
     if (!selected) return
     await deleteSession(selected.id)
@@ -139,40 +168,93 @@ export default function HistoryScreen() {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="px-4 pt-5 pb-28"
+        className="px-4 pt-5 pb-28 flex flex-col gap-1"
       >
-        <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-[1.8px] mb-4 flex items-center gap-2">
-          <span className="w-[3px] h-[11px] rounded-full bg-[#A78BFA] shadow-[0_0_8px_rgba(139,92,246,0.5)] inline-block" />
-          {sessions.length} séance{sessions.length > 1 ? 's' : ''}
-        </p>
-        <div className="card-glass rounded-2xl overflow-hidden">
-          {sessions.map((s, i) => {
-            const clr = TAG_CLR[s.type as MuscleGroup]
-            return (
-              <motion.div
-                key={s.id}
-                initial={{ opacity: 0, x: -12 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.04, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                onClick={() => setSelected(s)}
-                className="flex items-center gap-4 px-4 py-4 border-b border-white/[0.04] last:border-none cursor-pointer hover:bg-white/[0.02] active:bg-white/[0.04] transition-all"
-              >
-                <div className="w-0.5 h-9 rounded-full flex-shrink-0" style={{ background: clr, boxShadow: `0 0 12px ${clr}55` }} />
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-zinc-200 tracking-tight">{TYPE_LBL[s.type as MuscleGroup]}</div>
-                  <div className="text-[11px] text-zinc-500 font-mono mt-0.5">{fmtDate(s.date)}</div>
-                </div>
-                <div className="text-right flex-shrink-0">
-                  <div className="text-[11px] text-zinc-500 mb-1">{(s.exos || []).length} exercices</div>
-                  <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full border"
-                    style={{ color: clr, background: TAG_BG[s.type as MuscleGroup], borderColor: `${clr}33` }}>
-                    {TYPE_LBL[s.type as MuscleGroup].split(' ')[0]}
+        {/* Header stats */}
+        <div className="flex items-baseline justify-between mb-4">
+          <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-[1.8px] flex items-center gap-2">
+            <span className="w-[3px] h-[11px] rounded-full bg-[#A78BFA] shadow-[0_0_8px_rgba(139,92,246,0.5)] inline-block" />
+            {sessions.length} séance{sessions.length > 1 ? 's' : ''}
+          </p>
+          <span className="text-[11px] font-mono text-zinc-600">{totalVol} soulevés</span>
+        </div>
+
+        {/* Month groups */}
+        {grouped.map(([month, monthSessions], gi) => {
+          const monthVol = fmtVol(monthSessions.reduce((acc, s) => acc + calcVolume(s), 0))
+          return (
+            <motion.div
+              key={month}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: gi * 0.06, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+              className="mb-5"
+            >
+              {/* Month header */}
+              <div className="flex items-center justify-between mb-2 px-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-bold text-zinc-300 uppercase tracking-[1.6px]">
+                    {month.toUpperCase()}
+                  </span>
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[rgba(139,92,246,0.1)] text-[#A78BFA] border border-[rgba(139,92,246,0.2)]">
+                    {monthSessions.length} séance{monthSessions.length > 1 ? 's' : ''}
                   </span>
                 </div>
-              </motion.div>
-            )
-          })}
-        </div>
+                <span className="text-[11px] font-mono text-zinc-600">Vol. {monthVol}</span>
+              </div>
+
+              {/* Sessions */}
+              <div className="card-glass rounded-2xl overflow-hidden">
+                {monthSessions.map((s, i) => {
+                  const clr = TAG_CLR[s.type as MuscleGroup]
+                  const seriesCount = s.exos.reduce((acc, e) => acc + e.sets.length, 0)
+                  const vol = fmtVol(calcVolume(s))
+                  return (
+                    <motion.div
+                      key={s.id}
+                      initial={{ opacity: 0, x: -8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: gi * 0.06 + i * 0.04, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                      onClick={() => setSelected(s)}
+                      className="flex items-center gap-3 px-4 py-3.5 border-b border-white/[0.04] last:border-none cursor-pointer hover:bg-white/[0.02] active:bg-white/[0.04] transition-all"
+                    >
+                      {/* Color stripe */}
+                      <div className="w-0.5 h-10 rounded-full flex-shrink-0" style={{ background: clr, boxShadow: `0 0 10px ${clr}55` }} />
+
+                      {/* Date column */}
+                      <div className="flex flex-col items-center w-8 flex-shrink-0">
+                        <span className="text-[9px] font-bold text-zinc-600 uppercase tracking-wide">{fmtWeekday(s.date)}</span>
+                        <span className="text-[18px] font-bold font-mono text-zinc-200 leading-tight">{fmtDay(s.date)}</span>
+                      </div>
+
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[14px] font-semibold text-zinc-100 tracking-tight truncate">{TYPE_LBL[s.type as MuscleGroup]}</div>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className="text-[11px] text-zinc-600">{(s.exos || []).length} ex</span>
+                          <span className="text-[11px] text-zinc-700">·</span>
+                          <span className="text-[11px] text-zinc-600">{seriesCount} séries</span>
+                          {calcVolume(s) > 0 && (
+                            <>
+                              <span className="text-[11px] text-zinc-700">·</span>
+                              <span className="text-[11px] font-mono text-zinc-500">{vol}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Rarity badge */}
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full border flex-shrink-0"
+                        style={{ color: clr, background: TAG_BG[s.type as MuscleGroup], borderColor: `${clr}33` }}>
+                        {TYPE_LBL[s.type as MuscleGroup].split(' ')[0]}
+                      </span>
+                    </motion.div>
+                  )
+                })}
+              </div>
+            </motion.div>
+          )
+        })}
       </motion.div>
 
       <AnimatePresence>

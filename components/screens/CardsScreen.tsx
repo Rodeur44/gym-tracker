@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 import { useApp } from '@/context/AppContext'
@@ -9,67 +9,144 @@ import { TiltCard } from '@/components/ui/tilt-card'
 
 const RARITY_LBL = { rare: 'Rare', epic: 'Épique', legendary: 'Légendaire' }
 const RARITY_CLR = {
-  rare: { border: '#3498db', badge: 'bg-[#3498db]', glow: 'rgba(52,152,219,0.3)' },
-  epic: { border: '#9b59b6', badge: 'bg-[#9b59b6]', glow: 'rgba(155,89,182,0.3)' },
+  rare:      { border: '#3498db', badge: 'bg-[#3498db]',                              glow: 'rgba(52,152,219,0.3)'  },
+  epic:      { border: '#9b59b6', badge: 'bg-[#9b59b6]',                              glow: 'rgba(155,89,182,0.3)'  },
   legendary: { border: '#f1c40f', badge: 'bg-gradient-to-r from-[#f1c40f] to-[#f39c12]', glow: 'rgba(241,196,15,0.35)' },
 }
+
+type Filter = 'all' | 'legendary' | 'epic' | 'rare'
+
+const FILTER_LABELS: { key: Filter; label: string }[] = [
+  { key: 'all',       label: 'Toutes'      },
+  { key: 'legendary', label: 'Légendaires' },
+  { key: 'epic',      label: 'Épiques'     },
+  { key: 'rare',      label: 'Rares'       },
+]
 
 export default function CardsScreen() {
   const { unlockedCards } = useApp()
   const [selected, setSelected] = useState<typeof CARDS[0] | null>(null)
+  const [filter, setFilter] = useState<Filter>('all')
+
   const unlocked = CARDS.filter(c => unlockedCards.has(c.id))
-  const locked = CARDS.filter(c => !unlockedCards.has(c.id))
+  const locked   = CARDS.filter(c => !unlockedCards.has(c.id))
+  const pct = Math.round((unlocked.length / CARDS.length) * 100)
+
+  // Featured = last unlocked card
+  const featured = unlocked[unlocked.length - 1] ?? null
+
+  const filtered = useMemo(() => {
+    const all = [...unlocked, ...locked]
+    if (filter === 'all') return all
+    return all.filter(c => c.rarity === filter)
+  }, [unlocked, locked, filter])
 
   return (
     <>
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-4 pt-5 pb-28">
-        <div className="flex justify-between items-center mb-4">
+
+        {/* Header */}
+        <div className="flex items-center justify-between mb-3">
           <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-[1.8px] flex items-center gap-2">
             <span className="w-[3px] h-[11px] rounded-full bg-[#A78BFA] shadow-[0_0_8px_rgba(139,92,246,0.5)] inline-block" />
             Ma collection
           </p>
-          <span className="text-xs text-zinc-600 font-mono">{unlockedCards.size}/{CARDS.length}</span>
+          <span className="text-xs text-zinc-600 font-mono">{unlocked.length}/{CARDS.length}</span>
         </div>
 
+        {/* Progress bar */}
+        <div className="mb-4">
+          <div className="h-1.5 bg-[#1C1C1C] rounded-full overflow-hidden">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${pct}%` }}
+              transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
+              className="h-full rounded-full"
+              style={{ background: 'linear-gradient(90deg,#6D28D9,#A78BFA)', boxShadow: '0 0 8px rgba(139,92,246,0.5)' }}
+            />
+          </div>
+          <div className="flex justify-between items-center mt-1.5">
+            <span className="text-[10px] text-zinc-600">{pct}% complétée</span>
+            {locked.length > 0 && (
+              <span className="text-[10px] text-zinc-600">
+                Prochain : {locked[0]?.name ?? '—'}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Filter chips */}
+        <div className="flex gap-2 overflow-x-auto pb-1 mb-4 scrollbar-none">
+          {FILTER_LABELS.map(({ key, label }) => (
+            <motion.button
+              key={key}
+              whileTap={{ scale: 0.94 }}
+              onClick={() => setFilter(key)}
+              className="flex-shrink-0 px-3.5 py-1.5 rounded-full border text-[11px] font-semibold transition-all"
+              style={filter === key
+                ? { borderColor: '#A78BFA', background: 'rgba(167,139,250,0.12)', color: '#A78BFA' }
+                : { borderColor: 'rgba(255,255,255,0.06)', background: '#1C1C1C', color: '#737373' }}
+            >
+              {label}
+            </motion.button>
+          ))}
+        </div>
+
+        {/* Featured card */}
+        <AnimatePresence>
+          {featured && filter === 'all' && (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+              className="mb-4"
+            >
+              <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-[1.4px] mb-2 flex items-center gap-1.5">
+                <span className="w-[3px] h-[9px] rounded-full bg-amber-400/60 inline-block" />
+                À l&apos;honneur
+              </p>
+              <motion.div
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setSelected(featured)}
+                className="relative rounded-2xl overflow-hidden cursor-pointer border"
+                style={{
+                  borderColor: RARITY_CLR[featured.rarity].border,
+                  boxShadow: `0 0 32px -8px ${RARITY_CLR[featured.rarity].glow}`,
+                  height: 180,
+                }}
+              >
+                <Image src={featured.image} alt={featured.name} fill className="object-cover" sizes="400px" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                <div className="absolute top-3 right-3">
+                  <span className={`text-[9px] font-extrabold uppercase tracking-[0.6px] px-2.5 py-1 rounded-lg text-white ${RARITY_CLR[featured.rarity].badge}`}>
+                    {RARITY_LBL[featured.rarity]}
+                  </span>
+                </div>
+                <div className="absolute bottom-0 left-0 right-0 p-4">
+                  <div className="text-[15px] font-bold text-white tracking-tight">{featured.name}</div>
+                  <div className="text-[11px] text-zinc-400 mt-0.5 leading-snug">{featured.cond}</div>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Grid */}
         <div className="grid grid-cols-2 gap-3">
-          {[...unlocked, ...locked].map((card, i) => {
+          {filtered.map((card, i) => {
             const isLocked = !unlockedCards.has(card.id)
             const { border, badge, glow } = RARITY_CLR[card.rarity]
             return isLocked ? (
-                <motion.div
-                  key={card.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                  className="bg-[#1C1C1C] rounded-2xl overflow-hidden border cursor-default"
-                  style={{ borderColor: 'rgba(139,92,246,0.18)', boxShadow: '0 0 20px -10px rgba(139,92,246,0.25)' }}
-                >
-                  <div className="opacity-40 blur-[3px] brightness-50 saturate-50 pointer-events-none select-none">
-                    <div className="relative aspect-[2/3] w-full">
-                      <Image src={card.image} alt={card.name} fill className="object-cover" sizes="200px" />
-                      <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/60 to-transparent" />
-                    </div>
-                    <div className="p-3 text-center">
-                      <div className="text-[12px] font-semibold text-zinc-200 leading-tight mb-1.5">{card.name}</div>
-                      <div className="text-[10px] text-zinc-500 leading-snug mb-2">{card.cond}</div>
-                      <span className={`inline-block text-[9px] font-extrabold uppercase tracking-[0.6px] px-2 py-0.5 rounded-md text-white ${badge}`}>
-                        {RARITY_LBL[card.rarity]}
-                      </span>
-                    </div>
-                  </div>
-                </motion.div>
-              ) : (
-                <motion.div
-                  key={card.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                  whileHover={{ y: -4, scale: 1.02 }}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => setSelected(card)}
-                  className="bg-[#1C1C1C] rounded-2xl overflow-hidden border cursor-pointer transition-shadow"
-                  style={{ borderColor: border, boxShadow: `0 0 24px -8px ${glow}` }}
-                >
+              <motion.div
+                key={card.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.04, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                className="bg-[#1C1C1C] rounded-2xl overflow-hidden border cursor-default"
+                style={{ borderColor: 'rgba(139,92,246,0.18)', boxShadow: '0 0 20px -10px rgba(139,92,246,0.25)' }}
+              >
+                <div className="opacity-40 blur-[3px] brightness-50 saturate-50 pointer-events-none select-none">
                   <div className="relative aspect-[2/3] w-full">
                     <Image src={card.image} alt={card.name} fill className="object-cover" sizes="200px" />
                     <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/60 to-transparent" />
@@ -81,7 +158,32 @@ export default function CardsScreen() {
                       {RARITY_LBL[card.rarity]}
                     </span>
                   </div>
-                </motion.div>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div
+                key={card.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.04, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                whileHover={{ y: -4, scale: 1.02 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => setSelected(card)}
+                className="bg-[#1C1C1C] rounded-2xl overflow-hidden border cursor-pointer transition-shadow"
+                style={{ borderColor: border, boxShadow: `0 0 24px -8px ${glow}` }}
+              >
+                <div className="relative aspect-[2/3] w-full">
+                  <Image src={card.image} alt={card.name} fill className="object-cover" sizes="200px" />
+                  <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/60 to-transparent" />
+                </div>
+                <div className="p-3 text-center">
+                  <div className="text-[12px] font-semibold text-zinc-200 leading-tight mb-1.5">{card.name}</div>
+                  <div className="text-[10px] text-zinc-500 leading-snug mb-2">{card.cond}</div>
+                  <span className={`inline-block text-[9px] font-extrabold uppercase tracking-[0.6px] px-2 py-0.5 rounded-md text-white ${badge}`}>
+                    {RARITY_LBL[card.rarity]}
+                  </span>
+                </div>
+              </motion.div>
             )
           })}
         </div>
@@ -133,12 +235,14 @@ export default function CardsScreen() {
                 <div className="p-5">
                   <div className="text-base font-bold text-white mb-1">{selected.name}</div>
                   <div className="text-xs text-zinc-400 mb-4">{selected.cond}</div>
-                  <button
+                  <motion.button
+                    whileTap={{ scale: 0.96 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 25 }}
                     onClick={() => setSelected(null)}
                     className="w-full py-2.5 rounded-xl bg-[#1C1C1C] border border-white/[0.06] text-sm font-medium text-zinc-300"
                   >
                     Retour
-                  </button>
+                  </motion.button>
                 </div>
               </TiltCard>
             </motion.div>
