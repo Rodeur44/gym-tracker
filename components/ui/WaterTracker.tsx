@@ -2,13 +2,14 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Droplets, Plus, RotateCcw, Check } from 'lucide-react'
+import { Droplets, Plus, Minus, RotateCcw, Check } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 const GOAL_KEY = 'gymlog_water_goal'
 const DEFAULT_GOAL = 2000
 
 const QUICK_ADD = [150, 250, 500]
+const CUSTOM_STEP = 50
 
 function WaveCircle({ ml, goal, celebrated }: { ml: number; goal: number; celebrated: boolean }) {
   const pct = Math.min((ml / goal) * 100, 100)
@@ -136,6 +137,7 @@ export default function WaterTracker() {
   const [loading, setLoading] = useState(true)
   const [celebrated, setCelebrated] = useState(false)
   const [justAdded, setJustAdded] = useState(0)
+  const [customMl, setCustomMl] = useState(200)
 
   const today = new Date().toISOString().slice(0, 10)
 
@@ -153,7 +155,7 @@ export default function WaterTracker() {
   useEffect(() => { load() }, [load])
 
   const addWater = useCallback(async (amount: number) => {
-    const newMl = ml + amount
+    const newMl = Math.max(0, ml + amount)
     const wasBelow = ml < goal
     setMl(newMl)
     setJustAdded(amount)
@@ -222,25 +224,93 @@ export default function WaterTracker() {
         <WaveCircle ml={ml} goal={goal} celebrated={celebrated} />
       </div>
 
-      {/* Quick-add buttons */}
+      {/* Quick-add/remove buttons */}
       <div className="flex gap-2">
         {QUICK_ADD.map(amount => (
-          <motion.button
-            key={amount}
-            onClick={() => addWater(amount)}
-            whileTap={{ scale: 0.94 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-            className="flex-1 flex items-center justify-center gap-1 py-2.5 rounded-xl text-[12px] font-semibold transition-all active:opacity-80"
-            style={{
-              background: justAdded === amount ? 'rgba(14,165,233,0.2)' : 'rgba(14,165,233,0.08)',
-              border: justAdded === amount ? '1px solid rgba(14,165,233,0.4)' : '1px solid rgba(14,165,233,0.15)',
-              color: '#38bdf8',
-            }}
-          >
-            <Plus size={11} strokeWidth={2.5} />
-            {amount >= 1000 ? `${amount / 1000}L` : `${amount}ml`}
-          </motion.button>
+          <div key={amount} className="flex-1 flex flex-col gap-1.5">
+            <motion.button
+              onClick={() => addWater(amount)}
+              whileTap={{ scale: 0.93 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+              className="flex items-center justify-center gap-1 py-2 rounded-xl text-[12px] font-semibold transition-all"
+              style={{
+                background: justAdded === amount ? 'rgba(14,165,233,0.22)' : 'rgba(14,165,233,0.08)',
+                border: justAdded === amount ? '1px solid rgba(14,165,233,0.45)' : '1px solid rgba(14,165,233,0.15)',
+                color: '#38bdf8',
+              }}
+            >
+              <Plus size={10} strokeWidth={2.5} />
+              {amount >= 1000 ? `${amount / 1000}L` : `${amount}ml`}
+            </motion.button>
+            <motion.button
+              onClick={() => addWater(-amount)}
+              whileTap={{ scale: 0.93 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+              className="flex items-center justify-center gap-1 py-1.5 rounded-xl text-[11px] font-medium transition-all"
+              style={{
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid rgba(255,255,255,0.07)',
+                color: '#71717a',
+              }}
+            >
+              <Minus size={9} strokeWidth={2.5} />
+              {amount >= 1000 ? `${amount / 1000}L` : `${amount}ml`}
+            </motion.button>
+          </div>
         ))}
+      </div>
+
+      {/* Custom amount */}
+      <div className="flex items-center gap-2 mt-2">
+        <motion.button
+          onClick={() => setCustomMl(v => Math.max(CUSTOM_STEP, v - CUSTOM_STEP))}
+          whileTap={{ scale: 0.9 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+          aria-label="Diminuer"
+          className="w-9 h-9 flex items-center justify-center rounded-xl flex-shrink-0"
+          style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+        >
+          <Minus size={13} strokeWidth={2} className="text-zinc-400" />
+        </motion.button>
+
+        <div
+          className="flex-1 flex items-center justify-center gap-1 py-2.5 rounded-xl"
+          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
+        >
+          <span className="text-[13px] font-mono font-semibold text-zinc-200">{customMl}</span>
+          <span className="text-[11px] text-zinc-500">ml</span>
+        </div>
+
+        <motion.button
+          onClick={() => setCustomMl(v => v + CUSTOM_STEP)}
+          whileTap={{ scale: 0.9 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+          aria-label="Augmenter"
+          className="w-9 h-9 flex items-center justify-center rounded-xl flex-shrink-0"
+          style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
+        >
+          <Plus size={13} strokeWidth={2} className="text-zinc-400" />
+        </motion.button>
+
+        <motion.button
+          onClick={() => addWater(customMl)}
+          whileTap={{ scale: 0.95 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+          className="px-3 py-2.5 rounded-xl text-[12px] font-semibold flex-shrink-0"
+          style={{ background: 'rgba(14,165,233,0.12)', border: '1px solid rgba(14,165,233,0.2)', color: '#38bdf8' }}
+        >
+          Ajouter
+        </motion.button>
+
+        <motion.button
+          onClick={() => addWater(-customMl)}
+          whileTap={{ scale: 0.95 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+          className="px-3 py-2.5 rounded-xl text-[12px] font-semibold flex-shrink-0"
+          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#71717a' }}
+        >
+          Retirer
+        </motion.button>
       </div>
 
       {/* Today total */}
