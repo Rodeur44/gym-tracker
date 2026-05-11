@@ -3,13 +3,14 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, X, ChevronRight, AlertCircle, Camera, Copy, CopyPlus, LayoutGrid, Check, Sparkles, Lock } from 'lucide-react'
+import { Plus, X, ChevronRight, AlertCircle, Camera, Copy, CopyPlus, LayoutGrid, Check, Sparkles, Lock, Info } from 'lucide-react'
 import { useApp } from '@/context/AppContext'
 import { TYPE_LBL, TAG_CLR, TAG_BG, EXO_BY_TYPE, WORKOUT_TEMPLATES } from '@/lib/constants'
 import type { WorkoutTemplate } from '@/lib/constants'
 import type { MuscleGroup, Exercise } from '@/types'
 import AISessionSheet from '@/components/screens/AISessionSheet'
 import StretchingScreen from '@/components/screens/StretchingScreen'
+import ExerciseInfoSheet from '@/components/screens/ExerciseInfoSheet'
 
 const MUSCLE_TABS: MuscleGroup[] = ['pec', 'dos', 'bras', 'jambes', 'cardio']
 
@@ -277,7 +278,7 @@ function SetRow({ set, idx, accent, onWeightChange, onRepsChange, onDelete, slid
 }
 
 // ── Exo Card ──────────────────────────────────────────────────────
-function ExoCard({ exo, idx, accent, getBest, onChange, onDelete, onDuplicate, type }: {
+function ExoCard({ exo, idx, accent, getBest, onChange, onDelete, onDuplicate, onInfo, type }: {
   exo: Exercise
   idx: number
   accent: string
@@ -285,6 +286,7 @@ function ExoCard({ exo, idx, accent, getBest, onChange, onDelete, onDuplicate, t
   onChange: (updated: Exercise) => void
   onDelete: () => void
   onDuplicate: () => void
+  onInfo: () => void
   type: MuscleGroup
 }) {
   const sliderMax = type === 'jambes' ? 500 : 250
@@ -358,6 +360,15 @@ function ExoCard({ exo, idx, accent, getBest, onChange, onDelete, onDuplicate, t
           </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
+          <motion.button
+            onClick={onInfo}
+            whileTap={{ scale: 0.9 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+            aria-label="Informations sur l'exercice"
+            className="w-11 h-11 flex items-center justify-center text-zinc-600 hover:text-zinc-400 transition-all duration-200"
+          >
+            <Info size={15} strokeWidth={1.8} />
+          </motion.button>
           <motion.button
             onClick={onDuplicate}
             whileTap={{ scale: 0.9 }}
@@ -511,6 +522,7 @@ export default function LogScreen() {
   const [aiOpen, setAiOpen] = useState(false)
   const [stretchOpen, setStretchOpen] = useState(false)
   const [stretchType, setStretchType] = useState<MuscleGroup>('pec')
+  const [infoExo, setInfoExo] = useState<string | null>(null)
   const [error, setError] = useState('')
 
   useEffect(() => { if (!isPro) setAiOpen(false) }, [isPro])
@@ -671,6 +683,7 @@ export default function LogScreen() {
                 onChange={updated => updateExo(i, updated)}
                 onDelete={() => removeExo(i)}
                 onDuplicate={() => duplicateExo(i)}
+                onInfo={() => setInfoExo(exo.name)}
               />
             ))
           )}
@@ -751,6 +764,16 @@ export default function LogScreen() {
           <StretchingScreen
             muscleGroup={stretchType}
             onClose={() => setStretchOpen(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {infoExo && (
+          <ExerciseInfoSheet
+            exerciseName={infoExo}
+            muscleType={logType}
+            onClose={() => setInfoExo(null)}
           />
         )}
       </AnimatePresence>
