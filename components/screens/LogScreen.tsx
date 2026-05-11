@@ -51,7 +51,7 @@ function ExoPicker({ type, onPick, onClose, getBest, allPrev }: {
             {pr} kg
           </span>
         )}
-        <ChevronRight size={14} className="text-zinc-600 flex-shrink-0" />
+        <ChevronRight size={14} strokeWidth={1.8} className="text-zinc-600 flex-shrink-0" />
       </motion.div>
     )
   }
@@ -265,7 +265,7 @@ function SetRow({ set, idx, accent, onWeightChange, onRepsChange, onDelete, slid
         {/* Delete */}
         <button onClick={onDelete} aria-label="Supprimer la série"
           className="w-[30px] h-[30px] rounded-full bg-[#1C1C1C] border border-white/[0.06] flex items-center justify-center text-zinc-500 flex-shrink-0 hover:text-red-400 hover:border-red-400/30 active:bg-red-500 active:text-white active:rotate-90 transition-all duration-200">
-          <X size={14} />
+          <X size={14} strokeWidth={1.8} />
         </button>
       </div>
       {/* Weight slider */}
@@ -682,14 +682,14 @@ export default function LogScreen() {
           onClick={() => setPickerOpen(true)}
           className="w-full py-5 rounded-[18px] border-[1.5px] border-dashed border-white/10 text-zinc-500 text-sm font-medium flex items-center justify-center gap-2 hover:border-[#A78BFA] hover:text-[#A78BFA] hover:bg-[rgba(139,92,246,0.04)] transition-all"
         >
-          <Plus size={14} /> Ajouter un exercice
+          <Plus size={14} strokeWidth={1.8} /> Ajouter un exercice
         </motion.button>
 
         {/* Notes */}
         <details className="bg-[#1C1C1C] border border-white/[0.06] rounded-2xl overflow-hidden group">
           <summary className="flex items-center justify-between px-4 py-3.5 text-sm font-medium text-zinc-500 cursor-pointer list-none hover:text-zinc-300 transition-colors">
             <span>Notes optionnelles</span>
-            <ChevronRight size={14} className="group-open:rotate-90 transition-transform" />
+            <ChevronRight size={14} strokeWidth={1.8} className="group-open:rotate-90 transition-transform" />
           </summary>
           <div className="px-4 pb-4">
             <textarea
