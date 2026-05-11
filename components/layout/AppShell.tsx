@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Variants } from 'framer-motion'
-import { Home, Plus, Clock, BarChart2, LayoutGrid, LogOut, Crown, PersonStanding, ShieldCheck, Pencil } from 'lucide-react'
+import { Home, Plus, Clock, BarChart2, LayoutGrid, LogOut, Crown, PersonStanding, ShieldCheck, Pencil, Bell, BellOff } from 'lucide-react'
 import { useApp } from '@/context/AppContext'
 import { createClient } from '@/lib/supabase/client'
 import HomeScreen from '@/components/screens/HomeScreen'
@@ -14,6 +14,7 @@ import CardsScreen from '@/components/screens/CardsScreen'
 import ProScreen from '@/components/screens/ProScreen'
 import AdminScreen from '@/components/screens/AdminScreen'
 import { RestTimer } from '@/components/ui/RestTimer'
+import { registerSW, getNotifPermission, subscribePush, unsubscribePush, serializeSubscription } from '@/lib/push'
 
 const ADMIN_EMAIL = 'enbordigoni@gmail.com'
 
@@ -75,6 +76,57 @@ export default function AppShell() {
     await sb.auth.updateUser({ data: { display_name: val } })
     setPseudoOpen(false)
     setPseudoLoading(false)
+  }
+
+  // ── Push notifications ───────────────────────────────────────
+  const [swReg, setSwReg] = useState<ServiceWorkerRegistration | null>(null)
+  const [notifEnabled, setNotifEnabled] = useState(false)
+  const [notifPerm, setNotifPerm] = useState<string>('default')
+
+  useEffect(() => {
+    registerSW().then(reg => {
+      if (!reg) return
+      setSwReg(reg)
+      const perm = getNotifPermission()
+      setNotifPerm(perm)
+      if (perm === 'granted') {
+        reg.pushManager.getSubscription().then(sub => setNotifEnabled(!!sub))
+      }
+    })
+  }, [])
+
+  async function toggleNotifications() {
+    if (!swReg || !user) return
+    if (notifEnabled) {
+      await unsubscribePush(swReg)
+      const sub = await swReg.pushManager.getSubscription()
+      if (sub) {
+        const token = (await createClient().auth.getSession()).data.session?.access_token
+        if (token) {
+          fetch('/api/push/subscribe', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ endpoint: sub.endpoint }),
+          }).catch(() => {})
+        }
+      }
+      setNotifEnabled(false)
+    } else {
+      const perm = await Notification.requestPermission()
+      setNotifPerm(perm)
+      if (perm !== 'granted') return
+      const sub = await subscribePush(swReg)
+      if (!sub) return
+      const token = (await createClient().auth.getSession()).data.session?.access_token
+      if (token) {
+        fetch('/api/push/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify(serializeSubscription(sub)),
+        }).catch(() => {})
+      }
+      setNotifEnabled(true)
+    }
   }
 
   const [stretchEnabled, setStretchEnabled] = useState(true)
@@ -324,6 +376,25 @@ export default function AppShell() {
                       />
                     </button>
                   </div>
+                  {notifPerm !== 'unsupported' && notifPerm !== 'denied' && (
+                    <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-white/[0.06]">
+                      <span className="flex items-center gap-3 text-sm font-medium text-zinc-300">
+                        {notifEnabled ? <Bell size={16} strokeWidth={1.8} /> : <BellOff size={16} strokeWidth={1.8} />}
+                        Rappels de séance
+                      </span>
+                      <button
+                        onClick={toggleNotifications}
+                        aria-label="Activer ou désactiver les notifications"
+                        className="relative w-10 h-6 rounded-full transition-colors flex-shrink-0"
+                        style={{ background: notifEnabled ? '#7C3AED' : 'rgba(255,255,255,0.12)' }}
+                      >
+                        <div
+                          className="absolute top-1 w-4 h-4 rounded-full bg-white transition-transform duration-200"
+                          style={{ transform: notifEnabled ? 'translateX(20px)' : 'translateX(4px)' }}
+                        />
+                      </button>
+                    </div>
+                  )}
                   {isAdmin && (
                     <button
                       onClick={() => { setProfileOpen(false); setAdminOpen(true) }}

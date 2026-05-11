@@ -3,10 +3,11 @@
 import { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import type { Variants } from 'framer-motion'
-import { BarChart2, TrendingUp, Dumbbell, Ruler, Dumbbell as DumbbellIcon, Flame, Trophy, Grid3x3 } from 'lucide-react'
+import { BarChart2, TrendingUp, Dumbbell, Ruler, Dumbbell as DumbbellIcon, Flame, Trophy, Grid3x3, Download, Lock } from 'lucide-react'
 import { useApp } from '@/context/AppContext'
 import type { Session } from '@/types'
 import MeasurementsTab from './MeasurementsTab'
+import { exportSessionsCSV } from '@/lib/export'
 
 type Tab = 'exos' | 'body'
 
@@ -157,7 +158,7 @@ function WeeklyVolumeChart({ sessions }: { sessions: Session[] }) {
 // ── Main Screen ───────────────────────────────────────────────────
 
 export default function ProgressScreen() {
-  const { sessions } = useApp()
+  const { sessions, isPro, openPro } = useApp()
   const [selectedExo, setSelectedExo] = useState<string | null>(null)
   const [tab, setTab] = useState<Tab>('exos')
 
@@ -406,6 +407,30 @@ export default function ProgressScreen() {
             </div>
           </motion.div>
         )}
+
+        {/* Export CSV */}
+        <motion.div variants={fadeUp}>
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+            onClick={() => isPro ? exportSessionsCSV(sessions) : openPro()}
+            className="w-full h-12 rounded-2xl flex items-center justify-center gap-2.5 text-sm font-semibold transition-all"
+            style={{
+              background: isPro
+                ? 'linear-gradient(135deg,rgba(109,40,217,0.2),rgba(139,92,246,0.1))'
+                : 'rgba(255,255,255,0.03)',
+              border: isPro
+                ? '1px solid rgba(139,92,246,0.3)'
+                : '1px solid rgba(255,255,255,0.06)',
+              color: isPro ? '#A78BFA' : '#525252',
+            }}
+          >
+            {isPro
+              ? <><Download size={16} strokeWidth={1.8} /> Exporter en CSV</>
+              : <><Lock size={14} strokeWidth={1.8} /> Export CSV — Pro</>
+            }
+          </motion.button>
+        </motion.div>
 
         {/* Records */}
         <motion.div variants={fadeUp}>

@@ -1,13 +1,14 @@
 'use client'
 
 import { useMemo, useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import type { Variants } from 'framer-motion'
-import { Zap, Crown, Sparkles, ChevronRight } from 'lucide-react'
+import { Zap, Crown, Sparkles, ChevronRight, LayoutList } from 'lucide-react'
 import { useApp } from '@/context/AppContext'
 import { TYPE_LBL, TAG_CLR, TAG_BG, EXO_BY_TYPE } from '@/lib/constants'
 import type { MuscleGroup, Session } from '@/types'
 import { Counter } from '@/components/ui/animated-counter'
+import ProgramsSheet from '@/components/screens/ProgramsSheet'
 
 const stagger: Variants = {
   animate: { transition: { staggerChildren: 0.08 } }
@@ -23,6 +24,7 @@ function fmtDate(d: string) {
 
 export default function HomeScreen() {
   const { sessions, unlockedCards, getBest, getStreak, getNextType, repeatSession, isPro, openPro } = useApp()
+  const [programsOpen, setProgramsOpen] = useState(false)
   const nt = getNextType()
   const streak = getStreak()
   const last = sessions[0]
@@ -247,6 +249,32 @@ export default function HomeScreen() {
         </motion.div>
       )}
 
+      {/* Programmes */}
+      <motion.div variants={fadeUp}>
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+          onClick={() => setProgramsOpen(true)}
+          className="w-full flex items-center gap-3.5 p-4 rounded-2xl border text-left"
+          style={{
+            background: 'rgba(139,92,246,0.04)',
+            borderColor: 'rgba(139,92,246,0.15)',
+          }}
+        >
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ background: 'linear-gradient(135deg,rgba(109,40,217,0.25),rgba(139,92,246,0.15))', border: '1px solid rgba(139,92,246,0.2)' }}
+          >
+            <LayoutList size={18} strokeWidth={1.8} className="text-[#A78BFA]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] font-semibold text-zinc-200 tracking-tight">Programmes d'entraînement</p>
+            <p className="text-[11px] text-zinc-500 mt-0.5">PPL · Upper/Lower · 5/3/1 · PHAT · GVT</p>
+          </div>
+          <ChevronRight size={16} strokeWidth={1.8} className="text-zinc-600 flex-shrink-0" />
+        </motion.button>
+      </motion.div>
+
       {/* AI suggestion */}
       <motion.div variants={fadeUp}>
         <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-[1.8px] mb-3 flex items-center gap-2">
@@ -289,6 +317,11 @@ export default function HomeScreen() {
           </motion.button>
         </div>
       </motion.div>
+
+      {/* Programs sheet */}
+      <AnimatePresence>
+        {programsOpen && <ProgramsSheet onClose={() => setProgramsOpen(false)} />}
+      </AnimatePresence>
     </motion.div>
   )
 }

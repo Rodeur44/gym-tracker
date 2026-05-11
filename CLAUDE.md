@@ -237,7 +237,24 @@ import { Skeleton } from "@/components/ui/skeleton"
 
 ---
 
-### 12. Checklist avant tout commit UI
+### 12. Conventions TypeScript
+
+- Préférer les `interface` aux `type` pour les objets
+- Les types Supabase sont générés — utiliser `Database` depuis `types/supabase.ts`
+- Éviter `any`, utiliser `unknown` si le type est vraiment inconnu
+
+---
+
+### 13. À ne pas faire
+
+- Ne pas utiliser `useEffect` pour fetcher des données si un Server Component suffit
+- Ne pas mettre de logique métier dans les composants UI
+- Ne pas committer `.env.local`
+- Ne pas utiliser le client Supabase côté serveur sans les cookies (perd la session utilisateur)
+
+---
+
+### 14. Checklist avant tout commit UI
 
 - [ ] Icônes : `strokeWidth` cohérent, `aria-label` sur les icon-only buttons
 - [ ] Espacement : multiples de 4/8px uniquement
