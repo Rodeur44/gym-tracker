@@ -365,9 +365,10 @@ function ExoCard({ exo, idx, accent, getBest, onChange, onDelete, onDuplicate, o
             whileTap={{ scale: 0.9 }}
             transition={{ type: 'spring', stiffness: 400, damping: 25 }}
             aria-label="Informations sur l'exercice"
-            className="w-11 h-11 flex items-center justify-center text-zinc-600 hover:text-zinc-400 transition-all duration-200"
+            className="w-8 h-8 flex items-center justify-center rounded-full active:opacity-70 transition-opacity flex-shrink-0"
+            style={{ background: 'rgba(167,139,250,0.12)', border: '1px solid rgba(167,139,250,0.25)' }}
           >
-            <Info size={15} strokeWidth={1.8} />
+            <Info size={14} strokeWidth={1.8} style={{ color: '#A78BFA' }} />
           </motion.button>
           <motion.button
             onClick={onDuplicate}

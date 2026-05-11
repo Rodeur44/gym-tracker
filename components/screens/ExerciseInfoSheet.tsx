@@ -91,16 +91,20 @@ export default function ExerciseInfoSheet({ exerciseName, muscleType, onClose }:
           className="overflow-y-auto flex-1 px-4 flex flex-col gap-4"
           style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom, 24px))' }}
         >
-          {/* 3D Viewer */}
+          {/* Muscle map */}
           <div
-            className="w-full rounded-2xl overflow-hidden"
+            className="w-full rounded-2xl flex items-center justify-center"
             style={{
-              height: 220,
+              height: 240,
               background: 'radial-gradient(ellipse at center, rgba(109,40,217,0.08) 0%, rgba(0,0,0,0) 70%)',
               border: '1px solid rgba(255,255,255,0.05)',
             }}
           >
-            <MuscleMap muscles={muscles} />
+            <MuscleMap
+              muscles={muscles}
+              frontSlugs={info?.bodySlugs?.front}
+              backSlugs={info?.bodySlugs?.back}
+            />
           </div>
 
           {/* Description */}
