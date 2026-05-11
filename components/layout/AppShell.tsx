@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Variants } from 'framer-motion'
-import { Home, Plus, Clock, BarChart2, LayoutGrid, LogOut, Crown, PersonStanding, ShieldCheck, Pencil, Bell, BellOff } from 'lucide-react'
+import { Home, Plus, Clock, BarChart2, LayoutGrid, LogOut, Crown, PersonStanding, ShieldCheck, Pencil, Bell, BellOff, Share2, Check } from 'lucide-react'
 import { useApp } from '@/context/AppContext'
 import { createClient } from '@/lib/supabase/client'
 import HomeScreen from '@/components/screens/HomeScreen'
@@ -126,6 +126,20 @@ export default function AppShell() {
         }).catch(() => {})
       }
       setNotifEnabled(true)
+    }
+  }
+
+  const [shareCopied, setShareCopied] = useState(false)
+
+  async function shareStats() {
+    if (!user) return
+    const url = `${window.location.origin}/share/${user.id}`
+    try {
+      await navigator.share({ title: 'Mes stats GymLog', url })
+    } catch {
+      await navigator.clipboard.writeText(url)
+      setShareCopied(true)
+      setTimeout(() => setShareCopied(false), 2000)
     }
   }
 
@@ -344,6 +358,13 @@ export default function AppShell() {
                   >
                     <Pencil size={16} strokeWidth={1.8} />
                     Modifier le pseudo
+                  </button>
+                  <button
+                    onClick={shareStats}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-zinc-300 hover:bg-white/[0.04] transition-colors border-b border-white/[0.06]"
+                  >
+                    {shareCopied ? <Check size={16} strokeWidth={1.8} className="text-emerald-400" /> : <Share2 size={16} strokeWidth={1.8} />}
+                    {shareCopied ? 'Lien copié !' : 'Partager mes stats'}
                   </button>
                   <button
                     onClick={() => { setProfileOpen(false); openPro() }}
