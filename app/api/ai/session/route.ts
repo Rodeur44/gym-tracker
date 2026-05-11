@@ -9,7 +9,12 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
 
 export async function POST(req: NextRequest) {
   try {
-    const { prompt, sessions } = await req.json() as { prompt: string; sessions: Session[] }
+    const { prompt, notes, includePastNotes, sessions } = await req.json() as {
+      prompt: string
+      notes: string
+      includePastNotes: boolean
+      sessions: Session[]
+    }
 
     const bests: Record<string, number> = {}
     for (const s of sessions) {
@@ -24,7 +29,8 @@ export async function POST(req: NextRequest) {
         const max = Math.max(0, ...e.sets.map(st => st.weight || 0))
         return `${e.name} (${e.sets.length} séries${max > 0 ? `, max ${max}kg` : ', poids corps'})`
       }).join(', ')
-      return `- ${s.date} [${s.type}]${s.notes ? ` | Note: "${s.notes}"` : ''}: ${exosSummary}`
+      const notesPart = includePastNotes && s.notes ? ` | Note: "${s.notes}"` : ''
+      return `- ${s.date} [${s.type}]${notesPart}: ${exosSummary}`
     }).join('\n')
 
     const bestsText = Object.entries(bests)
@@ -35,7 +41,7 @@ export async function POST(req: NextRequest) {
 
     const systemPrompt = `Tu es un coach sportif expert en musculation. Tu génères des séances personnalisées à partir d'une demande en langage naturel.
 
-HISTORIQUE (20 dernières séances — inclut les notes importantes sur douleurs, fatigue, ressenti):
+HISTORIQUE (20 dernières séances${includePastNotes ? ' — avec notes de ressenti' : ''}):
 ${history || 'Aucun historique disponible'}
 
 RECORDS PERSONNELS:
@@ -46,20 +52,24 @@ TYPES: pec (poitrine/épaules/triceps), dos (dos/biceps), bras (bras/épaules), 
 RÈGLES:
 - Réponds UNIQUEMENT avec du JSON valide, sans markdown ni texte autour
 - Exercices au poids du corps (pompes, tractions, dips, burpees...) → weight: 0
-- Adapte les poids aux records (légèrement en dessous si l'utilisateur demande plus léger ou mentionne une fatigue/douleur récente)
+- Adapte les poids aux records personnels
 - 3 à 6 exercices, 2 à 4 séries selon la durée demandée
 - Si l'utilisateur demande "moitié de séance" ou "court" → 3 exercices, 3 séries max
-- Prends en compte les notes récentes pour éviter les exercices qui ont posé problème
-- Utilise les noms d'exercices en français
+- Utilise les noms d'exercices en français${includePastNotes ? '\n- Prends en compte les notes des séances passées (douleurs, fatigue, préférences)' : ''}
 
 FORMAT STRICTEMENT:
 {"type":"pec","exos":[{"name":"Pompes","sets":[{"weight":0,"reps":15},{"weight":0,"reps":12}]},{"name":"Développé couché","sets":[{"weight":60,"reps":10},{"weight":60,"reps":8}]}]}`
 
     const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
 
+    const userMessage = [
+      `Demande: ${prompt}`,
+      notes.trim() ? `Notes importantes pour aujourd'hui (PRIORITÉ ABSOLUE): ${notes}` : '',
+    ].filter(Boolean).join('\n')
+
     const result = await model.generateContent([
       { text: systemPrompt },
-      { text: `Demande: ${prompt}` },
+      { text: userMessage },
     ])
 
     const raw = result.response.text().trim()

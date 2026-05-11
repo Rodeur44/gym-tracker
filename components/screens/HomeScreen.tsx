@@ -3,13 +3,14 @@
 import { useMemo, useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Variants } from 'framer-motion'
-import { Zap, Crown, Sparkles, ChevronRight, LayoutList, Trophy, Send, Loader2 } from 'lucide-react'
+import { Zap, Crown, Sparkles, ChevronRight, LayoutList, Trophy, BrainCircuit } from 'lucide-react'
 import { useApp } from '@/context/AppContext'
 import { TYPE_LBL, TAG_CLR, TAG_BG, EXO_BY_TYPE } from '@/lib/constants'
-import type { MuscleGroup, Session, Exercise } from '@/types'
+import type { MuscleGroup, Session } from '@/types'
 import { Counter } from '@/components/ui/animated-counter'
 import ProgramsSheet from '@/components/screens/ProgramsSheet'
 import LeaderboardSheet from '@/components/screens/LeaderboardSheet'
+import AICoachSheet from '@/components/screens/AICoachSheet'
 
 const stagger: Variants = {
   animate: { transition: { staggerChildren: 0.08 } }
@@ -27,10 +28,7 @@ export default function HomeScreen() {
   const { sessions, unlockedCards, getBest, getStreak, getNextType, repeatSession, isPro, openPro } = useApp()
   const [programsOpen, setProgramsOpen] = useState(false)
   const [leaderboardOpen, setLeaderboardOpen] = useState(false)
-  const [aiPrompt, setAiPrompt] = useState('')
-  const [aiResult, setAiResult] = useState<{ type: MuscleGroup; exos: Exercise[] } | null>(null)
-  const [aiLoading, setAiLoading] = useState(false)
-  const [aiError, setAiError] = useState<string | null>(null)
+  const [aiCoachOpen, setAiCoachOpen] = useState(false)
   const nt = getNextType()
   const streak = getStreak()
   const last = sessions[0]
@@ -87,41 +85,6 @@ export default function HomeScreen() {
           { weight: e.target, reps: 8 },
         ],
       })),
-    }
-    repeatSession(fake)
-  }
-
-  async function generateAiSession() {
-    if (!aiPrompt.trim() || aiLoading) return
-    setAiLoading(true)
-    setAiError(null)
-    setAiResult(null)
-    try {
-      const res = await fetch('/api/ai/session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: aiPrompt, sessions }),
-      })
-      const data = await res.json()
-      if (data.error) throw new Error(data.error)
-      setAiResult(data)
-    } catch {
-      setAiError('Impossible de générer la séance. Réessaie.')
-    } finally {
-      setAiLoading(false)
-    }
-  }
-
-  function startAiResult() {
-    if (!aiResult) return
-    const fake: Session = {
-      id: 'ai-gen',
-      user_id: '',
-      created_at: '',
-      date: new Date().toISOString().slice(0, 10),
-      type: aiResult.type,
-      notes: '',
-      exos: aiResult.exos,
     }
     repeatSession(fake)
   }
@@ -342,137 +305,73 @@ export default function HomeScreen() {
         </motion.button>
       </motion.div>
 
-      {/* AI suggestion */}
+      {/* Coach IA */}
+      <motion.div variants={fadeUp}>
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+          onClick={() => setAiCoachOpen(true)}
+          className="w-full flex items-center gap-3.5 p-4 rounded-2xl border text-left"
+          style={{
+            background: 'linear-gradient(135deg,rgba(109,40,217,0.07),rgba(139,92,246,0.03))',
+            borderColor: 'rgba(139,92,246,0.2)',
+          }}
+        >
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ background: 'linear-gradient(135deg,#6D28D9,#7C3AED)', boxShadow: '0 4px 16px -4px rgba(109,40,217,0.5)' }}
+          >
+            <BrainCircuit size={18} strokeWidth={1.8} className="text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] font-semibold text-zinc-200 tracking-tight">Coach IA</p>
+            <p className="text-[11px] text-zinc-500 mt-0.5">Décris ta séance, l'IA la génère pour toi</p>
+          </div>
+          <ChevronRight size={16} strokeWidth={1.8} className="text-zinc-600 flex-shrink-0" />
+        </motion.button>
+      </motion.div>
+
+      {/* Suggestion IA */}
       <motion.div variants={fadeUp}>
         <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-[1.8px] mb-3 flex items-center gap-2">
           <span className="w-[3px] h-[11px] rounded-full bg-[#A78BFA] shadow-[0_0_8px_rgba(139,92,246,0.5)] inline-block" />
-          Coach IA
+          Suggestion IA
         </p>
-
-        {/* Text input */}
-        <div className="flex gap-2 mb-3">
-          <input
-            type="text"
-            placeholder="Décris ta séance… ex: poids du corps + un peu de dos"
-            value={aiPrompt}
-            onChange={e => setAiPrompt(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && generateAiSession()}
-            className="flex-1 h-11 px-4 rounded-xl text-sm outline-none"
-            style={{
-              background: 'rgba(255,255,255,0.045)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              color: '#e4e4e7',
-            }}
-          />
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-            onClick={generateAiSession}
-            disabled={!aiPrompt.trim() || aiLoading}
-            aria-label="Générer la séance"
-            className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 disabled:opacity-40 transition-opacity"
-            style={{ background: 'linear-gradient(135deg,#6D28D9,#7C3AED)' }}
-          >
-            {aiLoading
-              ? <Loader2 size={16} strokeWidth={1.8} className="text-white animate-spin" />
-              : <Send size={16} strokeWidth={1.8} className="text-white" />
-            }
-          </motion.button>
-        </div>
-
-        {/* Error */}
-        {aiError && (
-          <p className="text-[12px] text-red-400 mb-3 px-1">{aiError}</p>
-        )}
-
-        {/* AI result */}
-        {aiResult && !aiLoading && (
-          <div className="card-glass rounded-2xl p-4 mb-3">
-            <div className="flex items-center gap-2 mb-3">
-              <span
-                className="text-[11px] font-semibold px-2.5 py-1 rounded-full border"
-                style={{ color: TAG_CLR[aiResult.type], background: TAG_BG[aiResult.type], borderColor: `${TAG_CLR[aiResult.type]}33` }}
-              >
-                {TYPE_LBL[aiResult.type]}
-              </span>
-              <span className="text-[11px] text-zinc-500">· Généré par IA</span>
+        <div className="card-glass rounded-2xl p-4">
+          <div className="flex items-start justify-between mb-3">
+            <div>
+              <div className="text-[10px] font-bold text-zinc-600 uppercase tracking-[1.2px] mb-0.5">Muscle le plus reposé</div>
+              <div className="text-sm font-semibold text-zinc-200">{TYPE_LBL[aiSuggestion.type]}</div>
             </div>
-            <div className="flex flex-col gap-0.5 mb-4">
-              {aiResult.exos.map(e => {
-                const w = Math.max(0, ...e.sets.map(s => s.weight || 0))
-                return (
-                  <div key={e.name} className="flex items-center justify-between py-2 border-b border-white/[0.04] last:border-none">
-                    <span className="text-sm text-zinc-300 truncate mr-3">{e.name}</span>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      {w > 0 && <span className="text-[11px] font-mono font-semibold" style={{ color: TAG_CLR[aiResult.type] }}>{w}kg</span>}
-                      <span className="text-[11px] text-zinc-500 font-mono bg-[#1C1C1C] border border-white/[0.06] px-2 py-0.5 rounded-lg">
-                        {e.sets.length}×{e.sets[0]?.reps || '?'}
-                      </span>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-            <motion.button
-              whileTap={{ scale: 0.97 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-              onClick={startAiResult}
-              className="w-full h-11 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2"
-              style={{ background: 'linear-gradient(135deg,#6D28D9,#7C3AED)', boxShadow: '0 8px 24px -8px rgba(109,40,217,0.45)' }}
-            >
-              <Zap size={16} strokeWidth={1.8} />
-              Commencer cette séance
-            </motion.button>
+            <span className="text-[11px] font-mono text-zinc-500 bg-[#1C1C1C] border border-white/[0.06] px-2.5 py-1 rounded-lg">
+              {aiSuggestion.daysSince >= 999 ? 'Jamais' : `${aiSuggestion.daysSince}j repos`}
+            </span>
           </div>
-        )}
-
-        {/* Fallback: algorithmic suggestion (shown when no AI result) */}
-        {!aiResult && !aiLoading && (
-          <div className="card-glass rounded-2xl p-4">
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                <div className="text-[10px] font-bold text-zinc-600 uppercase tracking-[1.2px] mb-0.5">Muscle le plus reposé</div>
-                <div className="text-sm font-semibold text-zinc-200">{TYPE_LBL[aiSuggestion.type]}</div>
+          <div className="flex flex-col gap-0.5 mb-4">
+            {aiSuggestion.exos.map(e => (
+              <div key={e.name} className="flex items-center justify-between py-2 border-b border-white/[0.04] last:border-none">
+                <span className="text-sm text-zinc-300 truncate mr-3">{e.name}</span>
+                {e.target > 0 ? (
+                  <span className="text-[11px] font-mono font-semibold flex-shrink-0" style={{ color: TAG_CLR[aiSuggestion.type] }}>
+                    Vise {e.target}kg
+                  </span>
+                ) : (
+                  <span className="text-[11px] text-zinc-600 flex-shrink-0">poids libre</span>
+                )}
               </div>
-              <span className="text-[11px] font-mono text-zinc-500 bg-[#1C1C1C] border border-white/[0.06] px-2.5 py-1 rounded-lg">
-                {aiSuggestion.daysSince >= 999 ? 'Jamais' : `${aiSuggestion.daysSince}j repos`}
-              </span>
-            </div>
-            <div className="flex flex-col gap-0.5 mb-4">
-              {aiSuggestion.exos.map(e => (
-                <div key={e.name} className="flex items-center justify-between py-2 border-b border-white/[0.04] last:border-none">
-                  <span className="text-sm text-zinc-300 truncate mr-3">{e.name}</span>
-                  {e.target > 0 ? (
-                    <span className="text-[11px] font-mono font-semibold flex-shrink-0" style={{ color: TAG_CLR[aiSuggestion.type] }}>
-                      Vise {e.target}kg
-                    </span>
-                  ) : (
-                    <span className="text-[11px] text-zinc-600 flex-shrink-0">poids libre</span>
-                  )}
-                </div>
-              ))}
-            </div>
-            <motion.button
-              whileTap={{ scale: 0.97 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-              onClick={startAiSession}
-              className="w-full h-11 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2"
-              style={{ background: 'linear-gradient(135deg,#6D28D9,#7C3AED)', boxShadow: '0 8px 24px -8px rgba(109,40,217,0.45)' }}
-            >
-              <Zap size={16} strokeWidth={1.8} />
-              Commencer cette séance
-            </motion.button>
-          </div>
-        )}
-
-        {/* Loading skeleton */}
-        {aiLoading && (
-          <div className="card-glass rounded-2xl p-4 flex flex-col gap-3">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="h-9 rounded-xl bg-white/[0.03] animate-pulse" />
             ))}
           </div>
-        )}
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+            onClick={startAiSession}
+            className="w-full h-11 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2"
+            style={{ background: 'linear-gradient(135deg,#6D28D9,#7C3AED)', boxShadow: '0 8px 24px -8px rgba(109,40,217,0.45)' }}
+          >
+            <Zap size={16} strokeWidth={1.8} />
+            Commencer cette séance
+          </motion.button>
+        </div>
       </motion.div>
 
       {/* Programs sheet */}
@@ -483,6 +382,11 @@ export default function HomeScreen() {
       {/* Leaderboard sheet */}
       <AnimatePresence>
         {leaderboardOpen && <LeaderboardSheet onClose={() => setLeaderboardOpen(false)} />}
+      </AnimatePresence>
+
+      {/* AI Coach sheet */}
+      <AnimatePresence>
+        {aiCoachOpen && <AICoachSheet onClose={() => setAiCoachOpen(false)} />}
       </AnimatePresence>
     </motion.div>
   )
