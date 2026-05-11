@@ -3,12 +3,13 @@
 import { useMemo, useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Variants } from 'framer-motion'
-import { Zap, Crown, Sparkles, ChevronRight, LayoutList } from 'lucide-react'
+import { Zap, Crown, Sparkles, ChevronRight, LayoutList, Trophy } from 'lucide-react'
 import { useApp } from '@/context/AppContext'
 import { TYPE_LBL, TAG_CLR, TAG_BG, EXO_BY_TYPE } from '@/lib/constants'
 import type { MuscleGroup, Session } from '@/types'
 import { Counter } from '@/components/ui/animated-counter'
 import ProgramsSheet from '@/components/screens/ProgramsSheet'
+import LeaderboardSheet from '@/components/screens/LeaderboardSheet'
 
 const stagger: Variants = {
   animate: { transition: { staggerChildren: 0.08 } }
@@ -25,6 +26,7 @@ function fmtDate(d: string) {
 export default function HomeScreen() {
   const { sessions, unlockedCards, getBest, getStreak, getNextType, repeatSession, isPro, openPro } = useApp()
   const [programsOpen, setProgramsOpen] = useState(false)
+  const [leaderboardOpen, setLeaderboardOpen] = useState(false)
   const nt = getNextType()
   const streak = getStreak()
   const last = sessions[0]
@@ -275,6 +277,32 @@ export default function HomeScreen() {
         </motion.button>
       </motion.div>
 
+      {/* Classement */}
+      <motion.div variants={fadeUp}>
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+          onClick={() => setLeaderboardOpen(true)}
+          className="w-full flex items-center gap-3.5 p-4 rounded-2xl border text-left"
+          style={{
+            background: 'rgba(241,196,15,0.03)',
+            borderColor: 'rgba(241,196,15,0.14)',
+          }}
+        >
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ background: 'linear-gradient(135deg,rgba(241,196,15,0.15),rgba(245,158,11,0.08))', border: '1px solid rgba(241,196,15,0.18)' }}
+          >
+            <Trophy size={18} strokeWidth={1.8} className="text-[#F1C40F]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] font-semibold text-zinc-200 tracking-tight">Classement</p>
+            <p className="text-[11px] text-zinc-500 mt-0.5">Volume · Séances · Streak</p>
+          </div>
+          <ChevronRight size={16} strokeWidth={1.8} className="text-zinc-600 flex-shrink-0" />
+        </motion.button>
+      </motion.div>
+
       {/* AI suggestion */}
       <motion.div variants={fadeUp}>
         <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-[1.8px] mb-3 flex items-center gap-2">
@@ -321,6 +349,11 @@ export default function HomeScreen() {
       {/* Programs sheet */}
       <AnimatePresence>
         {programsOpen && <ProgramsSheet onClose={() => setProgramsOpen(false)} />}
+      </AnimatePresence>
+
+      {/* Leaderboard sheet */}
+      <AnimatePresence>
+        {leaderboardOpen && <LeaderboardSheet onClose={() => setLeaderboardOpen(false)} />}
       </AnimatePresence>
     </motion.div>
   )
