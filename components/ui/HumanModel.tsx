@@ -11,7 +11,7 @@ const MODEL_PATH: Partial<Record<MuscleGroup, string>> = {
   bras: '/models/curl.fbx',
   cardio: '/models/jumprope.fbx',
   jambes: '/models/squat.fbx',
-  // dos: '/models/latpulldown.fbx',   // à activer après téléchargement
+  dos: '/models/squat.fbx',
 }
 
 const DEFAULT_MODEL = '/models/pushup.fbx'
