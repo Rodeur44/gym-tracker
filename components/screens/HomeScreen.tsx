@@ -1,15 +1,16 @@
 'use client'
 
-import { useMemo, useEffect, useState } from 'react'
+import { useMemo, useEffect, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Variants } from 'framer-motion'
-import { Zap, Crown, Sparkles, ChevronRight, LayoutList, Trophy } from 'lucide-react'
+import { Zap, Crown, Sparkles, ChevronRight, LayoutList, Trophy, Bell, BellOff } from 'lucide-react'
 import { useApp } from '@/context/AppContext'
 import { TYPE_LBL, TAG_CLR, TAG_BG, EXO_BY_TYPE } from '@/lib/constants'
 import type { MuscleGroup, Session } from '@/types'
 import { Counter } from '@/components/ui/animated-counter'
 import ProgramsSheet from '@/components/screens/ProgramsSheet'
 import LeaderboardSheet from '@/components/screens/LeaderboardSheet'
+import WaterTracker from '@/components/ui/WaterTracker'
 
 const stagger: Variants = {
   animate: { transition: { staggerChildren: 0.08 } }
@@ -27,6 +28,51 @@ export default function HomeScreen() {
   const { sessions, unlockedCards, getBest, getStreak, getNextType, repeatSession, isPro, openPro } = useApp()
   const [programsOpen, setProgramsOpen] = useState(false)
   const [leaderboardOpen, setLeaderboardOpen] = useState(false)
+  const [pushEnabled, setPushEnabled] = useState(false)
+  const [pushLoading, setPushLoading] = useState(false)
+
+  // Check push subscription state on mount
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('serviceWorker' in navigator) || !('PushManager' in window)) return
+    navigator.serviceWorker.ready.then(reg => {
+      reg.pushManager.getSubscription().then(sub => setPushEnabled(!!sub))
+    }).catch(() => {})
+  }, [])
+
+  const togglePush = useCallback(async () => {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      alert('Les notifications ne sont pas supportées. Installe l\'app depuis Safari (Partager → Sur l\'écran d\'accueil).')
+      return
+    }
+    setPushLoading(true)
+    try {
+      const reg = await navigator.serviceWorker.ready
+      if (pushEnabled) {
+        const sub = await reg.pushManager.getSubscription()
+        if (sub) {
+          await fetch('/api/push/subscribe', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ endpoint: sub.endpoint }) })
+          await sub.unsubscribe()
+        }
+        setPushEnabled(false)
+      } else {
+        const perm = await Notification.requestPermission()
+        if (perm !== 'granted') return
+        const sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+        })
+        const j = sub.toJSON()
+        await fetch('/api/push/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ endpoint: sub.endpoint, p256dh: (j.keys as Record<string,string>).p256dh, auth: (j.keys as Record<string,string>).auth }),
+        })
+        setPushEnabled(true)
+      }
+    } finally {
+      setPushLoading(false)
+    }
+  }, [pushEnabled])
   const nt = getNextType()
   const streak = getStreak()
   const last = sessions[0]
@@ -300,6 +346,61 @@ export default function HomeScreen() {
             <p className="text-[11px] text-zinc-500 mt-0.5">Volume · Séances · Streak</p>
           </div>
           <ChevronRight size={16} strokeWidth={1.8} className="text-zinc-600 flex-shrink-0" />
+        </motion.button>
+      </motion.div>
+
+      {/* Hydratation */}
+      <motion.div variants={fadeUp}>
+        <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-[1.8px] mb-3 flex items-center gap-2">
+          <span className="w-[3px] h-[11px] rounded-full bg-sky-400 shadow-[0_0_8px_rgba(14,165,233,0.5)] inline-block" />
+          Hydratation
+        </p>
+        <WaterTracker />
+      </motion.div>
+
+      {/* Notifications */}
+      <motion.div variants={fadeUp}>
+        <motion.button
+          onClick={togglePush}
+          disabled={pushLoading}
+          whileTap={{ scale: 0.97 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+          className="w-full flex items-center gap-3.5 p-4 rounded-2xl border text-left transition-opacity disabled:opacity-50"
+          style={{
+            background: pushEnabled ? 'rgba(34,197,94,0.04)' : 'rgba(255,255,255,0.025)',
+            borderColor: pushEnabled ? 'rgba(34,197,94,0.2)' : 'rgba(255,255,255,0.06)',
+          }}
+        >
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{
+              background: pushEnabled ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.05)',
+              border: pushEnabled ? '1px solid rgba(34,197,94,0.25)' : '1px solid rgba(255,255,255,0.08)',
+            }}
+          >
+            {pushEnabled
+              ? <Bell size={18} strokeWidth={1.8} className="text-green-400" />
+              : <BellOff size={18} strokeWidth={1.8} className="text-zinc-500" />
+            }
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] font-semibold text-zinc-200 tracking-tight">
+              {pushEnabled ? 'Rappels activés' : 'Rappels d\'entraînement'}
+            </p>
+            <p className="text-[11px] text-zinc-500 mt-0.5">
+              {pushEnabled ? 'Notification à 9h si pas de séance' : 'Reçois un rappel quotidien à 9h'}
+            </p>
+          </div>
+          <div
+            className="w-11 h-6 rounded-full flex-shrink-0 flex items-center transition-colors duration-300 px-0.5"
+            style={{ background: pushEnabled ? '#22c55e' : 'rgba(255,255,255,0.1)' }}
+          >
+            <motion.div
+              className="w-5 h-5 rounded-full bg-white shadow-sm"
+              animate={{ x: pushEnabled ? 20 : 0 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+            />
+          </div>
         </motion.button>
       </motion.div>
 

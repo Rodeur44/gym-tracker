@@ -97,6 +97,23 @@
   100% { transform: translateX(200%) }
 }
 
+@keyframes wavePrimary {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes waveSecondary {
+  0%   { transform: translateX(-50%); }
+  100% { transform: translateX(0); }
+}
+
+.wave-primary {
+  animation: wavePrimary 2.4s linear infinite;
+}
+.wave-secondary {
+  animation: waveSecondary 3.2s linear infinite;
+}
+
 @keyframes loaderAnim {
   0%    { inset: 0 35px 35px 0; }
   12.5% { inset: 0 35px 0 0; }
