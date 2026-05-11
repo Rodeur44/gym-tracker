@@ -5,13 +5,12 @@ import { createAdminClient } from '@/lib/supabase/admin'
 export const runtime = 'nodejs'
 export const maxDuration = 30
 
-webpush.setVapidDetails(
-  `mailto:${process.env.VAPID_SUBJECT || 'admin@gymlog.app'}`,
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!,
-)
-
 export async function GET(req: NextRequest) {
+  webpush.setVapidDetails(
+    `mailto:${process.env.VAPID_SUBJECT || 'admin@gymlog.app'}`,
+    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+    process.env.VAPID_PRIVATE_KEY!,
+  )
   const secret = process.env.CRON_SECRET
   const auth = req.headers.get('Authorization')
   if (secret && auth !== `Bearer ${secret}`) {
