@@ -9,9 +9,9 @@ import type { MuscleGroup } from '@/types'
 const MODEL_PATH: Partial<Record<MuscleGroup, string>> = {
   pec: '/models/pushup.fbx',
   bras: '/models/curl.fbx',
-  cardio: '/models/running.fbx',
-  // jambes: '/models/squat.fbx',      // à activer après téléchargement
-  // dos: '/models/chinup.fbx',        // à activer après téléchargement
+  cardio: '/models/jumprope.fbx',
+  jambes: '/models/squat.fbx',
+  // dos: '/models/latpulldown.fbx',   // à activer après téléchargement
 }
 
 const DEFAULT_MODEL = '/models/pushup.fbx'
