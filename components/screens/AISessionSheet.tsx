@@ -118,7 +118,7 @@ export default function AISessionSheet({ defaultType, onClose, onUse }: Props) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/75 backdrop-blur-xl z-50 flex items-end justify-center"
+      className="fixed inset-0 bg-black/75 backdrop-blur-xl z-[80] flex items-end justify-center"
       onClick={onClose}
       data-no-swipe
     >
@@ -154,8 +154,8 @@ export default function AISessionSheet({ defaultType, onClose, onUse }: Props) {
         </div>
 
         {/* Scrollable content */}
-        <div className="overflow-y-auto flex-1 px-5 pb-8 flex flex-col gap-5"
-          style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
+        <div className="overflow-y-auto flex-1 px-5 flex flex-col gap-5"
+          style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain', paddingBottom: 'max(32px, env(safe-area-inset-bottom, 32px))' }}>
 
           {!result ? (
             <>
