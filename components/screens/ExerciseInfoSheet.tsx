@@ -8,7 +8,7 @@ import { TAG_CLR, TAG_BG, TYPE_LBL } from '@/lib/constants'
 import { getExerciseInfo, getMusclesForExercise } from '@/lib/exercise-info'
 import type { MuscleGroup } from '@/types'
 
-const HumanModel = dynamic(() => import('@/components/ui/HumanModel'), {
+const MuscleMap = dynamic(() => import('@/components/ui/MuscleMap'), {
   ssr: false,
   loading: () => <div className="w-full h-full rounded-2xl bg-white/[0.03] animate-pulse" />,
 })
@@ -100,7 +100,7 @@ export default function ExerciseInfoSheet({ exerciseName, muscleType, onClose }:
               border: '1px solid rgba(255,255,255,0.05)',
             }}
           >
-            <HumanModel muscles={muscles} />
+            <MuscleMap muscles={muscles} />
           </div>
 
           {/* Description */}
