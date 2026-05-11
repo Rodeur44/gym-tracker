@@ -15,15 +15,15 @@ import ExerciseInfoSheet from '@/components/screens/ExerciseInfoSheet'
 const MUSCLE_TABS: MuscleGroup[] = ['pec', 'dos', 'bras', 'jambes', 'cardio']
 
 // ── Exercise Picker Modal ─────────────────────────────────────────
-function ExoPicker({ type, onPick, onClose, getBest, allPrev, onInfo }: {
+function ExoPicker({ type, onPick, onClose, getBest, allPrev }: {
   type: MuscleGroup
   onPick: (name: string) => void
   onClose: () => void
   getBest: (name: string) => number
-  onInfo: (name: string) => void
   allPrev: string[]
 }) {
   const [q, setQ] = useState('')
+  const [pickerInfo, setPickerInfo] = useState<string | null>(null)
   const clr = TAG_CLR[type]
 
   const recent = allPrev.slice(0, 6)
@@ -57,7 +57,7 @@ function ExoPicker({ type, onPick, onClose, getBest, allPrev, onInfo }: {
           <ChevronRight size={14} strokeWidth={1.8} className="text-zinc-600 flex-shrink-0" />
         </motion.div>
         <motion.button
-          onClick={e => { e.stopPropagation(); onInfo(name) }}
+          onClick={e => { e.stopPropagation(); setPickerInfo(name) }}
           whileTap={{ scale: 0.88 }}
           transition={{ type: 'spring', stiffness: 400, damping: 25 }}
           aria-label={`Infos sur ${name}`}
@@ -160,7 +160,21 @@ function ExoPicker({ type, onPick, onClose, getBest, allPrev, onInfo }: {
     </div>
   )
   if (typeof document === 'undefined') return null
-  return createPortal(sheet, document.body)
+  return createPortal(
+    <>
+      {sheet}
+      <AnimatePresence>
+        {pickerInfo && (
+          <ExerciseInfoSheet
+            exerciseName={pickerInfo}
+            muscleType={type}
+            onClose={() => setPickerInfo(null)}
+          />
+        )}
+      </AnimatePresence>
+    </>,
+    document.body
+  )
 }
 
 // ── Weight slider (isolated touch — never bubbles to swipe handler) ─
@@ -755,7 +769,6 @@ export default function LogScreen() {
             onClose={() => setPickerOpen(false)}
             getBest={getBest}
             allPrev={allPrev}
-            onInfo={name => setInfoExo(name)}
           />
         )}
         {templatesOpen && (
