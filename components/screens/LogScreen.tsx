@@ -15,11 +15,12 @@ import ExerciseInfoSheet from '@/components/screens/ExerciseInfoSheet'
 const MUSCLE_TABS: MuscleGroup[] = ['pec', 'dos', 'bras', 'jambes', 'cardio']
 
 // ── Exercise Picker Modal ─────────────────────────────────────────
-function ExoPicker({ type, onPick, onClose, getBest, allPrev }: {
+function ExoPicker({ type, onPick, onClose, getBest, allPrev, onInfo }: {
   type: MuscleGroup
   onPick: (name: string) => void
   onClose: () => void
   getBest: (name: string) => number
+  onInfo: (name: string) => void
   allPrev: string[]
 }) {
   const [q, setQ] = useState('')
@@ -39,21 +40,33 @@ function ExoPicker({ type, onPick, onClose, getBest, allPrev }: {
   function ExoRow({ name }: { name: string }) {
     const pr = getBest(name)
     return (
-      <motion.div
-        whileTap={{ scale: 0.98, opacity: 0.6 }}
-        onClick={() => onPick(name)}
-        className="flex items-center gap-3 px-2 py-3.5 rounded-xl cursor-pointer hover:bg-white/[0.04] transition-all group border-b border-white/[0.04] last:border-none"
-      >
-        <div className="w-[3px] h-7 rounded-full flex-shrink-0 opacity-50 group-hover:opacity-100 group-hover:h-8 transition-all" style={{ background: clr }} />
-        <span className="flex-1 text-sm text-zinc-200 tracking-tight">{name}</span>
-        {pr > 0 && (
-          <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-lg border flex-shrink-0"
-            style={{ color: clr, background: TAG_BG[type], borderColor: `${clr}33` }}>
-            {pr} kg
-          </span>
-        )}
-        <ChevronRight size={14} strokeWidth={1.8} className="text-zinc-600 flex-shrink-0" />
-      </motion.div>
+      <div className="flex items-center border-b border-white/[0.04] last:border-none">
+        <motion.div
+          whileTap={{ scale: 0.98, opacity: 0.6 }}
+          onClick={() => onPick(name)}
+          className="flex items-center gap-3 px-2 py-3.5 rounded-xl cursor-pointer hover:bg-white/[0.04] transition-all group flex-1 min-w-0"
+        >
+          <div className="w-[3px] h-7 rounded-full flex-shrink-0 opacity-50 group-hover:opacity-100 group-hover:h-8 transition-all" style={{ background: clr }} />
+          <span className="flex-1 text-sm text-zinc-200 tracking-tight truncate">{name}</span>
+          {pr > 0 && (
+            <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-lg border flex-shrink-0"
+              style={{ color: clr, background: TAG_BG[type], borderColor: `${clr}33` }}>
+              {pr} kg
+            </span>
+          )}
+          <ChevronRight size={14} strokeWidth={1.8} className="text-zinc-600 flex-shrink-0" />
+        </motion.div>
+        <motion.button
+          onClick={e => { e.stopPropagation(); onInfo(name) }}
+          whileTap={{ scale: 0.88 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+          aria-label={`Infos sur ${name}`}
+          className="w-8 h-8 flex items-center justify-center rounded-full flex-shrink-0 ml-1 mr-1 active:opacity-70 transition-opacity"
+          style={{ background: 'rgba(167,139,250,0.12)', border: '1px solid rgba(167,139,250,0.25)' }}
+        >
+          <Info size={13} strokeWidth={1.8} style={{ color: '#A78BFA' }} />
+        </motion.button>
+      </div>
     )
   }
 
@@ -742,6 +755,7 @@ export default function LogScreen() {
             onClose={() => setPickerOpen(false)}
             getBest={getBest}
             allPrev={allPrev}
+            onInfo={name => setInfoExo(name)}
           />
         )}
         {templatesOpen && (
