@@ -1,12 +1,12 @@
 import type { Metadata, Viewport } from 'next'
-import { DM_Sans, DM_Mono } from 'next/font/google'
+import { Syne, DM_Mono } from 'next/font/google'
 import './globals.css'
 import { AppProvider } from '@/context/AppContext'
 import { BackgroundShader } from '@/components/ui/background-shader'
 
-const dmSans = DM_Sans({
+const syne = Syne({
   subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700', '800'],
+  weight: ['400', '500', '600', '700', '800'],
   variable: '--font-sans',
 })
 
@@ -51,7 +51,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="fr" className="dark">
-      <body className={`${dmSans.variable} ${dmMono.variable} font-sans antialiased`}>
+      <body className={`${syne.variable} ${dmMono.variable} font-sans antialiased`}>
         <BackgroundShader />
         <div className="relative z-10 min-h-screen max-w-[430px] mx-auto overflow-x-hidden">
           <AppProvider>

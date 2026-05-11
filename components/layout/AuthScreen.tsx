@@ -38,9 +38,19 @@ export default function AuthScreen() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
       >
-        <h1 className="text-5xl font-extrabold tracking-[-2px] mb-2">
-          Gym<span className="text-[#A78BFA] drop-shadow-[0_0_24px_rgba(139,92,246,0.6)]">Log</span>
-        </h1>
+        <div className="flex items-center gap-3 mb-2">
+          <img
+            src="/icon.svg"
+            alt="GymLog"
+            width={52}
+            height={52}
+            className="rounded-[14px] flex-shrink-0"
+            style={{ boxShadow: '0 0 24px rgba(139,92,246,0.5)' }}
+          />
+          <h1 className="text-5xl font-extrabold tracking-[-2px]">
+            Gym<span className="text-[#A78BFA] drop-shadow-[0_0_24px_rgba(139,92,246,0.6)]">Log</span>
+          </h1>
+        </div>
         <p className="text-sm text-zinc-500 mb-10 leading-relaxed">
           Suis tes séances, bats tes records,<br />débloque ta collection de cartes.
         </p>

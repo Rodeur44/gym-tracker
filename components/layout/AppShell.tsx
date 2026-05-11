@@ -306,7 +306,15 @@ export default function AppShell() {
         className="sticky top-0 z-50 glass-strong flex items-center justify-between px-5 border-b border-white/[0.06]"
         style={{ paddingTop: 'max(16px, env(safe-area-inset-top, 16px))', paddingBottom: '16px' }}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
+          <img
+            src="/icon.svg"
+            alt="GymLog"
+            width={30}
+            height={30}
+            className="rounded-[8px] flex-shrink-0"
+            style={{ boxShadow: '0 0 12px rgba(139,92,246,0.4)' }}
+          />
           <div className="text-xl font-semibold tracking-tight">
             Gym<span className="text-[#A78BFA] drop-shadow-[0_0_12px_rgba(139,92,246,0.6)]">Log</span>
           </div>
