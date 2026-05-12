@@ -8,13 +8,14 @@ import { useApp } from '@/context/AppContext'
 import type { Session } from '@/types'
 import MeasurementsTab from './MeasurementsTab'
 import { exportSessionsCSV } from '@/lib/export'
+import { Counter } from '@/components/ui/animated-counter'
 
 type Tab = 'exos' | 'body'
 
 const stagger: Variants = { animate: { transition: { staggerChildren: 0.07 } } }
 const fadeUp: Variants = {
   initial: { opacity: 0, y: 16 },
-  animate: { opacity: 1, y: 0 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] } },
 }
 
 // ── Sparkline ─────────────────────────────────────────────────────
@@ -48,8 +49,24 @@ function Sparkline({ sessions }: { sessions: Session[] }) {
           <stop offset="100%" stopColor="#A78BFA" stopOpacity="0" />
         </linearGradient>
       </defs>
-      <path d={fillPath} fill="url(#spk-grad)" />
-      <path d={linePath} stroke="#A78BFA" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      <motion.path
+        d={fillPath}
+        fill="url(#spk-grad)"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8, delay: 0.4 }}
+      />
+      <motion.path
+        d={linePath}
+        stroke="#A78BFA"
+        strokeWidth="1.5"
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        initial={{ pathLength: 0, opacity: 0 }}
+        animate={{ pathLength: 1, opacity: 1 }}
+        transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
+      />
     </svg>
   )
 }
@@ -109,14 +126,51 @@ function ExoProgressChart({ data }: { data: { date: string; weight: number }[] }
           <stop offset="100%" stopColor="#A78BFA" stopOpacity="0" />
         </linearGradient>
       </defs>
-      <path d={fillPath} fill="url(#chartGrad)" />
-      <path d={linePath} stroke="#A78BFA" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      <motion.path
+        d={fillPath}
+        fill="url(#chartGrad)"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.6, delay: 0.6 }}
+      />
+      <motion.path
+        d={linePath}
+        stroke="#A78BFA"
+        strokeWidth="2"
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        initial={{ pathLength: 0 }}
+        animate={{ pathLength: 1 }}
+        transition={{ duration: 1.0, ease: [0.16, 1, 0.3, 1] }}
+      />
       {pts.map((p, i) => (
-        <circle key={i} cx={p.x} cy={p.y} r={i === pts.length - 1 ? 4.5 : 2.5} fill="#A78BFA" opacity={i === pts.length - 1 ? 1 : 0.55} />
+        <motion.circle
+          key={i}
+          cx={p.x}
+          cy={p.y}
+          r={i === pts.length - 1 ? 4.5 : 2.5}
+          fill="#A78BFA"
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: i === pts.length - 1 ? 1 : 0.55 }}
+          transition={{ delay: 0.8 + i * 0.05, duration: 0.3, ease: [0.34, 1.56, 0.64, 1] }}
+          style={{ originX: `${p.x}px`, originY: `${p.y}px` }}
+        />
       ))}
-      <text x={last.x} y={last.y - 7} textAnchor="middle" fill="#A78BFA" fontSize="9" fontFamily="monospace" fontWeight="bold">
+      <motion.text
+        x={last.x}
+        y={last.y - 7}
+        textAnchor="middle"
+        fill="#A78BFA"
+        fontSize="9"
+        fontFamily="monospace"
+        fontWeight="bold"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1.1, duration: 0.3 }}
+      >
         {last.weight}kg
-      </text>
+      </motion.text>
     </svg>
   )
 }
@@ -140,10 +194,12 @@ function WeeklyVolumeChart({ sessions }: { sessions: Session[] }) {
     <div className="flex items-end gap-1.5" style={{ height: 72 }}>
       {weeks.map((w, i) => (
         <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
-          <div
-            className="w-full rounded-t-[4px] transition-all duration-700"
+          <motion.div
+            className="w-full rounded-t-[4px]"
+            initial={{ height: 0 }}
+            animate={{ height: Math.max(w.vol > 0 ? 6 : 2, (w.vol / maxVol) * 52) }}
+            transition={{ delay: i * 0.07, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
             style={{
-              height: `${Math.max(w.vol > 0 ? 6 : 2, (w.vol / maxVol) * 52)}px`,
               background: w.vol > 0 ? 'linear-gradient(180deg,#A78BFA 0%,#6D28D9 100%)' : 'rgba(255,255,255,0.05)',
               boxShadow: w.vol > 0 ? '0 0 8px rgba(139,92,246,0.3)' : 'none',
             }}
@@ -174,7 +230,6 @@ export default function ProgressScreen() {
     acc + s.exos.reduce((a, e) =>
       a + e.sets.reduce((x, st) => x + (st.weight||0)*(st.reps||0), 0), 0), 0)
 
-  // Previous month volume for delta
   const now = new Date()
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
   const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
@@ -290,9 +345,11 @@ export default function ProgressScreen() {
             <div>
               <p className="text-[10px] font-bold text-[#A78BFA] uppercase tracking-[1.8px] mb-2">Volume total</p>
               <div className="flex items-baseline gap-1.5">
-                <span className="text-[36px] font-bold font-mono text-white leading-none tracking-tight">
-                  {totalVol >= 1000 ? (totalVol / 1000).toFixed(1) : Math.round(totalVol)}
-                </span>
+                <Counter
+                  end={totalVol >= 1000 ? Math.round((totalVol / 1000) * 10) / 10 : Math.round(totalVol)}
+                  fontSize={36}
+                  className="text-white leading-none tracking-tight"
+                />
                 <span className="text-[14px] font-semibold text-zinc-400">{totalVol >= 1000 ? 'tonnes' : 'kg'}</span>
               </div>
               {prevMonthVol > 0 && (
@@ -319,7 +376,7 @@ export default function ProgressScreen() {
               </div>
               <MiniBar value={sessions.length} max={Math.max(sessions.length, 30)} />
             </div>
-            <div className="text-[26px] font-bold font-mono text-white leading-none mb-1">{sessions.length}</div>
+            <Counter end={sessions.length} fontSize={26} className="text-white mb-1" />
             <div className="text-[10px] text-zinc-500 uppercase tracking-wide">Séances totales</div>
           </div>
 
@@ -331,7 +388,7 @@ export default function ProgressScreen() {
               </div>
               <MiniBar value={top.length} max={Math.max(top.length, 10)} color="#FBBF24" />
             </div>
-            <div className="text-[26px] font-bold font-mono text-white leading-none mb-1">{top.length}</div>
+            <Counter end={top.length} fontSize={26} className="text-white mb-1" />
             <div className="text-[10px] text-zinc-500 uppercase tracking-wide">Records établis</div>
           </div>
 
@@ -342,8 +399,11 @@ export default function ProgressScreen() {
                 <Flame size={13} strokeWidth={1.8} className="text-[#A78BFA]" />
               </div>
             </div>
-            <div className="text-[26px] font-bold font-mono text-white leading-none mb-1">
-              {top[0] ? `${top[0][1]}kg` : '—'}
+            <div className="flex items-baseline gap-0.5 mb-1">
+              {top[0]
+                ? <Counter end={top[0][1]} fontSize={26} className="text-white" />
+                : <span className="text-[26px] font-bold font-mono text-white leading-none">—</span>}
+              {top[0] && <span className="text-[13px] font-semibold text-zinc-500 ml-0.5">kg</span>}
             </div>
             <div className="text-[10px] text-zinc-500 uppercase tracking-wide truncate">{top[0]?.[0] || 'Meilleur record'}</div>
           </div>
@@ -356,7 +416,10 @@ export default function ProgressScreen() {
               </div>
               <MiniBar value={groupsTrained} max={5} color="#34D399" />
             </div>
-            <div className="text-[26px] font-bold font-mono text-white leading-none mb-1">{groupsTrained}<span className="text-[14px] text-zinc-600">/5</span></div>
+            <div className="flex items-baseline gap-0.5 mb-1">
+              <Counter end={groupsTrained} fontSize={26} className="text-white" />
+              <span className="text-[14px] text-zinc-600">/5</span>
+            </div>
             <div className="text-[10px] text-zinc-500 uppercase tracking-wide">Groupes entraînés</div>
           </div>
         </motion.div>
