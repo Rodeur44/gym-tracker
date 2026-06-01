@@ -303,9 +303,9 @@ export default function AISessionSheet({ defaultType, onClose, onUse }: Props) {
                 {(result?.exercises ?? []).map((ex, i) => (
                   <motion.div
                     key={i}
-                    initial={{ opacity: 0, y: 8 }}
+                    initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                    transition={{ duration: 0.35, delay: i * 0.12, ease: [0.16, 1, 0.3, 1] }}
                     className="px-4 py-3.5 rounded-2xl border border-white/[0.06] bg-[#1C1C1C]"
                   >
                     <div className="flex items-start justify-between gap-3">
