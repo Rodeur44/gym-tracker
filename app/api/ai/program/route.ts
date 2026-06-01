@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { GoogleGenAI, Type } from '@google/genai'
+import { streamText, Output } from 'ai'
+import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import { getRequestUser } from '@/lib/supabase/server'
 import { rateLimit } from '@/lib/rate-limit'
+import { programSchema } from '@/lib/ai-schemas'
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
@@ -18,29 +20,6 @@ interface Body {
   duration: number
   equipment: Equipment
   notes?: string
-}
-
-const SCHEMA = {
-  type: Type.OBJECT,
-  properties: {
-    title: { type: Type.STRING },
-    summary: { type: Type.STRING },
-    exercises: {
-      type: Type.ARRAY,
-      items: {
-        type: Type.OBJECT,
-        properties: {
-          name: { type: Type.STRING },
-          sets: { type: Type.INTEGER },
-          reps: { type: Type.INTEGER },
-          rest_sec: { type: Type.INTEGER },
-          notes: { type: Type.STRING },
-        },
-        required: ['name', 'sets', 'reps', 'rest_sec'],
-      },
-    },
-  },
-  required: ['title', 'exercises'],
 }
 
 const SYSTEM = `Tu es un coach de musculation expert francophone. Tu génères des séances précises, progressives et adaptées au niveau, à l'objectif et au matériel disponible. Reste concis. N'invente jamais d'exercices dangereux. Utilise des noms d'exercices français standards (Développé couché, Squat, Tractions, etc.).`
@@ -105,39 +84,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Note trop longue.' }, { status: 400 })
   }
 
-  try {
-    const ai = new GoogleGenAI({ apiKey })
-    const res = await ai.models.generateContent({
-      model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
-      contents: buildPrompt(body),
-      config: {
-        systemInstruction: SYSTEM,
-        responseMimeType: 'application/json',
-        responseSchema: SCHEMA,
-        temperature: 0.7,
-        maxOutputTokens: 2048,
-      },
-    })
+  const google = createGoogleGenerativeAI({ apiKey })
+  const result = streamText({
+    model: google(process.env.GEMINI_MODEL || 'gemini-2.5-flash'),
+    system: SYSTEM,
+    prompt: buildPrompt(body),
+    output: Output.object({ schema: programSchema }),
+    temperature: 0.7,
+  })
 
-    const text = res.text
-    if (!text) {
-      return NextResponse.json({ error: 'Réponse IA vide. Réessaie.' }, { status: 502 })
-    }
-
-    let parsed: unknown
-    try {
-      parsed = JSON.parse(text)
-    } catch {
-      // Gemini truncated the JSON (e.g. hit token limit mid-output). Return a
-      // user-friendly message instead of crashing.
-      return NextResponse.json(
-        { error: 'La réponse IA était incomplète. Réessaie ou réduis la durée de séance.' },
-        { status: 502 }
-      )
-    }
-    return NextResponse.json(parsed, { headers: { 'Cache-Control': 'no-store' } })
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : 'Erreur IA inconnue.'
-    return NextResponse.json({ error: msg }, { status: 502 })
-  }
+  // Streams the partial JSON object as it's generated; the client (useObject)
+  // renders exercises one by one as they arrive.
+  return result.toTextStreamResponse()
 }

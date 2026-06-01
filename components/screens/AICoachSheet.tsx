@@ -4,9 +4,11 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Variants } from 'framer-motion'
 import { X, Send, Loader2, Zap, ChevronDown } from 'lucide-react'
+import { experimental_useObject as useObject } from '@ai-sdk/react'
 import { useApp } from '@/context/AppContext'
 import { TAG_CLR, TAG_BG, TYPE_LBL } from '@/lib/constants'
 import type { MuscleGroup, Session, Exercise } from '@/types'
+import { sessionSchema } from '@/lib/ai-schemas'
 
 const sheetVariants: Variants = {
   hidden: { y: '100%' },
@@ -24,41 +26,40 @@ export default function AICoachSheet({ onClose }: Props) {
   const [notes, setNotes] = useState('')
   const [includePastNotes, setIncludePastNotes] = useState(true)
   const [notesOpen, setNotesOpen] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [result, setResult] = useState<{ type: MuscleGroup; exos: Exercise[] } | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  async function generate() {
-    if (!prompt.trim() || loading) return
-    setLoading(true)
+  const { object: result, submit, isLoading } = useObject({
+    api: '/api/ai/session',
+    schema: sessionSchema,
+    onError: () => setError('Impossible de générer la séance. Réessaie.'),
+  })
+
+  function generate() {
+    if (!prompt.trim() || isLoading) return
     setError(null)
-    setResult(null)
-    try {
-      const res = await fetch('/api/ai/session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, notes, includePastNotes, sessions }),
-      })
-      const data = await res.json()
-      if (data.error) throw new Error(data.error)
-      setResult(data)
-    } catch {
-      setError('Impossible de générer la séance. Réessaie.')
-    } finally {
-      setLoading(false)
-    }
+    submit({ prompt, notes, includePastNotes, sessions })
   }
 
   function startSession() {
-    if (!result) return
+    const type = (result?.type ?? 'pec') as MuscleGroup
+    const exos: Exercise[] = (result?.exos ?? [])
+      .filter((e): e is NonNullable<typeof e> => !!e && !!e.name)
+      .map(e => ({
+        name: e.name!,
+        sets: (e.sets ?? [])
+          .filter((s): s is NonNullable<typeof s> => !!s)
+          .map(s => ({ weight: s.weight ?? 0, reps: s.reps ?? 10 })),
+      }))
+      .filter(e => e.sets.length > 0)
+    if (!exos.length) return
     const fake: Session = {
       id: 'ai-gen',
       user_id: '',
       created_at: '',
       date: new Date().toISOString().slice(0, 10),
-      type: result.type,
+      type,
       notes: notes.trim() || '',
-      exos: result.exos,
+      exos,
     }
     repeatSession(fake)
     onClose()
@@ -133,12 +134,12 @@ export default function AICoachSheet({ onClose }: Props) {
                 whileTap={{ scale: 0.95 }}
                 transition={{ type: 'spring', stiffness: 400, damping: 25 }}
                 onClick={generate}
-                disabled={!prompt.trim() || loading}
+                disabled={!prompt.trim() || isLoading}
                 aria-label="Générer la séance"
                 className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 disabled:opacity-40 transition-opacity"
                 style={{ background: 'linear-gradient(135deg,#6D28D9,#7C3AED)' }}
               >
-                {loading
+                {isLoading
                   ? <Loader2 size={16} strokeWidth={1.8} className="text-white animate-spin" />
                   : <Send size={16} strokeWidth={1.8} className="text-white" />
                 }
@@ -221,8 +222,8 @@ export default function AICoachSheet({ onClose }: Props) {
             <p className="text-sm text-red-400 px-1">{error}</p>
           )}
 
-          {/* Loading skeleton */}
-          {loading && (
+          {/* Loading skeleton — uniquement avant l'arrivée du premier exercice */}
+          {isLoading && !result?.exos?.length && (
             <div className="rounded-2xl p-4 flex flex-col gap-3" style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)' }}>
               {Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} className="h-9 rounded-xl bg-white/[0.04] animate-pulse" />
@@ -230,50 +231,67 @@ export default function AICoachSheet({ onClose }: Props) {
             </div>
           )}
 
-          {/* Result */}
-          {result && !loading && (
-            <div className="rounded-2xl p-4" style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <div className="flex items-center gap-2 mb-4">
-                <span
-                  className="text-[11px] font-semibold px-2.5 py-1 rounded-full border"
-                  style={{ color: TAG_CLR[result.type], background: TAG_BG[result.type], borderColor: `${TAG_CLR[result.type]}33` }}
-                >
-                  {TYPE_LBL[result.type]}
-                </span>
-                <span className="text-[11px] text-zinc-500">{result.exos.length} exercices</span>
-              </div>
+          {/* Result — les exercices apparaissent au fil du streaming */}
+          {!!result?.exos?.length && (() => {
+            const rtype = (result.type ?? 'pec') as MuscleGroup
+            return (
+              <div className="rounded-2xl p-4" style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div className="flex items-center gap-2 mb-4">
+                  <span
+                    className="text-[11px] font-semibold px-2.5 py-1 rounded-full border"
+                    style={{ color: TAG_CLR[rtype], background: TAG_BG[rtype], borderColor: `${TAG_CLR[rtype]}33` }}
+                  >
+                    {TYPE_LBL[rtype]}
+                  </span>
+                  <span className="text-[11px] text-zinc-500 flex items-center gap-1.5">
+                    {isLoading && <Loader2 size={11} strokeWidth={1.8} className="animate-spin" />}
+                    {result.exos.length} exercice{result.exos.length > 1 ? 's' : ''}
+                  </span>
+                </div>
 
-              <div className="flex flex-col gap-0.5 mb-4">
-                {result.exos.map(e => {
-                  const w = Math.max(0, ...e.sets.map(s => s.weight || 0))
-                  return (
-                    <div key={e.name} className="flex items-center justify-between py-2.5 border-b border-white/[0.04] last:border-none">
-                      <span className="text-sm text-zinc-200 truncate mr-3">{e.name}</span>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        {w > 0 && (
-                          <span className="text-[11px] font-mono font-semibold" style={{ color: TAG_CLR[result.type] }}>{w}kg</span>
+                <div className="flex flex-col gap-0.5 mb-4">
+                  {result.exos.map((e, i) => {
+                    const sets = e?.sets ?? []
+                    const w = Math.max(0, ...sets.map(s => s?.weight || 0))
+                    return (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                        className="flex items-center justify-between py-2.5 border-b border-white/[0.04] last:border-none"
+                      >
+                        <span className="text-sm text-zinc-200 truncate mr-3">{e?.name ?? '…'}</span>
+                        {sets.length > 0 && (
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            {w > 0 && (
+                              <span className="text-[11px] font-mono font-semibold" style={{ color: TAG_CLR[rtype] }}>{w}kg</span>
+                            )}
+                            <span className="text-[11px] text-zinc-500 font-mono bg-[#1C1C1C] border border-white/[0.06] px-2 py-0.5 rounded-lg">
+                              {sets.length}×{sets[0]?.reps ?? '?'}
+                            </span>
+                          </div>
                         )}
-                        <span className="text-[11px] text-zinc-500 font-mono bg-[#1C1C1C] border border-white/[0.06] px-2 py-0.5 rounded-lg">
-                          {e.sets.length}×{e.sets[0]?.reps || '?'}
-                        </span>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
+                      </motion.div>
+                    )
+                  })}
+                </div>
 
-              <motion.button
-                whileTap={{ scale: 0.97 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-                onClick={startSession}
-                className="w-full h-11 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2"
-                style={{ background: 'linear-gradient(135deg,#6D28D9,#7C3AED)', boxShadow: '0 8px 24px -8px rgba(109,40,217,0.45)' }}
-              >
-                <Zap size={16} strokeWidth={1.8} />
-                Commencer cette séance
-              </motion.button>
-            </div>
-          )}
+                {!isLoading && (
+                  <motion.button
+                    whileTap={{ scale: 0.97 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                    onClick={startSession}
+                    className="w-full h-11 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2"
+                    style={{ background: 'linear-gradient(135deg,#6D28D9,#7C3AED)', boxShadow: '0 8px 24px -8px rgba(109,40,217,0.45)' }}
+                  >
+                    <Zap size={16} strokeWidth={1.8} />
+                    Commencer cette séance
+                  </motion.button>
+                )}
+              </div>
+            )
+          })()}
         </div>
       </motion.div>
     </motion.div>
