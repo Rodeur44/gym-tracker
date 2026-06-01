@@ -20,10 +20,12 @@ const ADMIN_EMAIL = 'enbordigoni@gmail.com'
 
 type Tab = 'home' | 'log' | 'history' | 'prog' | 'cards'
 
+// Ordre visuel : Accueil au centre (surélevé), Historique/Séance à gauche,
+// Progrès/Cartes à droite. L'ordre du tableau pilote aussi le swipe & le scrub.
 const NAV = [
-  { id: 'home' as Tab, label: 'Accueil', icon: Home },
-  { id: 'log' as Tab, label: 'Séance', icon: Plus },
   { id: 'history' as Tab, label: 'Historique', icon: Clock },
+  { id: 'log' as Tab, label: 'Séance', icon: Plus },
+  { id: 'home' as Tab, label: 'Accueil', icon: Home },
   { id: 'prog' as Tab, label: 'Progrès', icon: BarChart2 },
   { id: 'cards' as Tab, label: 'Cartes', icon: LayoutGrid },
 ]
@@ -471,15 +473,55 @@ export default function AppShell() {
         )}
       </main>
 
-      {/* Bottom Nav */}
-      <nav className="glass-strong border-t border-white/[0.06] fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-50">
-        <div ref={navRef} className="flex">
+      {/* Bottom Nav — Accueil surélevé au centre */}
+      <nav className="glass-strong border-t border-white/[0.06] fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-50 overflow-visible">
+        <div ref={navRef} className="flex items-stretch">
           {NAV.map(({ id, label, icon: Icon }) => {
             const active = tab === id
+
+            // ── Bouton central surélevé (Accueil) ──
+            if (id === 'home') {
+              return (
+                <button
+                  key={id}
+                  onClick={() => goTo(id)}
+                  aria-label={label}
+                  className="flex-1 flex flex-col items-center pt-3 relative"
+                  style={{ paddingBottom: 'max(20px, env(safe-area-inset-bottom, 20px))' }}
+                >
+                  {/* Réserve la même hauteur d'icône que les autres ; le cercle flotte au-dessus */}
+                  <div className="relative h-[22px] w-full flex justify-center">
+                    <motion.div
+                      animate={{ y: active ? -28 : -24, scale: active ? 1 : 0.95 }}
+                      transition={{ type: 'spring', stiffness: 400, damping: 26 }}
+                      className="absolute w-14 h-14 rounded-2xl flex items-center justify-center"
+                      style={{
+                        background: 'linear-gradient(135deg,#6D28D9,#7C3AED 50%,#8B5CF6)',
+                        boxShadow: active
+                          ? '0 10px 30px -6px rgba(124,58,237,0.75), 0 0 0 5px #0A0A0A, inset 0 1px 0 rgba(255,255,255,0.28)'
+                          : '0 6px 20px -8px rgba(124,58,237,0.5), 0 0 0 5px #0A0A0A, inset 0 1px 0 rgba(255,255,255,0.16)',
+                      }}
+                    >
+                      <Icon
+                        size={26}
+                        strokeWidth={2}
+                        className="text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.35)]"
+                      />
+                    </motion.div>
+                  </div>
+                  <span className={`text-[9px] font-semibold tracking-wide mt-1.5 ${active ? 'text-[#A78BFA]' : 'text-zinc-500'}`}>
+                    {label}
+                  </span>
+                </button>
+              )
+            }
+
+            // ── Onglets latéraux ──
             return (
               <button
                 key={id}
                 onClick={() => goTo(id)}
+                aria-label={label}
                 className="flex-1 flex flex-col items-center gap-1 pt-3 relative"
                 style={{ paddingBottom: 'max(20px, env(safe-area-inset-bottom, 20px))' }}
               >
