@@ -3,6 +3,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 import type { Session, MuscleGroup, Exercise } from '@/types'
 import { getRequestUser } from '@/lib/supabase/server'
 import { rateLimit } from '@/lib/rate-limit'
+import { personalBests } from '@/lib/stats'
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
@@ -32,13 +33,7 @@ export async function POST(req: NextRequest) {
       sessions: Session[]
     }
 
-    const bests: Record<string, number> = {}
-    for (const s of sessions) {
-      for (const e of s.exos) {
-        const max = Math.max(0, ...e.sets.map(st => st.weight || 0))
-        if (max > 0 && (!bests[e.name] || max > bests[e.name])) bests[e.name] = max
-      }
-    }
+    const bests = personalBests(sessions)
 
     const history = sessions.slice(0, 20).map(s => {
       const exosSummary = s.exos.map(e => {
