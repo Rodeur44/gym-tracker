@@ -256,9 +256,9 @@ export default function AICoachSheet({ onClose }: Props) {
                     return (
                       <motion.div
                         key={i}
-                        initial={{ opacity: 0, y: 6 }}
+                        initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                        transition={{ duration: 0.3, delay: i * 0.12, ease: [0.16, 1, 0.3, 1] }}
                         className="flex items-center justify-between py-2.5 border-b border-white/[0.04] last:border-none"
                       >
                         <span className="text-sm text-zinc-200 truncate mr-3">{e?.name ?? '…'}</span>
