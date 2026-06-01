@@ -1,28 +1,9 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { computeStreak, exosVolume, type ExoLike } from '@/lib/stats'
 
 export const runtime = 'nodejs'
 export const maxDuration = 15
-
-interface ExoSet { weight?: number; reps?: number }
-interface Exo { sets: ExoSet[] }
-
-function computeVolume(exos: Exo[]): number {
-  return exos.reduce((acc, e) =>
-    acc + e.sets.reduce((a, s) => a + (s.weight || 0) * (s.reps || 0), 0), 0)
-}
-
-function computeStreak(dates: string[]): number {
-  const set = new Set(dates)
-  let count = 0
-  const d = new Date()
-  if (!set.has(d.toISOString().slice(0, 10))) d.setDate(d.getDate() - 1)
-  while (set.has(d.toISOString().slice(0, 10))) {
-    count++
-    d.setDate(d.getDate() - 1)
-  }
-  return count
-}
 
 export async function GET() {
   const admin = createAdminClient()
@@ -55,7 +36,7 @@ export async function GET() {
     if (!optedIn.has(row.user_id)) continue
     if (!stats[row.user_id]) stats[row.user_id] = { volume: 0, sessions: 0, dates: [] }
     stats[row.user_id].sessions++
-    stats[row.user_id].volume += computeVolume(row.exos as Exo[])
+    stats[row.user_id].volume += exosVolume(row.exos as ExoLike[])
     stats[row.user_id].dates.push(row.date)
   }
 

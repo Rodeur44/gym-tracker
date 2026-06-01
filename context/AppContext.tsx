@@ -6,6 +6,7 @@ import type { User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import type { Session, MuscleGroup, Exercise, Measurement, MeasurementInput } from '@/types'
 import { MUSCLE_ORDER } from '@/lib/constants'
+import { computeStreak, exosVolume, bestForExercise } from '@/lib/stats'
 
 // ── Unlock checker (pure, outside component) ─────────────────────
 function checkUnlocks(allSessions: Session[], currentUnlocked: Set<string>): string[] {
@@ -13,10 +14,7 @@ function checkUnlocks(allSessions: Session[], currentUnlocked: Set<string>): str
   const has = (id: string) => currentUnlocked.has(id)
 
   const volumeForType = (type: MuscleGroup) =>
-    allSessions
-      .filter(s => s.type === type)
-      .flatMap(s => s.exos.flatMap(e => e.sets))
-      .reduce((acc, set) => acc + (set.weight || 0) * (set.reps || 0), 0)
+    exosVolume(allSessions.filter(s => s.type === type).flatMap(s => s.exos))
 
   const totalRepsForKeyword = (keyword: string) =>
     allSessions
@@ -42,23 +40,11 @@ function checkUnlocks(allSessions: Session[], currentUnlocked: Set<string>): str
   const hasExercise = (keyword: string) =>
     allSessions.some(s => s.exos.some(e => e.name.toLowerCase().includes(keyword)))
 
-  const computeStreak = () => {
-    const dates = new Set(allSessions.map(s => s.date))
-    let count = 0
-    const d = new Date()
-    if (!dates.has(d.toISOString().slice(0, 10))) d.setDate(d.getDate() - 1)
-    while (true) {
-      const ds = d.toISOString().slice(0, 10)
-      if (dates.has(ds)) { count++; d.setDate(d.getDate() - 1) } else break
-    }
-    return count
-  }
-
   const total = allSessions.length
 
   if (!has('consist_newbie') && total >= 1) newCards.push('consist_newbie')
   if (!has('consist_veteran') && total >= 100) newCards.push('consist_veteran')
-  if (!has('consist_unstoppable') && computeStreak() >= 100) newCards.push('consist_unstoppable')
+  if (!has('consist_unstoppable') && computeStreak(allSessions.map(s => s.date)) >= 100) newCards.push('consist_unstoppable')
 
   if (!has('volume_chest') && volumeForType('pec') > 50_000) newCards.push('volume_chest')
   if (!has('volume_back') && totalRepsForKeyword('traction') >= 10_000) newCards.push('volume_back')
@@ -279,27 +265,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (user) await loadData(user.id)
   }, [user, loadData])
 
-  const getBest = useCallback((name: string) => {
-    let best = 0
-    sessions.forEach(s => (s.exos || []).forEach(e => {
-      if (e.name !== name) return
-      e.sets.forEach(set => { if ((set.weight || 0) > best) best = set.weight })
-    }))
-    return best
-  }, [sessions])
+  const getBest = useCallback((name: string) => bestForExercise(sessions, name), [sessions])
 
-  const getStreak = useCallback(() => {
-    if (!sessions.length) return 0
-    const dates = new Set(sessions.map(s => s.date))
-    let streak = 0
-    const d = new Date()
-    if (!dates.has(d.toISOString().slice(0, 10))) d.setDate(d.getDate() - 1)
-    while (true) {
-      const ds = d.toISOString().slice(0, 10)
-      if (dates.has(ds)) { streak++; d.setDate(d.getDate() - 1) } else break
-    }
-    return streak
-  }, [sessions])
+  const getStreak = useCallback(() => computeStreak(sessions.map(s => s.date)), [sessions])
 
   const getNextType = useCallback((): MuscleGroup => {
     if (!sessions.length) return 'pec'
