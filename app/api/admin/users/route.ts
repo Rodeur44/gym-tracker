@@ -1,30 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { getRequestUser } from '@/lib/supabase/server'
 
 export const runtime = 'nodejs'
 
 const ADMIN_EMAIL = 'enbordigoni@gmail.com'
 
-async function getRequestingUserEmail(req: NextRequest): Promise<string | null> {
-  try {
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      { cookies: { getAll: () => cookieStore.getAll() } }
-    )
-    const { data: { user } } = await supabase.auth.getUser()
-    return user?.email ?? null
-  } catch {
-    return null
-  }
-}
-
-export async function GET(req: NextRequest) {
-  const email = await getRequestingUserEmail(req)
-  if (email !== ADMIN_EMAIL) {
+export async function GET() {
+  const user = await getRequestUser()
+  if (user?.email !== ADMIN_EMAIL) {
     return NextResponse.json({ error: 'Accès refusé.' }, { status: 403 })
   }
 

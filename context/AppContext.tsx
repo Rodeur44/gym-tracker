@@ -6,7 +6,6 @@ import type { User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import type { Session, MuscleGroup, Exercise, Measurement, MeasurementInput } from '@/types'
 import { MUSCLE_ORDER } from '@/lib/constants'
-import { validatePromo } from '@/lib/promo'
 
 // ── Unlock checker (pure, outside component) ─────────────────────
 function checkUnlocks(allSessions: Session[], currentUnlocked: Set<string>): string[] {
@@ -111,9 +110,9 @@ interface AppContextValue {
   getNextType: () => MuscleGroup
   // Pro
   isPro: boolean
-  unlockPro: (code: string) => boolean
-  activatePro: () => void
-  disablePro: () => void
+  unlockPro: (code: string) => Promise<boolean>
+  activatePro: () => Promise<boolean>
+  disablePro: () => Promise<void>
   proOpen: boolean
   openPro: () => void
   closePro: () => void
@@ -158,7 +157,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (typeof window === 'undefined') return
     // Cancel any beep left over from a suspended PWA session
     cancelScheduledBeep()
-    setIsPro(localStorage.getItem('gymlog_pro') === '1')
     const saved = parseInt(localStorage.getItem('gymlog_rest_default') || '', 10)
     if (!Number.isNaN(saved) && saved >= 15 && saved <= 600) setRestDuration(saved)
   }, [])
@@ -216,21 +214,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const restActive = restEndsAt !== null
 
-  const activatePro = useCallback(() => {
-    if (typeof window !== 'undefined') localStorage.setItem('gymlog_pro', '1')
+  // Grants Pro server-side (entitlement stored in app_metadata), then refreshes
+  // the local session so the new JWT claim is picked up. `body` carries either
+  // a promo code or the demo-payment intent.
+  const grantPro = useCallback(async (body: { code?: string; demoPayment?: boolean }) => {
+    const res = await fetch('/api/pro/redeem', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    if (!res.ok) return false
+    await sb.auth.refreshSession()
     setIsPro(true)
-  }, [])
-
-  const unlockPro = useCallback((code: string) => {
-    if (!validatePromo(code)) return false
-    activatePro()
     return true
-  }, [activatePro])
+  }, [sb])
 
-  const disablePro = useCallback(() => {
-    if (typeof window !== 'undefined') localStorage.removeItem('gymlog_pro')
+  const activatePro = useCallback(() => grantPro({ demoPayment: true }), [grantPro])
+
+  const unlockPro = useCallback((code: string) => grantPro({ code }), [grantPro])
+
+  const disablePro = useCallback(async () => {
+    const res = await fetch('/api/pro/redeem', { method: 'DELETE' })
+    if (res.ok) await sb.auth.refreshSession()
     setIsPro(false)
-  }, [])
+  }, [sb])
 
   const loadData = useCallback(async (userId: string) => {
     const [{ data: s }, { data: c }, { data: m, error: mErr }] = await Promise.all([
@@ -256,11 +263,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     sb.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
+      setIsPro(session?.user?.app_metadata?.pro === true)
       if (session?.user) loadData(session.user.id).finally(() => setLoading(false))
       else setLoading(false)
     })
     const { data: { subscription } } = sb.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
+      setIsPro(session?.user?.app_metadata?.pro === true)
       if (session?.user) loadData(session.user.id)
     })
     return () => subscription.unsubscribe()

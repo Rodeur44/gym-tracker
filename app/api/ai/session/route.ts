@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import type { Session, MuscleGroup, Exercise } from '@/types'
+import { getRequestUser } from '@/lib/supabase/server'
+import { rateLimit } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
@@ -8,6 +10,20 @@ export const maxDuration = 30
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
 
 export async function POST(req: NextRequest) {
+  const user = await getRequestUser()
+  if (!user) {
+    return NextResponse.json({ error: 'Authentification requise.' }, { status: 401 })
+  }
+
+  // Cap AI generations per user to protect the Gemini budget.
+  const rl = rateLimit(`ai-session:${user.id}`, { limit: 20, windowSec: 3600 })
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: 'Limite de générations atteinte. Réessaie plus tard.' },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } },
+    )
+  }
+
   try {
     const { prompt, notes, includePastNotes, sessions } = await req.json() as {
       prompt: string

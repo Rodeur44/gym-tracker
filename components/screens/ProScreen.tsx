@@ -64,15 +64,15 @@ export default function ProScreen({ onClose }: { onClose: () => void }) {
   function pay() {
     if (!valid || paying) return
     setPaying(true)
-    setTimeout(() => {
+    setTimeout(async () => {
+      const ok = await activatePro()
       setPaying(false)
-      activatePro()
-      setSuccess(true)
+      if (ok) setSuccess(true)
     }, 1400)
   }
 
-  function submitCode() {
-    const ok = unlockPro(code)
+  async function submitCode() {
+    const ok = await unlockPro(code)
     if (!ok) { setCodeError(true); return }
     setCodeError(false)
     setSuccess(true)
@@ -142,7 +142,7 @@ export default function ProScreen({ onClose }: { onClose: () => void }) {
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto pb-10">
         {showSuccess ? (
-          <SuccessView onClose={onClose} onDeactivate={() => { disablePro(); setSuccess(false) }} />
+          <SuccessView onClose={onClose} onDeactivate={async () => { await disablePro(); setSuccess(false) }} />
         ) : codeMode ? (
           <CodeView
             code={code}
@@ -374,7 +374,7 @@ function CodeView({ code, setCode, error, onSubmit, onBack }: {
           spellCheck={false}
           value={code}
           onChange={e => setCode(e.target.value.toUpperCase())}
-          placeholder="EX: GYMBROS"
+          placeholder="TON CODE"
           className={`w-full h-12 px-4 rounded-xl bg-[#1C1C1C] border text-center text-zinc-100 font-mono text-base tracking-[2px] placeholder:text-zinc-600 placeholder:tracking-normal focus:outline-none transition-all ${error ? 'border-red-500/50 shadow-[0_0_0_3px_rgba(239,68,68,0.18)]' : 'border-white/[0.08] focus:border-[#A78BFA] focus:shadow-[0_0_0_3px_rgba(139,92,246,0.18)]'}`}
         />
         {error && (
