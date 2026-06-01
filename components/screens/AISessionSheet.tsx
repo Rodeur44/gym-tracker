@@ -4,18 +4,14 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Variants } from 'framer-motion'
 import { X, Sparkles, ChevronRight, AlertCircle, Clock, RotateCcw } from 'lucide-react'
+import { experimental_useObject as useObject } from '@ai-sdk/react'
 import type { MuscleGroup, Exercise } from '@/types'
 import { TYPE_LBL, TAG_CLR, TAG_BG } from '@/lib/constants'
+import { programSchema } from '@/lib/ai-schemas'
 
 type Level = 'debutant' | 'intermediaire' | 'avance'
 type Goal = 'force' | 'volume' | 'endurance' | 'perte_poids'
 type Equipment = 'salle' | 'maison_basique' | 'maison_haltere'
-
-interface AIProgramResult {
-  title: string
-  summary?: string
-  exercises: { name: string; sets: number; reps: number; rest_sec: number; notes?: string }[]
-}
 
 interface Props {
   defaultType: MuscleGroup
@@ -76,39 +72,40 @@ export default function AISessionSheet({ defaultType, onClose, onUse }: Props) {
   const [duration, setDuration] = useState(60)
   const [equipment, setEquipment] = useState<Equipment>('salle')
   const [notes, setNotes] = useState('')
-  const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [result, setResult] = useState<AIProgramResult | null>(null)
+
+  const { object: result, submit, isLoading, stop, clear } = useObject({
+    api: '/api/ai/program',
+    schema: programSchema,
+    onError: () => setError('Impossible de générer la séance. Réessaie.'),
+  })
 
   const accent = TAG_CLR[type]
   const bg = TAG_BG[type]
 
-  async function generate() {
-    setLoading(true)
+  // Streaming démarré dès qu'on a lancé une génération (loading) ou reçu du contenu.
+  const started = isLoading || !!result
+
+  function generate() {
     setError('')
-    setResult(null)
-    try {
-      const res = await fetch('/api/ai/program', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type, level, goal, duration, equipment, notes: notes.trim() || undefined }),
-      })
-      const data = await res.json()
-      if (!res.ok) { setError(data.error || 'Erreur IA.'); return }
-      setResult(data)
-    } catch {
-      setError('Impossible de contacter l\'IA. Vérifie ta connexion.')
-    } finally {
-      setLoading(false)
-    }
+    submit({ type, level, goal, duration, equipment, notes: notes.trim() || undefined })
+  }
+
+  function reset() {
+    stop()
+    clear()
+    setError('')
   }
 
   function handleUse() {
-    if (!result) return
-    const exos: Exercise[] = result.exercises.map(e => ({
-      name: e.name,
-      sets: Array.from({ length: e.sets }, () => ({ weight: 0, reps: e.reps })),
-    }))
+    const exercises = result?.exercises
+    if (!exercises) return
+    const exos: Exercise[] = exercises
+      .filter((e): e is NonNullable<typeof e> => !!e && !!e.name)
+      .map(e => ({
+        name: e.name!,
+        sets: Array.from({ length: e.sets ?? 1 }, () => ({ weight: 0, reps: e.reps ?? 10 })),
+      }))
     onUse(exos)
     onClose()
   }
@@ -157,7 +154,7 @@ export default function AISessionSheet({ defaultType, onClose, onUse }: Props) {
         <div className="overflow-y-auto flex-1 px-5 flex flex-col gap-5"
           style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain', paddingBottom: 'max(32px, env(safe-area-inset-bottom, 32px))' }}>
 
-          {!result ? (
+          {!started ? (
             <>
               {/* Groupe */}
               <div>
@@ -268,26 +265,12 @@ export default function AISessionSheet({ defaultType, onClose, onUse }: Props) {
               <motion.button
                 whileTap={{ scale: 0.97 }}
                 onClick={generate}
-                disabled={loading}
+                disabled={isLoading}
                 className="w-full py-4 rounded-2xl font-semibold text-[15px] text-white flex items-center justify-center gap-2.5 transition-all disabled:opacity-60"
                 style={{ background: 'linear-gradient(135deg,#6D28D9,#7C3AED 50%,#8B5CF6)', boxShadow: '0 12px 32px -8px rgba(109,40,217,0.55)' }}
               >
-                {loading ? (
-                  <>
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                    >
-                      <Sparkles size={18} strokeWidth={1.8} />
-                    </motion.div>
-                    Génération en cours…
-                  </>
-                ) : (
-                  <>
-                    <Sparkles size={18} strokeWidth={1.8} />
-                    Générer ma séance
-                  </>
-                )}
+                <Sparkles size={18} strokeWidth={1.8} />
+                Générer ma séance
               </motion.button>
             </>
           ) : (
@@ -301,55 +284,83 @@ export default function AISessionSheet({ defaultType, onClose, onUse }: Props) {
               {/* Title */}
               <div className="px-4 py-4 rounded-2xl border"
                 style={{ background: 'linear-gradient(135deg,rgba(109,40,217,0.12),rgba(139,92,246,0.06))', borderColor: 'rgba(139,92,246,0.25)' }}>
-                <p className="text-[11px] font-bold uppercase tracking-[1.8px] text-[#A78BFA] mb-1">Séance générée</p>
-                <h4 className="text-[15px] font-semibold text-white tracking-tight">{result.title}</h4>
-                {result.summary && <p className="text-xs text-zinc-400 mt-1 leading-relaxed">{result.summary}</p>}
+                <p className="text-[11px] font-bold uppercase tracking-[1.8px] text-[#A78BFA] mb-1 flex items-center gap-2">
+                  {isLoading && (
+                    <motion.span animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} className="inline-flex">
+                      <Sparkles size={11} strokeWidth={2} />
+                    </motion.span>
+                  )}
+                  {isLoading ? 'Génération en cours…' : 'Séance générée'}
+                </p>
+                {result?.title
+                  ? <h4 className="text-[15px] font-semibold text-white tracking-tight">{result.title}</h4>
+                  : <div className="h-4 w-40 rounded-full bg-white/[0.06] animate-pulse" />}
+                {result?.summary && <p className="text-xs text-zinc-400 mt-1 leading-relaxed">{result.summary}</p>}
               </div>
 
-              {/* Exercise list */}
+              {/* Exercise list — apparaît au fur et à mesure du streaming */}
               <div className="flex flex-col gap-2">
-                {result.exercises.map((ex, i) => (
-                  <div key={i} className="px-4 py-3.5 rounded-2xl border border-white/[0.06] bg-[#1C1C1C]">
+                {(result?.exercises ?? []).map((ex, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                    className="px-4 py-3.5 rounded-2xl border border-white/[0.06] bg-[#1C1C1C]"
+                  >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-zinc-200 tracking-tight">{ex.name}</p>
-                        {ex.notes && <p className="text-[11px] text-zinc-500 mt-0.5">{ex.notes}</p>}
+                        <p className="text-sm font-semibold text-zinc-200 tracking-tight">{ex?.name ?? '…'}</p>
+                        {ex?.notes && <p className="text-[11px] text-zinc-500 mt-0.5">{ex.notes}</p>}
                       </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <span className="text-[12px] font-mono font-bold px-2.5 py-1 rounded-lg"
-                          style={{ color: accent, background: bg }}>
-                          {ex.sets}×{ex.reps}
-                        </span>
-                        <span className="flex items-center gap-1 text-[11px] text-zinc-600">
-                          <Clock size={10} strokeWidth={1.8} />
-                          {ex.rest_sec}s
-                        </span>
-                      </div>
+                      {ex?.sets != null && ex?.reps != null && (
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <span className="text-[12px] font-mono font-bold px-2.5 py-1 rounded-lg"
+                            style={{ color: accent, background: bg }}>
+                            {ex.sets}×{ex.reps}
+                          </span>
+                          {ex?.rest_sec != null && (
+                            <span className="flex items-center gap-1 text-[11px] text-zinc-600">
+                              <Clock size={10} strokeWidth={1.8} />
+                              {ex.rest_sec}s
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
+                {/* Skeleton tant qu'aucun exercice n'est encore arrivé */}
+                {isLoading && !result?.exercises?.length && (
+                  Array.from({ length: 4 }).map((_, i) => (
+                    <div key={`sk-${i}`} className="h-[58px] rounded-2xl bg-white/[0.03] border border-white/[0.05] animate-pulse" />
+                  ))
+                )}
               </div>
 
-              {/* Actions */}
-              <div className="flex gap-3">
-                <motion.button
-                  whileTap={{ scale: 0.95 }}
-                  transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-                  onClick={() => { setResult(null); setError('') }}
-                  className="w-11 h-11 rounded-2xl bg-[#1C1C1C] border border-white/[0.08] flex items-center justify-center text-zinc-500 hover:text-zinc-300 transition-colors flex-shrink-0"
-                  aria-label="Régénérer"
-                >
-                  <RotateCcw size={16} strokeWidth={1.8} />
-                </motion.button>
-                <motion.button
-                  whileTap={{ scale: 0.97 }}
-                  onClick={handleUse}
-                  className="flex-1 py-3.5 rounded-2xl font-semibold text-[15px] text-white"
-                  style={{ background: 'linear-gradient(135deg,#6D28D9,#7C3AED 50%,#8B5CF6)', boxShadow: '0 8px 24px -6px rgba(109,40,217,0.5)' }}
-                >
-                  Utiliser cette séance
-                </motion.button>
-              </div>
+              {/* Actions — disponibles une fois le streaming terminé */}
+              {!isLoading && (
+                <div className="flex gap-3">
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                    onClick={reset}
+                    className="w-11 h-11 rounded-2xl bg-[#1C1C1C] border border-white/[0.08] flex items-center justify-center text-zinc-500 hover:text-zinc-300 transition-colors flex-shrink-0"
+                    aria-label="Régénérer"
+                  >
+                    <RotateCcw size={16} strokeWidth={1.8} />
+                  </motion.button>
+                  <motion.button
+                    whileTap={{ scale: 0.97 }}
+                    onClick={handleUse}
+                    disabled={!result?.exercises?.length}
+                    className="flex-1 py-3.5 rounded-2xl font-semibold text-[15px] text-white disabled:opacity-50"
+                    style={{ background: 'linear-gradient(135deg,#6D28D9,#7C3AED 50%,#8B5CF6)', boxShadow: '0 8px 24px -6px rgba(109,40,217,0.5)' }}
+                  >
+                    Utiliser cette séance
+                  </motion.button>
+                </div>
+              )}
             </motion.div>
           )}
         </div>
