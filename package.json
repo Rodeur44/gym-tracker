@@ -6,13 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
     "@google/genai": "^1.52.0",
-    "@google/generative-ai": "^0.24.1",
     "@paper-design/shaders-react": "^0.0.76",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",
@@ -40,6 +40,8 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/web-push": "^3.6.4",
+    "eslint": "^9.39.4",
+    "eslint-config-next": "^16.2.6",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.8"

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { GoogleGenerativeAI } from '@google/generative-ai'
+import { GoogleGenAI } from '@google/genai'
 import type { Session, MuscleGroup, Exercise } from '@/types'
 import { getRequestUser } from '@/lib/supabase/server'
 import { rateLimit } from '@/lib/rate-limit'
@@ -7,8 +7,6 @@ import { personalBests } from '@/lib/stats'
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
 
 export async function POST(req: NextRequest) {
   const user = await getRequestUser()
@@ -23,6 +21,11 @@ export async function POST(req: NextRequest) {
       { error: 'Limite de générations atteinte. Réessaie plus tard.' },
       { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } },
     )
+  }
+
+  const apiKey = process.env.GEMINI_API_KEY
+  if (!apiKey) {
+    return NextResponse.json({ error: 'IA non configurée (GEMINI_API_KEY manquant côté serveur).' }, { status: 503 })
   }
 
   try {
@@ -71,19 +74,24 @@ RÈGLES:
 FORMAT STRICTEMENT:
 {"type":"pec","exos":[{"name":"Pompes","sets":[{"weight":0,"reps":15},{"weight":0,"reps":12}]},{"name":"Développé couché","sets":[{"weight":60,"reps":10},{"weight":60,"reps":8}]}]}`
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
-
     const userMessage = [
       `Demande: ${prompt}`,
       notes.trim() ? `Notes importantes pour aujourd'hui (PRIORITÉ ABSOLUE): ${notes}` : '',
     ].filter(Boolean).join('\n')
 
-    const result = await model.generateContent([
-      { text: systemPrompt },
-      { text: userMessage },
-    ])
+    const ai = new GoogleGenAI({ apiKey })
+    const result = await ai.models.generateContent({
+      model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+      contents: userMessage,
+      config: {
+        systemInstruction: systemPrompt,
+        responseMimeType: 'application/json',
+        temperature: 0.7,
+        maxOutputTokens: 2048,
+      },
+    })
 
-    const raw = result.response.text().trim()
+    const raw = (result.text || '').trim()
     const jsonMatch = raw.match(/\{[\s\S]*\}/)
     if (!jsonMatch) return NextResponse.json({ error: 'Réponse invalide' }, { status: 500 })
 

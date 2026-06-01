@@ -66,7 +66,7 @@ Utiliser **exclusivement** les multiples du système 4/8px. Aucune valeur arbitr
 
 ### 3. Typographie
 
-- **Polices** : `DM Sans` (variable `--font-sans`) pour le texte, `DM Mono` (variable `--font-mono`) pour les chiffres/données.
+- **Polices** : `Inter` (variable `--font-sans`) pour le texte, `Geist Mono` (variable `--font-mono`) pour les chiffres/données.
 - **Hiérarchie** :
   - Titre écran : `text-xl font-semibold tracking-tight`
   - Titre carte : `text-[15px] font-semibold tracking-tight`
