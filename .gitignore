@@ -13,6 +13,10 @@
 # testing
 /coverage
 
+# lockfiles — ce projet utilise pnpm uniquement (pnpm-lock.yaml)
+package-lock.json
+yarn.lock
+
 # next.js
 /.next/
 /out/
