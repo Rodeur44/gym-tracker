@@ -217,8 +217,8 @@ export default function AICoachSheet({ onClose }: Props) {
             </button>
           </div>
 
-          {/* Error */}
-          {error && (
+          {/* Error — masquée si on a déjà des exercices exploitables */}
+          {error && !result?.exos?.length && (
             <p className="text-sm text-red-400 px-1">{error}</p>
           )}
 
