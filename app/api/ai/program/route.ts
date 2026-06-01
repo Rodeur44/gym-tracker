@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { GoogleGenAI, Type } from '@google/genai'
+import { getRequestUser } from '@/lib/supabase/server'
+import { rateLimit } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
@@ -65,6 +67,20 @@ Contraintes :
 }
 
 export async function POST(req: NextRequest) {
+  const user = await getRequestUser()
+  if (!user) {
+    return NextResponse.json({ error: 'Authentification requise.' }, { status: 401 })
+  }
+
+  // Cap AI generations per user to protect the Gemini budget.
+  const rl = rateLimit(`ai-program:${user.id}`, { limit: 20, windowSec: 3600 })
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: 'Limite de générations atteinte. Réessaie plus tard.' },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } },
+    )
+  }
+
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) {
     return NextResponse.json({ error: 'IA non configurée (GEMINI_API_KEY manquant côté serveur).' }, { status: 503 })
