@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
 import type { Metadata } from 'next'
 import { CARDS, TYPE_LBL } from '@/lib/constants'
 import type { MuscleGroup } from '@/types'
@@ -172,7 +173,7 @@ export default async function SharePage({ params }: { params: Promise<{ userId: 
         )}
 
         {/* CTA */}
-        <a
+        <Link
           href="/"
           className="w-full flex items-center justify-center h-13 rounded-2xl text-sm font-semibold text-white"
           style={{
@@ -183,7 +184,7 @@ export default async function SharePage({ params }: { params: Promise<{ userId: 
           }}
         >
           Rejoindre GymLog
-        </a>
+        </Link>
 
         <p style={{ textAlign: 'center', fontSize: 11, color: '#3f3f46' }}>gymlog.app</p>
       </div>
