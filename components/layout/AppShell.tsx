@@ -489,10 +489,10 @@ export default function AppShell() {
                   className="flex-1 flex flex-col items-center pt-3 relative"
                   style={{ paddingBottom: 'max(20px, env(safe-area-inset-bottom, 20px))' }}
                 >
-                  {/* Réserve la même hauteur d'icône que les autres ; le cercle flotte au-dessus */}
+                  {/* Réserve la même hauteur d'icône que les autres ; le cercle flotte plus haut pour libérer le label */}
                   <div className="relative h-[22px] w-full flex justify-center">
                     <motion.div
-                      animate={{ y: active ? -28 : -24, scale: active ? 1 : 0.95 }}
+                      animate={{ y: active ? -38 : -34, scale: active ? 1 : 0.95 }}
                       transition={{ type: 'spring', stiffness: 400, damping: 26 }}
                       className="absolute w-14 h-14 rounded-2xl flex items-center justify-center"
                       style={{
@@ -509,7 +509,7 @@ export default function AppShell() {
                       />
                     </motion.div>
                   </div>
-                  <span className={`text-[9px] font-semibold tracking-wide mt-1.5 ${active ? 'text-[#A78BFA]' : 'text-zinc-500'}`}>
+                  <span className={`text-[9px] font-semibold tracking-wide mt-1 ${active ? 'text-[#A78BFA]' : 'text-zinc-500'}`}>
                     {label}
                   </span>
                 </button>
