@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computeStreak, exosVolume, personalBests, bestForExercise, type ExoLike } from '@/lib/stats'
+import { computeStreak, exosVolume, personalBests, bestForExercise, sessionMuscleGroups, type ExoLike } from '@/lib/stats'
 
 // Fixed reference date so streak tests are deterministic.
 const NOW = new Date('2026-06-01T12:00:00.000Z')
@@ -85,5 +85,22 @@ describe('bestForExercise', () => {
   })
   it('returns 0 for an unknown exercise', () => {
     expect(bestForExercise(sessions, 'Snatch')).toBe(0)
+  })
+})
+
+describe('sessionMuscleGroups', () => {
+  it('liste les groupes distincts dans l\'ordre d\'apparition', () => {
+    const s = { type: 'dos', exos: [
+      { name: 'Tractions', type: 'dos', sets: [] },
+      { name: 'Curl', type: 'bras', sets: [] },
+      { name: 'Squat', type: 'jambes', sets: [] },
+      { name: 'Rowing', type: 'dos', sets: [] },
+    ] }
+    expect(sessionMuscleGroups(s)).toEqual(['dos', 'bras', 'jambes'])
+  })
+
+  it('retombe sur le type de séance pour les anciennes données sans type par exo', () => {
+    const s = { type: 'pec', exos: [{ name: 'Développé', sets: [] }] }
+    expect(sessionMuscleGroups(s)).toEqual(['pec'])
   })
 })

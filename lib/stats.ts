@@ -11,9 +11,28 @@ export interface SetLike {
 export interface ExoLike {
   name?: string
   sets: SetLike[]
+  type?: string
 }
 
 const isoDay = (d: Date) => d.toISOString().slice(0, 10)
+
+/**
+ * Groupes musculaires distincts d'une séance, dans l'ordre d'apparition.
+ * Dérivé du type propre à chaque exercice ; retombe sur le type de séance
+ * pour les anciennes données qui n'avaient pas de type par exercice.
+ */
+export function sessionMuscleGroups(
+  session: { type?: string; exos: ExoLike[] },
+): string[] {
+  const seen = new Set<string>()
+  const ordered: string[] = []
+  for (const e of session.exos) {
+    const t = e.type
+    if (t && !seen.has(t)) { seen.add(t); ordered.push(t) }
+  }
+  if (ordered.length === 0 && session.type) return [session.type]
+  return ordered
+}
 
 /**
  * Length of the current consecutive-day training streak.

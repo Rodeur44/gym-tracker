@@ -8,6 +8,7 @@ import { useApp } from '@/context/AppContext'
 import { TYPE_LBL, TAG_CLR, TAG_BG, EXO_BY_TYPE } from '@/lib/constants'
 import type { MuscleGroup, Session } from '@/types'
 import { Counter } from '@/components/ui/animated-counter'
+import { sessionMuscleGroups } from '@/lib/stats'
 import ProgramsSheet from '@/components/screens/ProgramsSheet'
 import LeaderboardSheet from '@/components/screens/LeaderboardSheet'
 import WaterTracker from '@/components/ui/WaterTracker'
@@ -215,21 +216,28 @@ export default function HomeScreen() {
             Dernière séance
           </p>
           <div className="card-glass rounded-2xl p-4">
-            <div className="flex justify-between items-center mb-3">
-              <span className="text-[11px] font-semibold px-3 py-1 rounded-full border"
-                style={{ color: TAG_CLR[last.type as MuscleGroup], background: TAG_BG[last.type as MuscleGroup], borderColor: `${TAG_CLR[last.type as MuscleGroup]}33` }}>
-                {TYPE_LBL[last.type as MuscleGroup]}
-              </span>
-              <span className="text-xs text-zinc-500 font-mono">{fmtDate(last.date)}</span>
-            </div>
-            {(last.exos || []).slice(0, 4).map((e, i) => (
-              <div key={i} className="flex items-center py-2.5 border-b border-white/[0.04] last:border-none gap-3">
-                <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: TAG_CLR[last.type as MuscleGroup], boxShadow: `0 0 8px ${TAG_CLR[last.type as MuscleGroup]}66` }} />
-                <span className="flex-1 text-sm text-zinc-200 tracking-tight">{e.name}</span>
-                {exoW(e) > 0 && <span className="text-sm font-semibold font-mono" style={{ color: TAG_CLR[last.type as MuscleGroup] }}>{exoW(e)}kg</span>}
-                <span className="text-[11px] text-zinc-500 font-mono bg-[#1C1C1C] px-2 py-0.5 rounded-lg border border-white/[0.06]">{exoSR(e)}</span>
+            <div className="flex justify-between items-center mb-3 gap-2">
+              <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+                {(sessionMuscleGroups(last) as MuscleGroup[]).map(g => (
+                  <span key={g} className="text-[11px] font-semibold px-3 py-1 rounded-full border"
+                    style={{ color: TAG_CLR[g], background: TAG_BG[g], borderColor: `${TAG_CLR[g]}33` }}>
+                    {TYPE_LBL[g]}
+                  </span>
+                ))}
               </div>
-            ))}
+              <span className="text-xs text-zinc-500 font-mono flex-shrink-0">{fmtDate(last.date)}</span>
+            </div>
+            {(last.exos || []).slice(0, 4).map((e, i) => {
+              const eClr = TAG_CLR[(e.type ?? last.type) as MuscleGroup]
+              return (
+                <div key={i} className="flex items-center py-2.5 border-b border-white/[0.04] last:border-none gap-3">
+                  <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: eClr, boxShadow: `0 0 8px ${eClr}66` }} />
+                  <span className="flex-1 text-sm text-zinc-200 tracking-tight">{e.name}</span>
+                  {exoW(e) > 0 && <span className="text-sm font-semibold font-mono" style={{ color: eClr }}>{exoW(e)}kg</span>}
+                  <span className="text-[11px] text-zinc-500 font-mono bg-[#1C1C1C] px-2 py-0.5 rounded-lg border border-white/[0.06]">{exoSR(e)}</span>
+                </div>
+              )
+            })}
             {(last.exos || []).length > 4 && (
               <p className="text-xs text-zinc-600 pt-2">+{last.exos.length - 4} exercices…</p>
             )}
