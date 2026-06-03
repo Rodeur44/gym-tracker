@@ -9,6 +9,7 @@ import type { Session } from '@/types'
 import MeasurementsTab from './MeasurementsTab'
 import { exportSessionsCSV } from '@/lib/export'
 import { Counter } from '@/components/ui/animated-counter'
+import EmptyState from '@/components/ui/EmptyState'
 
 type Tab = 'exos' | 'body'
 
@@ -301,21 +302,11 @@ export default function ProgressScreen() {
     return (
       <div className="pb-28">
         {tabsBar}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          className="flex flex-col items-center justify-center min-h-[60vh] px-8 text-center"
-        >
-          <div className="w-20 h-20 rounded-[24px] flex items-center justify-center mb-6 border"
-            style={{ background: 'linear-gradient(135deg,rgba(109,40,217,0.15),rgba(139,92,246,0.06))', borderColor: 'rgba(139,92,246,0.2)', boxShadow: '0 0 40px -12px rgba(139,92,246,0.4)' }}>
-            <BarChart2 size={36} className="text-[#A78BFA]" />
-          </div>
-          <h3 className="text-lg font-semibold text-zinc-100 mb-2 tracking-tight">Aucun progrès encore</h3>
-          <p className="text-sm text-zinc-500 leading-relaxed max-w-[220px]">
-            Enregistre ta première séance avec des poids pour voir tes records et ton volume ici.
-          </p>
-        </motion.div>
+        <EmptyState
+          icon={BarChart2}
+          title="Aucun progrès encore"
+          message="Enregistre ta première séance avec des poids pour voir tes records et ton volume ici."
+        />
       </div>
     )
   }

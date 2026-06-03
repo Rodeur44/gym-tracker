@@ -158,7 +158,7 @@ export default function LeaderboardSheet({ onClose }: Props) {
           {loading ? (
             <div className="flex flex-col gap-2 pt-2">
               {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="h-14 rounded-2xl bg-white/[0.03] animate-pulse" />
+                <div key={i} className="h-14 rounded-2xl shimmer-block" />
               ))}
             </div>
           ) : entries.length === 0 ? (

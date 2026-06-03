@@ -188,7 +188,7 @@ export default function WaterTracker() {
   }, [today])
 
   if (loading) return (
-    <div className="rounded-2xl p-4 card-glass animate-pulse" style={{ height: 260 }} />
+    <div className="rounded-2xl shimmer-block" style={{ height: 260 }} />
   )
 
   const goalL = (goal / 1000).toFixed(1)

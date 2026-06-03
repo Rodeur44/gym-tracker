@@ -6,6 +6,7 @@ import { Clock, Trash2, Pencil, RotateCcw } from 'lucide-react'
 import { useApp } from '@/context/AppContext'
 import { TYPE_LBL, TAG_CLR, TAG_BG } from '@/lib/constants'
 import type { MuscleGroup, Session } from '@/types'
+import EmptyState from '@/components/ui/EmptyState'
 
 function fmtDate(d: string) {
   return new Date(d + 'T12:00:00').toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })
@@ -152,14 +153,11 @@ export default function HistoryScreen() {
 
   if (!sessions.length) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] px-8 text-center">
-        <div className="w-18 h-18 rounded-[22px] flex items-center justify-center mb-5 border"
-          style={{ background: 'linear-gradient(135deg,rgba(139,92,246,0.1),rgba(99,102,241,0.05))', borderColor: 'rgba(139,92,246,0.18)', boxShadow: '0 0 30px -10px rgba(139,92,246,0.35)', width: 72, height: 72 }}>
-          <Clock size={32} className="text-[#A78BFA]" />
-        </div>
-        <h3 className="text-base font-semibold text-zinc-200 mb-2">Aucune séance</h3>
-        <p className="text-sm text-zinc-500 leading-relaxed">Enregistre ta première séance<br />pour la voir apparaître ici.</p>
-      </div>
+      <EmptyState
+        icon={Clock}
+        title="Aucune séance"
+        message="Enregistre ta première séance pour la voir apparaître ici."
+      />
     )
   }
 
@@ -215,6 +213,7 @@ export default function HistoryScreen() {
                       initial={{ opacity: 0, x: -8 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: gi * 0.06 + i * 0.04, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                      whileTap={{ scale: 0.985 }}
                       onClick={() => setSelected(s)}
                       className="flex items-center gap-3 px-4 py-3.5 border-b border-white/[0.04] last:border-none cursor-pointer hover:bg-white/[0.02] active:bg-white/[0.04] transition-all"
                     >

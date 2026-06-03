@@ -223,7 +223,7 @@ export default function AICoachSheet({ onClose }: Props) {
           {isLoading && !result?.exos?.length && (
             <div className="rounded-2xl p-4 flex flex-col gap-3" style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)' }}>
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="h-9 rounded-xl bg-white/[0.04] animate-pulse" />
+                <div key={i} className="h-9 rounded-xl shimmer-block" />
               ))}
             </div>
           )}
