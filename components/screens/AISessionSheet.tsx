@@ -1,13 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import type { Variants } from 'framer-motion'
 import { X, Sparkles, ChevronRight, AlertCircle, Clock, RotateCcw } from 'lucide-react'
-import { experimental_useObject as useObject } from '@ai-sdk/react'
 import type { MuscleGroup, Exercise } from '@/types'
 import { TYPE_LBL, TAG_CLR, TAG_BG } from '@/lib/constants'
 import { programSchema } from '@/lib/ai-schemas'
+import { useAiObject } from '@/lib/use-ai-object'
 
 type Level = 'debutant' | 'intermediaire' | 'avance'
 type Goal = 'force' | 'volume' | 'endurance' | 'perte_poids'
@@ -72,29 +72,24 @@ export default function AISessionSheet({ defaultType, onClose, onUse }: Props) {
   const [duration, setDuration] = useState(60)
   const [equipment, setEquipment] = useState<Equipment>('salle')
   const [notes, setNotes] = useState('')
-  const [error, setError] = useState('')
 
-  const { object: result, submit, isLoading, stop, clear } = useObject({
+  const { object: result, submit, isLoading, failed, clear } = useAiObject({
     api: '/api/ai/program',
     schema: programSchema,
-    onError: () => setError('Impossible de générer la séance. Réessaie.'),
   })
 
   const accent = TAG_CLR[type]
   const bg = TAG_BG[type]
 
   // Streaming démarré dès qu'on a lancé une génération (loading) ou reçu du contenu.
-  const started = isLoading || !!result
+  const started = isLoading || !!result || failed
 
   function generate() {
-    setError('')
     submit({ type, level, goal, duration, equipment, notes: notes.trim() || undefined })
   }
 
   function reset() {
-    stop()
     clear()
-    setError('')
   }
 
   function handleUse() {
@@ -250,17 +245,6 @@ export default function AISessionSheet({ defaultType, onClose, onUse }: Props) {
                 />
               </div>
 
-              {/* Error */}
-              <AnimatePresence>
-                {error && (
-                  <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                    className="flex items-start gap-2 text-sm text-red-400 bg-red-500/10 border border-red-500/20 px-4 py-3 rounded-xl">
-                    <AlertCircle size={14} className="mt-0.5 flex-shrink-0" />
-                    <span>{error}</span>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
               {/* Generate */}
               <motion.button
                 whileTap={{ scale: 0.97 }}
@@ -281,6 +265,36 @@ export default function AISessionSheet({ defaultType, onClose, onUse }: Props) {
               transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
               className="flex flex-col gap-4"
             >
+              {failed && !result?.exercises?.length ? (
+                /* ── Échec après retry automatique ── */
+                <div className="flex flex-col items-center text-center gap-4 py-8 px-2">
+                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center border"
+                    style={{ background: 'rgba(239,68,68,0.08)', borderColor: 'rgba(239,68,68,0.2)' }}>
+                    <AlertCircle size={26} strokeWidth={1.8} className="text-red-400" />
+                  </div>
+                  <div>
+                    <h4 className="text-[15px] font-semibold text-zinc-100">Génération impossible</h4>
+                    <p className="text-[13px] text-zinc-500 mt-1 max-w-[260px] leading-relaxed">L&apos;IA n&apos;a pas répondu. Réessaie dans un instant ou ajuste tes critères.</p>
+                  </div>
+                  <div className="flex gap-3 w-full">
+                    <button
+                      onClick={reset}
+                      className="flex-1 py-3 rounded-2xl text-sm font-semibold text-zinc-300 bg-[#1C1C1C] border border-white/[0.08]"
+                    >
+                      Modifier
+                    </button>
+                    <motion.button
+                      whileTap={{ scale: 0.97 }}
+                      onClick={generate}
+                      className="flex-1 py-3 rounded-2xl text-sm font-semibold text-white"
+                      style={{ background: 'linear-gradient(135deg,#6D28D9,#7C3AED 50%,#8B5CF6)', boxShadow: '0 8px 24px -6px rgba(109,40,217,0.5)' }}
+                    >
+                      Réessayer
+                    </motion.button>
+                  </div>
+                </div>
+              ) : (
+              <>
               {/* Title */}
               <div className="px-4 py-4 rounded-2xl border"
                 style={{ background: 'linear-gradient(135deg,rgba(109,40,217,0.12),rgba(139,92,246,0.06))', borderColor: 'rgba(139,92,246,0.25)' }}>
@@ -360,6 +374,8 @@ export default function AISessionSheet({ defaultType, onClose, onUse }: Props) {
                     Utiliser cette séance
                   </motion.button>
                 </div>
+              )}
+              </>
               )}
             </motion.div>
           )}
