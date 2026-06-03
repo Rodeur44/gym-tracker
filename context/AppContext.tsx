@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
 import { scheduleBeep, cancelScheduledBeep, testBeep as testBeepImpl, unlockAudio } from '@/lib/audio'
 import type { User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
@@ -166,27 +166,48 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
+  // Programme une notif push de fin de repos (déclenchée même app fermée).
+  // Best-effort : si l'utilisateur n'a pas activé les notifs, ça ne fait rien.
+  const restTokenRef = useRef('')
+  const scheduleRestPush = useCallback((seconds: number) => {
+    const token = `${Date.now()}-${Math.random().toString(36).slice(2)}`
+    restTokenRef.current = token
+    fetch('/api/push/rest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ seconds: Math.round(seconds), token }),
+      keepalive: true,
+    }).catch(() => {})
+  }, [])
+  const cancelRestPush = useCallback(() => {
+    restTokenRef.current = ''
+    fetch('/api/push/rest', { method: 'DELETE', keepalive: true }).catch(() => {})
+  }, [])
+
   const startRest = useCallback((seconds?: number) => {
     const dur = seconds ?? restDuration
     // scheduleBeep also unlocks the audio element synchronously inside this
     // user gesture, then schedules a setTimeout for the end-of-rest beep.
     scheduleBeep(dur * 1000)
     setRestEndsAt(Date.now() + dur * 1000)
-  }, [restDuration])
+    scheduleRestPush(dur)
+  }, [restDuration, scheduleRestPush])
 
   const stopRest = useCallback(() => {
     cancelScheduledBeep()
     setRestEndsAt(null)
-  }, [])
+    cancelRestPush()
+  }, [cancelRestPush])
 
   const addRest = useCallback((deltaSec: number) => {
     setRestEndsAt(prev => {
       if (!prev) return prev
       const next = Math.max(Date.now() + 1000, prev + deltaSec * 1000)
       scheduleBeep(next - Date.now())
+      scheduleRestPush((next - Date.now()) / 1000)
       return next
     })
-  }, [])
+  }, [scheduleRestPush])
 
   const testBeep = useCallback(() => {
     testBeepImpl()

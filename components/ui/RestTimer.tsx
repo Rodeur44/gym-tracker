@@ -46,9 +46,26 @@ export function RestTimer() {
   const progress = restEndsAt && restActive ? Math.max(0, Math.min(1, 1 - remaining / restDuration)) : 0
   const justFinished = restActive && remaining === 0
   const isLow = remaining <= 10 && remaining > 0 && !justFinished
+  const isMid = remaining <= 30 && remaining > 10 && !justFinished
 
-  const arcColor = justFinished ? '#10B981' : isLow ? '#F87171' : 'url(#arc-grad)'
-  const arcColorSolid = justFinished ? '#10B981' : isLow ? '#F87171' : '#A78BFA'
+  const arcColor = justFinished ? '#10B981' : isLow ? '#F87171' : isMid ? '#FBBF24' : 'url(#arc-grad)'
+  const arcColorSolid = justFinished ? '#10B981' : isLow ? '#F87171' : isMid ? '#FBBF24' : '#A78BFA'
+
+  // Dégradé de fond du bouton actif selon l'état (bien distinct).
+  const activeBg = justFinished
+    ? 'linear-gradient(135deg,#059669,#10B981)'
+    : isLow
+    ? 'linear-gradient(135deg,#B91C1C,#EF4444)'
+    : isMid
+    ? 'linear-gradient(135deg,#B45309,#F59E0B)'
+    : 'linear-gradient(135deg,#6D28D9,#7C3AED)'
+  const activeGlow = justFinished
+    ? '0 10px 30px -4px rgba(16,185,129,0.7),0 0 36px rgba(16,185,129,0.55)'
+    : isLow
+    ? '0 10px 30px -4px rgba(239,68,68,0.7),0 0 32px rgba(239,68,68,0.5)'
+    : isMid
+    ? '0 10px 30px -4px rgba(245,158,11,0.6),0 0 28px rgba(245,158,11,0.45)'
+    : '0 10px 30px -4px rgba(109,40,217,0.6),0 0 28px rgba(139,92,246,0.5)'
 
   return (
     <>
@@ -85,23 +102,17 @@ export function RestTimer() {
         ) : (
           <motion.button
             initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            whileTap={{ scale: 0.96 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-            onClick={() => setExpanded(true)}
-            className="relative h-12 px-4 rounded-full flex items-center gap-2 text-[13px] font-semibold text-white overflow-hidden"
-            style={{
-              background: justFinished
-                ? 'linear-gradient(135deg,#059669,#10B981)'
-                : isLow
-                ? 'linear-gradient(135deg,#B91C1C,#EF4444)'
-                : 'linear-gradient(135deg,#6D28D9,#7C3AED)',
-              boxShadow: justFinished
-                ? '0 8px 28px -6px rgba(16,185,129,0.6),0 0 28px rgba(16,185,129,0.45)'
-                : isLow
-                ? '0 8px 28px -6px rgba(239,68,68,0.6),0 0 24px rgba(239,68,68,0.4),inset 0 1px 0 rgba(255,255,255,0.18)'
-                : '0 8px 28px -6px rgba(109,40,217,0.6),0 0 24px rgba(139,92,246,0.45),inset 0 1px 0 rgba(255,255,255,0.18)',
+            animate={{
+              scale: justFinished ? [1, 1.12, 1] : isLow ? [1, 1.06, 1] : [1, 1.025, 1],
+              opacity: 1,
             }}
+            transition={{
+              scale: { repeat: Infinity, duration: justFinished ? 0.5 : isLow ? 0.7 : 2.4, ease: 'easeInOut' },
+            }}
+            whileTap={{ scale: 0.96 }}
+            onClick={() => setExpanded(true)}
+            className="relative h-14 pl-3 pr-5 rounded-full flex items-center gap-2.5 text-[15px] font-bold text-white overflow-hidden"
+            style={{ background: activeBg, boxShadow: `${activeGlow},inset 0 1px 0 rgba(255,255,255,0.2)` }}
             aria-label={justFinished ? 'Repos terminé' : 'Voir le timer'}
           >
             {/* Progress fill behind text */}
@@ -109,12 +120,14 @@ export function RestTimer() {
               className="absolute inset-y-0 left-0 pointer-events-none rounded-full"
               style={{
                 width: `${progress * 100}%`,
-                background: isLow ? 'rgba(248,113,113,0.25)' : 'rgba(255,255,255,0.18)',
-                transition: 'width 200ms linear, background 400ms ease',
+                background: 'rgba(255,255,255,0.2)',
+                transition: 'width 200ms linear',
               }}
             />
-            <Timer size={16} strokeWidth={1.8} className="relative" />
-            <span className="relative font-mono">{justFinished ? 'TERMINÉ' : fmt(remaining)}</span>
+            <span className="relative w-8 h-8 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+              <Timer size={17} strokeWidth={2} />
+            </span>
+            <span className="relative font-mono tabular-nums tracking-tight">{justFinished ? 'TERMINÉ' : fmt(remaining)}</span>
           </motion.button>
         )}
       </div>
