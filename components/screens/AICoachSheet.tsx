@@ -4,11 +4,11 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Variants } from 'framer-motion'
 import { X, Send, Loader2, Zap, ChevronDown } from 'lucide-react'
-import { experimental_useObject as useObject } from '@ai-sdk/react'
 import { useApp } from '@/context/AppContext'
 import { TAG_CLR, TAG_BG, TYPE_LBL } from '@/lib/constants'
 import type { MuscleGroup, Session, Exercise } from '@/types'
 import { sessionSchema } from '@/lib/ai-schemas'
+import { useAiObject } from '@/lib/use-ai-object'
 
 const sheetVariants: Variants = {
   hidden: { y: '100%' },
@@ -26,17 +26,14 @@ export default function AICoachSheet({ onClose }: Props) {
   const [notes, setNotes] = useState('')
   const [includePastNotes, setIncludePastNotes] = useState(true)
   const [notesOpen, setNotesOpen] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
-  const { object: result, submit, isLoading } = useObject({
+  const { object: result, submit, isLoading, failed } = useAiObject({
     api: '/api/ai/session',
     schema: sessionSchema,
-    onError: () => setError('Impossible de générer la séance. Réessaie.'),
   })
 
   function generate() {
     if (!prompt.trim() || isLoading) return
-    setError(null)
     submit({ prompt, notes, includePastNotes, sessions })
   }
 
@@ -217,9 +214,9 @@ export default function AICoachSheet({ onClose }: Props) {
             </button>
           </div>
 
-          {/* Error — masquée si on a déjà des exercices exploitables */}
-          {error && !result?.exos?.length && (
-            <p className="text-sm text-red-400 px-1">{error}</p>
+          {/* Error — affichée seulement après échec définitif (retry inclus) et sans résultat */}
+          {failed && !result?.exos?.length && (
+            <p className="text-sm text-red-400 px-1">Impossible de générer la séance. Réessaie.</p>
           )}
 
           {/* Loading skeleton — uniquement avant l'arrivée du premier exercice */}
