@@ -5,10 +5,10 @@ self.addEventListener('push', event => {
       body: data.body || "C'est l'heure de t'entraîner !",
       icon: '/apple-icon',
       badge: '/icon',
-      tag: 'gymlog-reminder',
+      tag: data.tag || 'gymlog-reminder',
       renotify: true,
       data: { url: data.url || '/' },
-      vibrate: [100, 50, 100],
+      vibrate: data.vibrate || [100, 50, 100],
     })
   )
 })
