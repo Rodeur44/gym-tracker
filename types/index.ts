@@ -8,6 +8,11 @@ export interface ExoSet {
 export interface Exercise {
   name: string
   sets: ExoSet[]
+  // Groupe musculaire propre à l'exercice (séances multi-groupes).
+  // Optionnel : les anciennes séances retombent sur Session.type.
+  type?: MuscleGroup
+  // Ressenti global de l'exercice (toutes séries confondues).
+  note?: string
 }
 
 export interface Session {

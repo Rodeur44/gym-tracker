@@ -305,10 +305,9 @@ function SetRow({ set, idx, accent, onWeightChange, onRepsChange, onDelete, slid
 }
 
 // ── Exo Card ──────────────────────────────────────────────────────
-function ExoCard({ exo, idx, accent, getBest, onChange, onDelete, onDuplicate, onInfo, type }: {
+function ExoCard({ exo, idx, getBest, onChange, onDelete, onDuplicate, onInfo, type }: {
   exo: Exercise
   idx: number
-  accent: string
   getBest: (n: string) => number
   onChange: (updated: Exercise) => void
   onDelete: () => void
@@ -316,7 +315,10 @@ function ExoCard({ exo, idx, accent, getBest, onChange, onDelete, onDuplicate, o
   onInfo: () => void
   type: MuscleGroup
 }) {
-  const sliderMax = type === 'jambes' ? 500 : 250
+  // Couleur propre à l'exercice (séances multi-groupes), repli sur le type courant.
+  const exoType = (exo.type ?? type) as MuscleGroup
+  const accent = TAG_CLR[exoType]
+  const sliderMax = exoType === 'jambes' ? 500 : 250
   const pr = getBest(exo.name)
   const maxW = Math.max(0, ...exo.sets.map(s => s.weight || 0))
   const isRecord = pr > 0 && maxW > pr
@@ -466,6 +468,15 @@ function ExoCard({ exo, idx, accent, getBest, onChange, onDelete, onDuplicate, o
             </motion.button>
           )}
         </div>
+
+        {/* Note de ressenti de l'exercice */}
+        <input
+          value={exo.note ?? ''}
+          onChange={e => onChange({ ...exo, note: e.target.value })}
+          placeholder="Ressenti de l'exercice (optionnel)…"
+          maxLength={140}
+          className="w-full mt-3 bg-transparent border-t border-white/[0.06] pt-3 text-[13px] text-zinc-300 placeholder:text-zinc-700 outline-none"
+        />
       </div>
     </motion.div>
   )
@@ -576,6 +587,7 @@ export default function LogScreen() {
     setLogType(t.type)
     setCurrentExos(t.exos.map(e => ({
       name: e.name,
+      type: t.type,
       sets: Array.from({ length: e.sets }, () => ({ weight: getBest(e.name), reps: e.reps })),
     })))
     setTemplatesOpen(false)
@@ -583,14 +595,16 @@ export default function LogScreen() {
 
   function pickExo(name: string) {
     const pr = getBest(name)
-    setCurrentExos([...currentExos, { name, sets: [{ weight: pr, reps: 10 }] }])
+    setCurrentExos([...currentExos, { name, type: logType, sets: [{ weight: pr, reps: 10 }] }])
     setPickerOpen(false)
   }
 
   async function handleSave() {
     if (!currentExos.length) { setError('Ajoute au moins un exercice !'); return }
     setError('')
-    const ok = await saveSession({ date, type: logType, notes, exos: currentExos })
+    // type de séance = groupe du 1er exercice (primaire), pour compat & tri.
+    const primaryType = currentExos[0]?.type ?? logType
+    const ok = await saveSession({ date, type: primaryType, notes, exos: currentExos })
     if (ok) {
       setCurrentExos([]); setNotes(''); setDate(new Date().toISOString().slice(0, 10))
       if (localStorage.getItem('gymlog_stretch_enabled') !== 'false') {
@@ -635,21 +649,6 @@ export default function LogScreen() {
             onChange={e => setDate(e.target.value)}
             className="bg-[#1C1C1C] border border-white/[0.06] rounded-xl px-3 py-1.5 text-[13px] font-mono text-zinc-300 outline-none focus:border-[#A78BFA] transition-all text-center"
           />
-        </div>
-
-        {/* Type pills */}
-        <div className="grid grid-cols-5 gap-1.5">
-          {MUSCLE_TABS.map(t => (
-            <motion.button
-              key={t}
-              whileTap={{ scale: 0.94 }}
-              onClick={() => setLogType(t)}
-              className={`py-2.5 rounded-full border-[1.5px] text-[13px] font-semibold transition-all text-center ${logType === t ? 'shadow-lg' : 'border-white/[0.06] bg-[#1C1C1C] text-zinc-500'}`}
-              style={logType === t ? { borderColor: accent, background: TAG_BG[t], color: accent, boxShadow: `0 0 16px ${accent}55` } : {}}
-            >
-              {TYPE_LBL[t].split(' ')[0]}
-            </motion.button>
-          ))}
         </div>
 
         {/* Template + IA triggers */}
@@ -705,7 +704,6 @@ export default function LogScreen() {
                 key={`${exo.name}-${i}`}
                 exo={exo}
                 idx={i}
-                accent={accent}
                 type={logType}
                 getBest={getBest}
                 onChange={updated => updateExo(i, updated)}
@@ -717,14 +715,36 @@ export default function LogScreen() {
           )}
         </AnimatePresence>
 
-        {/* Add exercise button */}
-        <motion.button
-          whileTap={{ scale: 0.98 }}
-          onClick={() => setPickerOpen(true)}
-          className="w-full py-5 rounded-[18px] border-[1.5px] border-dashed border-white/10 text-zinc-500 text-sm font-medium flex items-center justify-center gap-2 hover:border-[#A78BFA] hover:text-[#A78BFA] hover:bg-[rgba(139,92,246,0.04)] transition-all"
-        >
-          <Plus size={14} strokeWidth={1.8} /> Ajouter un exercice
-        </motion.button>
+        {/* Sélecteur de groupe + ajout — sous le dernier exercice */}
+        <div className="flex flex-col gap-2.5">
+          <p className="text-[11px] font-bold uppercase tracking-[1.8px] text-zinc-500 flex items-center gap-2">
+            <span className="w-[3px] h-[11px] rounded-full inline-block" style={{ background: accent, boxShadow: `0 0 8px ${accent}88` }} />
+            Groupe du prochain exercice
+          </p>
+          <div className="grid grid-cols-5 gap-1.5">
+            {MUSCLE_TABS.map(t => (
+              <motion.button
+                key={t}
+                whileTap={{ scale: 0.94 }}
+                onClick={() => setLogType(t)}
+                className={`py-2.5 rounded-full border-[1.5px] text-[13px] font-semibold transition-all text-center ${logType === t ? 'shadow-lg' : 'border-white/[0.06] bg-[#1C1C1C] text-zinc-500'}`}
+                style={logType === t ? { borderColor: TAG_CLR[t], background: TAG_BG[t], color: TAG_CLR[t], boxShadow: `0 0 16px ${TAG_CLR[t]}55` } : {}}
+              >
+                {TYPE_LBL[t].split(' ')[0]}
+              </motion.button>
+            ))}
+          </div>
+
+          {/* Add exercise button */}
+          <motion.button
+            whileTap={{ scale: 0.98 }}
+            onClick={() => setPickerOpen(true)}
+            className="w-full py-4 rounded-[18px] border-[1.5px] border-dashed text-sm font-semibold flex items-center justify-center gap-2 transition-all"
+            style={{ borderColor: `${accent}66`, color: accent, background: `${accent}0f` }}
+          >
+            <Plus size={15} strokeWidth={2} /> Ajouter un exercice {TYPE_LBL[logType].split(' ')[0]}
+          </motion.button>
+        </div>
 
         {/* Notes */}
         <details className="bg-[#1C1C1C] border border-white/[0.06] rounded-2xl overflow-hidden group">

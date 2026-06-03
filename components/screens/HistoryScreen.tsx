@@ -7,6 +7,7 @@ import { useApp } from '@/context/AppContext'
 import { TYPE_LBL, TAG_CLR, TAG_BG } from '@/lib/constants'
 import type { MuscleGroup, Session } from '@/types'
 import EmptyState from '@/components/ui/EmptyState'
+import { sessionMuscleGroups } from '@/lib/stats'
 
 function fmtDate(d: string) {
   return new Date(d + 'T12:00:00').toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })
@@ -37,7 +38,7 @@ function DetailModal({ session, onClose, onEdit, onDelete, onRepeat }: {
   onDelete: () => void
   onRepeat: () => void
 }) {
-  const clr = TAG_CLR[session.type as MuscleGroup]
+  const groups = sessionMuscleGroups(session) as MuscleGroup[]
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -57,32 +58,45 @@ function DetailModal({ session, onClose, onEdit, onDelete, onRepeat }: {
       >
         <div className="flex-shrink-0 px-6 pt-5 pb-4">
           <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-5" />
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold px-3 py-1 rounded-full border"
-              style={{ color: clr, background: TAG_BG[session.type as MuscleGroup], borderColor: `${clr}33` }}>
-              {TYPE_LBL[session.type as MuscleGroup]}
-            </span>
-            <span className="text-xs text-zinc-500 font-mono">{fmtDate(session.date)}</span>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+              {groups.map(g => (
+                <span key={g} className="text-[11px] font-semibold px-3 py-1 rounded-full border"
+                  style={{ color: TAG_CLR[g], background: TAG_BG[g], borderColor: `${TAG_CLR[g]}33` }}>
+                  {TYPE_LBL[g]}
+                </span>
+              ))}
+            </div>
+            <span className="text-xs text-zinc-500 font-mono flex-shrink-0">{fmtDate(session.date)}</span>
           </div>
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 pb-2">
           <div className="flex flex-col gap-1">
-            {(session.exos || []).map((e, i) => (
-              <div key={i} className="py-3 border-b border-white/[0.05] last:border-none">
-                <div className="flex justify-between items-baseline mb-1">
-                  <span className="text-sm font-medium text-zinc-200">{e.name}</span>
-                  <span className="text-xs font-mono text-zinc-500">{e.sets.length} série{e.sets.length > 1 ? 's' : ''}</span>
-                </div>
-                <div className="flex flex-wrap gap-2 mt-1.5">
-                  {e.sets.map((s, si) => (
-                    <span key={si} className="text-[11px] font-mono bg-[#1C1C1C] border border-white/[0.06] px-2.5 py-1 rounded-lg text-zinc-400">
-                      {s.weight > 0 ? `${s.weight}kg` : 'corps'} × {s.reps}
+            {(session.exos || []).map((e, i) => {
+              const eClr = TAG_CLR[(e.type ?? session.type) as MuscleGroup]
+              return (
+                <div key={i} className="py-3 border-b border-white/[0.05] last:border-none">
+                  <div className="flex justify-between items-baseline mb-1">
+                    <span className="flex items-center gap-2 min-w-0">
+                      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: eClr, boxShadow: `0 0 6px ${eClr}88` }} />
+                      <span className="text-sm font-medium text-zinc-200 truncate">{e.name}</span>
                     </span>
-                  ))}
+                    <span className="text-xs font-mono text-zinc-500 flex-shrink-0">{e.sets.length} série{e.sets.length > 1 ? 's' : ''}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-1.5">
+                    {e.sets.map((s, si) => (
+                      <span key={si} className="text-[11px] font-mono bg-[#1C1C1C] border border-white/[0.06] px-2.5 py-1 rounded-lg text-zinc-400">
+                        {s.weight > 0 ? `${s.weight}kg` : 'corps'} × {s.reps}
+                      </span>
+                    ))}
+                  </div>
+                  {e.note && (
+                    <p className="text-[12px] text-zinc-500 mt-2 leading-relaxed italic">« {e.note} »</p>
+                  )}
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
 
@@ -204,7 +218,8 @@ export default function HistoryScreen() {
               {/* Sessions */}
               <div className="card-glass rounded-2xl overflow-hidden">
                 {monthSessions.map((s, i) => {
-                  const clr = TAG_CLR[s.type as MuscleGroup]
+                  const groups = sessionMuscleGroups(s) as MuscleGroup[]
+                  const clr = TAG_CLR[groups[0]]
                   const seriesCount = s.exos.reduce((acc, e) => acc + e.sets.length, 0)
                   const vol = fmtVol(calcVolume(s))
                   return (
@@ -217,8 +232,16 @@ export default function HistoryScreen() {
                       onClick={() => setSelected(s)}
                       className="flex items-center gap-3 px-4 py-3.5 border-b border-white/[0.04] last:border-none cursor-pointer hover:bg-white/[0.02] active:bg-white/[0.04] transition-all"
                     >
-                      {/* Color stripe */}
-                      <div className="w-0.5 h-10 rounded-full flex-shrink-0" style={{ background: clr, boxShadow: `0 0 10px ${clr}55` }} />
+                      {/* Color stripe — dégradé des groupes de la séance */}
+                      <div
+                        className="w-0.5 h-10 rounded-full flex-shrink-0"
+                        style={{
+                          background: groups.length > 1
+                            ? `linear-gradient(180deg, ${groups.map(g => TAG_CLR[g]).join(', ')})`
+                            : clr,
+                          boxShadow: `0 0 10px ${clr}55`,
+                        }}
+                      />
 
                       {/* Date column */}
                       <div className="flex flex-col items-center w-8 flex-shrink-0">
@@ -228,7 +251,9 @@ export default function HistoryScreen() {
 
                       {/* Content */}
                       <div className="flex-1 min-w-0">
-                        <div className="text-[14px] font-semibold text-zinc-100 tracking-tight truncate">{TYPE_LBL[s.type as MuscleGroup]}</div>
+                        <div className="text-[14px] font-semibold text-zinc-100 tracking-tight truncate">
+                          {groups.map(g => TYPE_LBL[g].split(' ')[0]).join(' · ')}
+                        </div>
                         <div className="flex items-center gap-1.5 mt-0.5">
                           <span className="text-[11px] text-zinc-600">{(s.exos || []).length} ex</span>
                           <span className="text-[11px] text-zinc-700">·</span>
@@ -242,11 +267,16 @@ export default function HistoryScreen() {
                         </div>
                       </div>
 
-                      {/* Rarity badge */}
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full border flex-shrink-0"
-                        style={{ color: clr, background: TAG_BG[s.type as MuscleGroup], borderColor: `${clr}33` }}>
-                        {TYPE_LBL[s.type as MuscleGroup].split(' ')[0]}
-                      </span>
+                      {/* Pastilles de groupes */}
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        {groups.slice(0, 4).map(g => (
+                          <span
+                            key={g}
+                            className="w-2 h-2 rounded-full"
+                            style={{ background: TAG_CLR[g], boxShadow: `0 0 6px ${TAG_CLR[g]}88` }}
+                          />
+                        ))}
+                      </div>
                     </motion.div>
                   )
                 })}

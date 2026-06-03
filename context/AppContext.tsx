@@ -14,7 +14,7 @@ function checkUnlocks(allSessions: Session[], currentUnlocked: Set<string>): str
   const has = (id: string) => currentUnlocked.has(id)
 
   const volumeForType = (type: MuscleGroup) =>
-    exosVolume(allSessions.filter(s => s.type === type).flatMap(s => s.exos))
+    exosVolume(allSessions.flatMap(s => s.exos.filter(e => (e.type ?? s.type) === type)))
 
   const totalRepsForKeyword = (keyword: string) =>
     allSessions
@@ -392,6 +392,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setEditMode(true); setEditSessionId(id)
     setCurrentExos(s.exos.map(e => ({
       name: e.name,
+      type: (e.type ?? s.type) as MuscleGroup,
+      note: e.note,
       sets: e.sets.map(st => ({ weight: st.weight || 0, reps: st.reps || 10 }))
     })))
     setLogType(s.type as MuscleGroup)
@@ -405,6 +407,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setLogType(session.type as MuscleGroup)
     setCurrentExos(session.exos.map(e => ({
       name: e.name,
+      type: (e.type ?? session.type) as MuscleGroup,
+      note: e.note,
       sets: e.sets.map(s => ({ weight: s.weight || 0, reps: s.reps || 10 }))
     })))
     setRepeatPending(true)
