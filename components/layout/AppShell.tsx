@@ -339,7 +339,7 @@ export default function AppShell() {
           <div ref={profileRef} className="relative">
             <button
               onClick={() => setProfileOpen(o => !o)}
-              className={`w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-semibold transition-all duration-300 hover:shadow-[0_0_16px_rgba(139,92,246,0.5)] hover:scale-105 active:scale-95 ${isPro ? 'text-white border border-white/20' : 'bg-[#1C1C1C] border border-[#A78BFA] text-[#A78BFA]'}`}
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-semibold transition-all duration-300 hover:shadow-[0_0_16px_rgba(139,92,246,0.5)] hover:scale-105 active:scale-95 ${profileOpen ? 'ring-2 ring-[#A78BFA]/60 ring-offset-2 ring-offset-[#0A0A0A]' : ''} ${isPro ? 'text-white border border-white/20' : 'bg-[#1C1C1C] border border-[#A78BFA] text-[#A78BFA]'}`}
               style={isPro ? { background: 'linear-gradient(135deg,#A78BFA,#7C3AED)', boxShadow: '0 0 14px rgba(139,92,246,0.45), inset 0 1px 0 rgba(255,255,255,0.18)' } : undefined}
               aria-label="Profil"
             >
@@ -351,7 +351,8 @@ export default function AppShell() {
                   initial={{ opacity: 0, scale: 0.92, y: -4 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.92, y: -4 }}
-                  transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
+                  transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+                  style={{ transformOrigin: 'top right' }}
                   className="absolute right-0 top-10 w-52 bg-[#1C1C1C] border border-white/[0.08] rounded-2xl shadow-xl overflow-hidden z-50"
                 >
                   <div className="px-4 py-3 border-b border-white/[0.06]">

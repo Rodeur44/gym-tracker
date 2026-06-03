@@ -10,7 +10,7 @@ import type { MuscleGroup } from '@/types'
 
 const MuscleMap = dynamic(() => import('@/components/ui/MuscleMap'), {
   ssr: false,
-  loading: () => <div className="w-full h-full rounded-2xl bg-white/[0.03] animate-pulse" />,
+  loading: () => <div className="w-full h-full rounded-2xl shimmer-block" />,
 })
 
 const sheetVariants: Variants = {

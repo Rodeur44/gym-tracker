@@ -308,7 +308,7 @@ export default function AISessionSheet({ defaultType, onClose, onUse }: Props) {
                 </p>
                 {result?.title
                   ? <h4 className="text-[15px] font-semibold text-white tracking-tight">{result.title}</h4>
-                  : <div className="h-4 w-40 rounded-full bg-white/[0.06] animate-pulse" />}
+                  : <div className="h-4 w-40 rounded-full shimmer-block" />}
                 {result?.summary && <p className="text-xs text-zinc-400 mt-1 leading-relaxed">{result.summary}</p>}
               </div>
 
@@ -347,7 +347,7 @@ export default function AISessionSheet({ defaultType, onClose, onUse }: Props) {
                 {/* Skeleton tant qu'aucun exercice n'est encore arrivé */}
                 {isLoading && !result?.exercises?.length && (
                   Array.from({ length: 4 }).map((_, i) => (
-                    <div key={`sk-${i}`} className="h-[58px] rounded-2xl bg-white/[0.03] border border-white/[0.05] animate-pulse" />
+                    <div key={`sk-${i}`} className="h-[58px] rounded-2xl border border-white/[0.05] shimmer-block" />
                   ))
                 )}
               </div>

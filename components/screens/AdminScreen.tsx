@@ -130,7 +130,7 @@ export default function AdminScreen({ onClose }: Props) {
           {loading ? (
             <div className="flex flex-col gap-2">
               {Array.from({ length: 6 }, (_, i) => (
-                <div key={i} className="h-[62px] rounded-2xl bg-white/[0.03] animate-pulse" />
+                <div key={i} className="h-[62px] rounded-2xl shimmer-block" />
               ))}
             </div>
           ) : (
