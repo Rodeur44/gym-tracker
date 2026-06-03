@@ -3,18 +3,12 @@
 import { useApp } from '@/context/AppContext'
 import AuthScreen from '@/components/layout/AuthScreen'
 import AppShell from '@/components/layout/AppShell'
-import { LumaSpin } from '@/components/ui/luma-spin'
+import AppSkeleton from '@/components/layout/AppSkeleton'
 
 export default function Page() {
   const { user, loading } = useApp()
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LumaSpin />
-      </div>
-    )
-  }
+  if (loading) return <AppSkeleton />
 
   return user ? <AppShell /> : <AuthScreen />
 }

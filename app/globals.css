@@ -97,6 +97,31 @@
   100% { transform: translateX(200%) }
 }
 
+/* Bloc de chargement avec balayage lumineux (skeleton premium) */
+.shimmer-block {
+  position: relative;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.045);
+}
+.shimmer-block::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.06) 40%,
+    rgba(139, 92, 246, 0.08) 50%,
+    rgba(255, 255, 255, 0.06) 60%,
+    transparent
+  );
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .shimmer-block::after { animation: none; }
+}
+
 @keyframes wavePrimary {
   0%   { transform: translateX(0); }
   100% { transform: translateX(-50%); }
