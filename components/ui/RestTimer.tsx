@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Timer, X, Plus, Minus, Settings2, Volume2 } from 'lucide-react'
+import { Timer, X, Plus, Minus, Settings2, Volume2, Bell } from 'lucide-react'
 import { useApp } from '@/context/AppContext'
 
 const PRESETS = [60, 90, 120, 180]
@@ -18,7 +18,28 @@ export function RestTimer() {
   const [expanded, setExpanded] = useState(false)
   const [now, setNow] = useState(() => Date.now())
   const [picker, setPicker] = useState(false)
+  const [testingNotif, setTestingNotif] = useState(false)
   const lastEndedRef = useRef<number | null>(null)
+
+  async function testNotif() {
+    if (testingNotif) return
+    setTestingNotif(true)
+    try {
+      const res = await fetch('/api/push/test', { method: 'POST' })
+      const d = await res.json().catch(() => ({}))
+      if (d.ok) {
+        alert(`✅ Notification envoyée (${d.sent}/${d.found} appareil·s). Si tu ne la vois pas : l'app doit être installée sur l'écran d'accueil et les notifications autorisées.`)
+      } else if (d.found === 0) {
+        alert("Aucun appareil abonné aux notifications. Active « Rappels de séance » dans le menu profil (avatar en haut), accepte la demande iOS, et assure-toi que l'app est installée sur l'écran d'accueil.")
+      } else {
+        alert(`Échec de l'envoi. Détail : ${(d.errors || []).join(', ') || d.reason || 'inconnu'}`)
+      }
+    } catch {
+      alert('Impossible de contacter le serveur.')
+    } finally {
+      setTestingNotif(false)
+    }
+  }
 
   // Tick every 200ms while active
   useEffect(() => {
@@ -325,13 +346,23 @@ export function RestTimer() {
               </div>
 
               {/* Test sound */}
-              <button
-                onClick={testBeep}
-                className="w-full mt-4 h-11 rounded-xl bg-[#1C1C1C] border border-white/[0.08] flex items-center justify-center gap-2 text-[13px] text-zinc-200 font-semibold active:scale-[0.98] transition-transform"
-              >
-                <Volume2 size={14} strokeWidth={1.8} className="text-[#A78BFA]" />
-                Tester le son
-              </button>
+              <div className="flex gap-2 mt-4">
+                <button
+                  onClick={testBeep}
+                  className="flex-1 h-11 rounded-xl bg-[#1C1C1C] border border-white/[0.08] flex items-center justify-center gap-2 text-[13px] text-zinc-200 font-semibold active:scale-[0.98] transition-transform"
+                >
+                  <Volume2 size={14} strokeWidth={1.8} className="text-[#A78BFA]" />
+                  Tester le son
+                </button>
+                <button
+                  onClick={testNotif}
+                  disabled={testingNotif}
+                  className="flex-1 h-11 rounded-xl bg-[#1C1C1C] border border-white/[0.08] flex items-center justify-center gap-2 text-[13px] text-zinc-200 font-semibold active:scale-[0.98] transition-transform disabled:opacity-60"
+                >
+                  <Bell size={14} strokeWidth={1.8} className="text-[#A78BFA]" />
+                  {testingNotif ? '…' : 'Tester la notif'}
+                </button>
+              </div>
               <p className="text-[11px] text-zinc-500 leading-relaxed mt-3 px-1 text-center">
                 💡 Sur iPhone, le bip ne joue pas si le mode silencieux est activé (interrupteur sur le côté). Vérifie aussi le volume.
               </p>
