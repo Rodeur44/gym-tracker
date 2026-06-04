@@ -22,10 +22,26 @@ export function getNotifPermission(): NotificationPermission | 'unsupported' {
   return Notification.permission
 }
 
+async function getVapidPublicKey(): Promise<string | null> {
+  // Récupère la clé depuis le serveur (toujours alignée avec la clé privée),
+  // avec repli sur la valeur gravée au build si le réseau échoue.
+  try {
+    const res = await fetch('/api/push/vapid-public-key', { cache: 'no-store' })
+    const data = await res.json()
+    if (data?.key) return data.key as string
+  } catch { /* repli ci-dessous */ }
+  return process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null
+}
+
 export async function subscribePush(reg: ServiceWorkerRegistration): Promise<PushSubscription | null> {
-  const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+  const vapidKey = await getVapidPublicKey()
   if (!vapidKey) return null
   try {
+    // Supprime un éventuel abonnement existant (potentiellement créé avec une
+    // ancienne clé) pour repartir proprement avec la clé serveur courante.
+    const existing = await reg.pushManager.getSubscription()
+    if (existing) await existing.unsubscribe()
+
     return await reg.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(vapidKey),
