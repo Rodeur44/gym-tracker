@@ -27,12 +27,13 @@ export function RestTimer() {
     try {
       const res = await fetch('/api/push/test', { method: 'POST' })
       const d = await res.json().catch(() => ({}))
+      const diag = d.diag ? `\n\nClé pub: ${d.diag.publicKeyHead}… (${d.diag.publicKeyLen}) · clé privée: ${d.diag.privateKeySet ? `posée (${d.diag.privateKeyLen})` : 'ABSENTE'}` : ''
       if (d.ok) {
-        alert(`✅ Notification envoyée (${d.sent}/${d.found} appareil·s). Si tu ne la vois pas : l'app doit être installée sur l'écran d'accueil et les notifications autorisées.`)
+        alert(`✅ Notification envoyée (${d.sent}/${d.found}). Si tu ne la vois pas : app installée sur l'écran d'accueil + notifications autorisées.${diag}`)
       } else if (d.found === 0) {
-        alert("Aucun appareil abonné aux notifications. Active « Rappels de séance » dans le menu profil (avatar en haut), accepte la demande iOS, et assure-toi que l'app est installée sur l'écran d'accueil.")
+        alert(`Aucun appareil abonné. Active « Rappels de séance » dans le menu profil, accepte iOS, app installée sur l'écran d'accueil.${diag}`)
       } else {
-        alert(`Échec de l'envoi. Détail : ${(d.errors || []).join(', ') || d.reason || 'inconnu'}`)
+        alert(`Échec. ${(d.errors || []).join(' | ') || d.reason || 'inconnu'}${diag}`)
       }
     } catch {
       alert('Impossible de contacter le serveur.')
