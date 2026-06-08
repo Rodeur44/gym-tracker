@@ -11,6 +11,7 @@ import LogScreen from '@/components/screens/LogScreen'
 import HistoryScreen from '@/components/screens/HistoryScreen'
 import ProgressScreen from '@/components/screens/ProgressScreen'
 import CardsScreen from '@/components/screens/CardsScreen'
+import CardReveal from '@/components/screens/CardReveal'
 import ProScreen from '@/components/screens/ProScreen'
 import AdminScreen from '@/components/screens/AdminScreen'
 import { RestTimer } from '@/components/ui/RestTimer'
@@ -564,6 +565,9 @@ export default function AppShell() {
 
       {/* Rest timer — only visible on the Séance tab */}
       {tab === 'log' && <RestTimer />}
+
+      {/* Card unlock reveal — full-screen, fires whenever a new card is earned */}
+      <CardReveal />
 
       {/* Pseudo prompt for Google / OAuth users with no display_name */}
       <AnimatePresence>

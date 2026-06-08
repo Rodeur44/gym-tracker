@@ -91,3 +91,32 @@ export function testBeep() {
   unlockAudio()
   window.setTimeout(playBeep, 50)
 }
+
+// Card-unlock reward: ascending arpeggio that resolves on a bright fifth.
+// `intensity` (0–1) scales the brilliance — pass higher for rarer cards.
+export function playReward(intensity = 0.5) {
+  unlockAudio()
+  const c = getCtx()
+  if (!c || c.state !== 'running') return
+  try {
+    const now = c.currentTime
+    // Major arpeggio (C5 E5 G5 C6) + a sparkle high note for legendary tiers
+    const notes = [523.25, 659.25, 783.99, 1046.5]
+    if (intensity > 0.7) notes.push(1318.51)
+    notes.forEach((freq, i) => {
+      const osc = c.createOscillator()
+      const gain = c.createGain()
+      osc.connect(gain)
+      gain.connect(c.destination)
+      osc.type = 'triangle'
+      osc.frequency.value = freq
+      const t = now + i * 0.09
+      const peak = 0.18 + intensity * 0.22
+      gain.gain.setValueAtTime(0, t)
+      gain.gain.linearRampToValueAtTime(peak, t + 0.02)
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.6)
+      osc.start(t)
+      osc.stop(t + 0.6)
+    })
+  } catch {}
+}

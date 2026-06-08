@@ -30,12 +30,24 @@ export interface UserCard {
   user_id: string
 }
 
+export type Rarity = 'rare' | 'epic' | 'legendary'
+
+// A collectible card. The visual is built in-app (frame + Lucide icon window),
+// no external images. `metric` reads derived stats so the unlock check and the
+// progress bar share a single source of truth.
 export interface GymCard {
   id: string
   name: string
   cond: string
-  rarity: 'rare' | 'epic' | 'legendary'
-  image: string
+  rarity: Rarity
+  icon: import('lucide-react').LucideIcon
+  // Optional illustration shown in the card window (Midjourney art, etc.).
+  // When absent, the Lucide `icon` is used as a clean fallback.
+  art?: string
+  // Progress: card is unlocked once metric(stats) >= target.
+  metric: (stats: import('@/lib/cards').CardStats) => number
+  target: number
+  unit: 'séances' | 'reps' | 'kg' | 'T' | 'j' | 'count'
 }
 
 export interface Measurement {

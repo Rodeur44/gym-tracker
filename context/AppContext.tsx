@@ -4,75 +4,19 @@ import { createContext, useContext, useEffect, useState, useCallback, useRef } f
 import { scheduleBeep, cancelScheduledBeep, testBeep as testBeepImpl, unlockAudio } from '@/lib/audio'
 import type { User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
-import type { Session, MuscleGroup, Exercise, Measurement, MeasurementInput } from '@/types'
+import type { Session, MuscleGroup, Exercise, Measurement, MeasurementInput, GymCard } from '@/types'
 import { MUSCLE_ORDER } from '@/lib/constants'
-import { computeStreak, exosVolume, bestForExercise } from '@/lib/stats'
-
-// ── Unlock checker (pure, outside component) ─────────────────────
-function checkUnlocks(allSessions: Session[], currentUnlocked: Set<string>): string[] {
-  const newCards: string[] = []
-  const has = (id: string) => currentUnlocked.has(id)
-
-  const volumeForType = (type: MuscleGroup) =>
-    exosVolume(allSessions.flatMap(s => s.exos.filter(e => (e.type ?? s.type) === type)))
-
-  const totalRepsForKeyword = (keyword: string) =>
-    allSessions
-      .flatMap(s => s.exos.filter(e => e.name.toLowerCase().includes(keyword)))
-      .flatMap(e => e.sets)
-      .reduce((acc, set) => acc + (set.reps || 0), 0)
-
-  const maxRepsInOneSession = (keyword: string) =>
-    Math.max(0, ...allSessions.map(s =>
-      s.exos
-        .filter(e => e.name.toLowerCase().includes(keyword))
-        .flatMap(e => e.sets)
-        .reduce((acc, set) => acc + (set.reps || 0), 0)
-    ))
-
-  const maxWeightForKeyword = (keyword: string) =>
-    Math.max(0, ...allSessions.flatMap(s =>
-      s.exos
-        .filter(e => e.name.toLowerCase().includes(keyword))
-        .flatMap(e => e.sets.map(st => st.weight || 0))
-    ))
-
-  const hasExercise = (keyword: string) =>
-    allSessions.some(s => s.exos.some(e => e.name.toLowerCase().includes(keyword)))
-
-  const total = allSessions.length
-
-  if (!has('consist_newbie') && total >= 1) newCards.push('consist_newbie')
-  if (!has('consist_veteran') && total >= 100) newCards.push('consist_veteran')
-  if (!has('consist_unstoppable') && computeStreak(allSessions.map(s => s.date)) >= 100) newCards.push('consist_unstoppable')
-
-  if (!has('volume_chest') && volumeForType('pec') > 50_000) newCards.push('volume_chest')
-  if (!has('volume_back') && totalRepsForKeyword('traction') >= 10_000) newCards.push('volume_back')
-  if (!has('volume_legs') && volumeForType('jambes') > 150_000) newCards.push('volume_legs')
-  if (!has('volume_arms') && volumeForType('bras') > 40_000) newCards.push('volume_arms')
-
-  if (!has('reps_pullups') && maxRepsInOneSession('traction') >= 100) newCards.push('reps_pullups')
-  if (!has('reps_dips') && maxRepsInOneSession('dip') >= 100) newCards.push('reps_dips')
-
-  if (!has('goal_muscleup') && totalRepsForKeyword('muscle') >= 1) newCards.push('goal_muscleup')
-
-  if (!has('master_squat') && maxWeightForKeyword('squat') >= 100) newCards.push('master_squat')
-  if (!has('master_bench') && (maxWeightForKeyword('bench') >= 80 || maxWeightForKeyword('développé couché') >= 80)) newCards.push('master_bench')
-  if (!has('master_deadlift') && (maxWeightForKeyword('deadlift') >= 120 || maxWeightForKeyword('soulevé de terre') >= 120)) newCards.push('master_deadlift')
-  if (!has('big_three') &&
-    (hasExercise('squat') || hasExercise('back squat')) &&
-    (hasExercise('bench') || hasExercise('développé couché')) &&
-    (hasExercise('deadlift') || hasExercise('soulevé de terre'))
-  ) newCards.push('big_three')
-
-  return newCards
-}
+import { computeStreak, bestForExercise } from '@/lib/stats'
+import { CARDS, checkUnlocks } from '@/lib/cards'
 
 interface AppContextValue {
   user: User | null
   sessions: Session[]
   unlockedCards: Set<string>
   loading: boolean
+  // Card reveal — cards freshly unlocked this session, awaiting their reveal moment
+  revealQueue: GymCard[]
+  dismissReveal: () => void
   // Log state
   currentExos: Exercise[]
   setCurrentExos: (exos: Exercise[]) => void
@@ -124,6 +68,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [sessions, setSessions] = useState<Session[]>([])
   const [unlockedCards, setUnlockedCards] = useState<Set<string>>(new Set())
+  const [revealQueue, setRevealQueue] = useState<GymCard[]>([])
   const [measurements, setMeasurements] = useState<Measurement[]>([])
   const [loading, setLoading] = useState(true)
   const [currentExos, setCurrentExos] = useState<Exercise[]>([])
@@ -319,6 +264,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const newCards = checkUnlocks(updatedSessions, unlockedCards)
       if (newCards.length > 0) {
         setUnlockedCards(prev => new Set([...prev, ...newCards]))
+        // Queue the freshly-earned cards for their full-screen reveal moment.
+        // Rarest first so the big payoff lands last.
+        const order = { rare: 0, epic: 1, legendary: 2 } as const
+        const earned = newCards
+          .map(id => CARDS.find(c => c.id === id))
+          .filter((c): c is GymCard => Boolean(c))
+          .sort((a, b) => order[a.rarity] - order[b.rarity])
+        setRevealQueue(prev => [...prev, ...earned])
         await sb.from('user_cards').insert(newCards.map(id => ({ user_id: user.id, card_id: id })))
       }
 
@@ -437,9 +390,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const clearRepeat = useCallback(() => setRepeatPending(false), [])
 
+  const dismissReveal = useCallback(() => setRevealQueue(prev => prev.slice(1)), [])
+
   return (
     <AppContext.Provider value={{
       user, sessions, unlockedCards, loading,
+      revealQueue, dismissReveal,
       currentExos, setCurrentExos, logType, setLogType,
       editMode, editSessionId, startEdit, cancelEdit,
       repeatPending, repeatSession, clearRepeat,
