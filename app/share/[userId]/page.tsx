@@ -2,7 +2,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { CARDS, TYPE_LBL } from '@/lib/constants'
+import { TYPE_LBL } from '@/lib/constants'
+import { CARDS } from '@/lib/cards'
 import type { MuscleGroup } from '@/types'
 
 interface ExoSet { weight: number; reps: number }
