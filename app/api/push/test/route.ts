@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import webpush from 'web-push'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/supabase/server'
+import { vapidSubject } from '@/lib/vapid'
 
 export const runtime = 'nodejs'
 
@@ -34,7 +35,7 @@ export async function POST() {
     return NextResponse.json({ ok: false, found: subs.length, sent: 0, reason: 'vapid-keys-missing', diag })
   }
 
-  webpush.setVapidDetails(`mailto:${process.env.VAPID_SUBJECT || 'admin@gymlog.app'}`, pub, priv)
+  webpush.setVapidDetails(vapidSubject(), pub, priv)
   const payload = JSON.stringify({
     title: 'Test GymLog ✅',
     body: 'Si tu vois ça, les notifications fonctionnent !',

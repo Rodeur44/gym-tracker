@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import webpush from 'web-push'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { vapidSubject } from '@/lib/vapid'
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
 
 export async function GET(req: NextRequest) {
   webpush.setVapidDetails(
-    `mailto:${process.env.VAPID_SUBJECT || 'admin@gymlog.app'}`,
+    vapidSubject(),
     process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
     process.env.VAPID_PRIVATE_KEY!,
   )
