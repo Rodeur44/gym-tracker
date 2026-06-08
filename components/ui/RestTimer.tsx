@@ -19,24 +19,25 @@ export function RestTimer() {
   const [now, setNow] = useState(() => Date.now())
   const [picker, setPicker] = useState(false)
   const [testingNotif, setTestingNotif] = useState(false)
+  const [testMsg, setTestMsg] = useState<{ ok: boolean; text: string } | null>(null)
   const lastEndedRef = useRef<number | null>(null)
 
   async function testNotif() {
     if (testingNotif) return
     setTestingNotif(true)
+    setTestMsg(null)
     try {
       const res = await fetch('/api/push/test', { method: 'POST' })
       const d = await res.json().catch(() => ({}))
-      const diag = d.diag ? `\n\nClé pub: ${d.diag.publicKeyHead}… (${d.diag.publicKeyLen}) · clé privée: ${d.diag.privateKeySet ? `posée (${d.diag.privateKeyLen})` : 'ABSENTE'}` : ''
       if (d.ok) {
-        alert(`✅ Notification envoyée (${d.sent}/${d.found}). Si tu ne la vois pas : app installée sur l'écran d'accueil + notifications autorisées.${diag}`)
+        setTestMsg({ ok: true, text: 'Notification envoyée ! Tu devrais la voir apparaître. 🔔' })
       } else if (d.found === 0) {
-        alert(`Aucun appareil abonné. Active « Rappels de séance » dans le menu profil, accepte iOS, app installée sur l'écran d'accueil.${diag}`)
+        setTestMsg({ ok: false, text: "Active d'abord « Rappels de séance » dans le menu profil (avatar)." })
       } else {
-        alert(`Échec. ${(d.errors || []).join(' | ') || d.reason || 'inconnu'}${diag}`)
+        setTestMsg({ ok: false, text: "Envoi impossible. Réessaie dans un instant." })
       }
     } catch {
-      alert('Impossible de contacter le serveur.')
+      setTestMsg({ ok: false, text: 'Pas de connexion. Réessaie.' })
     } finally {
       setTestingNotif(false)
     }
@@ -295,7 +296,7 @@ export function RestTimer() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             className="fixed inset-0 z-[85] bg-black/80 backdrop-blur-md flex items-end justify-center"
-            onClick={() => setPicker(false)}
+            onClick={() => { setPicker(false); setTestMsg(null) }}
           >
             <motion.div
               initial={{ y: '100%' }}
@@ -364,6 +365,23 @@ export function RestTimer() {
                   {testingNotif ? '…' : 'Tester la notif'}
                 </button>
               </div>
+
+              <AnimatePresence>
+                {testMsg && (
+                  <motion.p
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="text-[12px] font-medium leading-relaxed mt-3 px-3 py-2.5 rounded-xl border text-center"
+                    style={testMsg.ok
+                      ? { color: '#34D399', background: 'rgba(16,185,129,0.1)', borderColor: 'rgba(16,185,129,0.25)' }
+                      : { color: '#FCA5A5', background: 'rgba(239,68,68,0.1)', borderColor: 'rgba(239,68,68,0.22)' }}
+                  >
+                    {testMsg.text}
+                  </motion.p>
+                )}
+              </AnimatePresence>
+
               <p className="text-[11px] text-zinc-500 leading-relaxed mt-3 px-1 text-center">
                 💡 Sur iPhone, le bip ne joue pas si le mode silencieux est activé (interrupteur sur le côté). Vérifie aussi le volume.
               </p>
