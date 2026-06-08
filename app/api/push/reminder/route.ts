@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import webpush from 'web-push'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { vapidSubject } from '@/lib/vapid'
+import { vapidSubject, vapidPublicKey } from '@/lib/vapid'
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
@@ -9,7 +9,7 @@ export const maxDuration = 30
 export async function GET(req: NextRequest) {
   webpush.setVapidDetails(
     vapidSubject(),
-    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+    vapidPublicKey(),
     process.env.VAPID_PRIVATE_KEY!,
   )
   const secret = process.env.CRON_SECRET

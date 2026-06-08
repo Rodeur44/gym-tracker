@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import webpush from 'web-push'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/supabase/server'
-import { vapidSubject } from '@/lib/vapid'
+import { vapidSubject, vapidPublicKey } from '@/lib/vapid'
 
 export const runtime = 'nodejs'
 
@@ -13,7 +13,7 @@ export async function POST() {
   const user = await getRequestUser()
   if (!user) return NextResponse.json({ error: 'Authentification requise.' }, { status: 401 })
 
-  const pub = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || ''
+  const pub = vapidPublicKey() // dérivée de la privée → paire garantie
   const priv = process.env.VAPID_PRIVATE_KEY || ''
   const diag = {
     publicKeyHead: pub ? pub.slice(0, 12) : '(vide)',

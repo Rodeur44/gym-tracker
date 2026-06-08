@@ -2,7 +2,7 @@ import { NextRequest, NextResponse, after } from 'next/server'
 import webpush from 'web-push'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getRequestUser } from '@/lib/supabase/server'
-import { vapidSubject } from '@/lib/vapid'
+import { vapidSubject, vapidPublicKey } from '@/lib/vapid'
 
 export const runtime = 'nodejs'
 // Le travail en arrière-plan (after) peut tourner jusqu'à cette limite.
@@ -14,7 +14,7 @@ const MAX_NOTIFY_SEC = 290
 function setupVapid() {
   webpush.setVapidDetails(
     vapidSubject(),
-    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+    vapidPublicKey(),
     process.env.VAPID_PRIVATE_KEY!,
   )
 }

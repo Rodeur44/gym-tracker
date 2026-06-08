@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server'
+import { vapidPublicKey } from '@/lib/vapid'
 
 export const runtime = 'nodejs'
 
-// Renvoie la clé publique VAPID au runtime (et non gravée au build), pour que
-// l'abonnement push utilise toujours la clé qui correspond à la clé privée du
-// serveur — quel que soit le build mis en cache côté client.
+// Renvoie la clé publique VAPID dérivée de la clé privée (paire garantie),
+// pour que l'abonnement push corresponde toujours à la signature serveur.
 export function GET() {
   return NextResponse.json(
-    { key: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? '' },
+    { key: vapidPublicKey() },
     { headers: { 'Cache-Control': 'no-store' } },
   )
 }
