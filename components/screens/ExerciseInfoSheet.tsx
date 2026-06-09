@@ -1,11 +1,13 @@
 'use client'
 
 import dynamic from 'next/dynamic'
+import Image from 'next/image'
 import { motion } from 'framer-motion'
 import type { Variants } from 'framer-motion'
 import { X, Zap } from 'lucide-react'
 import { TAG_CLR, TAG_BG, TYPE_LBL } from '@/lib/constants'
 import { getExerciseInfo, getMusclesForExercise } from '@/lib/exercise-info'
+import { exerciseImage } from '@/lib/exercise-images'
 import type { MuscleGroup } from '@/types'
 
 const MuscleMap = dynamic(() => import('@/components/ui/MuscleMap'), {
@@ -27,6 +29,7 @@ interface Props {
 
 export default function ExerciseInfoSheet({ exerciseName, muscleType, onClose }: Props) {
   const info = getExerciseInfo(exerciseName)
+  const demo = exerciseImage(exerciseName)
   const muscles = getMusclesForExercise(exerciseName, muscleType)
   const primaryMuscle = muscles[0]
   const accent = TAG_CLR[primaryMuscle]
@@ -91,6 +94,19 @@ export default function ExerciseInfoSheet({ exerciseName, muscleType, onClose }:
           className="overflow-y-auto flex-1 px-4 flex flex-col gap-4"
           style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom, 24px))' }}
         >
+          {/* Demo photo (free-exercise-db) */}
+          {demo && (
+            <div
+              className="relative w-full rounded-2xl overflow-hidden"
+              style={{ height: 220, border: '1px solid rgba(255,255,255,0.06)', background: '#fff' }}
+            >
+              <Image src={demo} alt={`Démonstration : ${exerciseName}`} fill className="object-contain" sizes="430px" />
+              <span className="absolute top-2.5 left-2.5 text-[10px] font-bold uppercase tracking-[1.2px] px-2 py-0.5 rounded-full bg-black/60 text-zinc-200 backdrop-blur-sm">
+                Démonstration
+              </span>
+            </div>
+          )}
+
           {/* Muscle map */}
           <div
             className="w-full rounded-2xl flex items-center justify-center"
