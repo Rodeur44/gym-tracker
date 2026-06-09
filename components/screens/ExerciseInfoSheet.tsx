@@ -98,9 +98,9 @@ export default function ExerciseInfoSheet({ exerciseName, muscleType, onClose }:
           {demo && (
             <div
               className="relative w-full rounded-2xl overflow-hidden"
-              style={{ height: 220, border: '1px solid rgba(255,255,255,0.06)', background: '#fff' }}
+              style={{ height: 200, border: '1px solid rgba(255,255,255,0.06)', background: '#0a0a0a' }}
             >
-              <Image src={demo} alt={`Démonstration : ${exerciseName}`} fill className="object-contain" sizes="430px" />
+              <Image src={demo} alt={`Démonstration : ${exerciseName}`} fill className="object-cover" sizes="430px" />
               <span className="absolute top-2.5 left-2.5 text-[10px] font-bold uppercase tracking-[1.2px] px-2 py-0.5 rounded-full bg-black/60 text-zinc-200 backdrop-blur-sm">
                 Démonstration
               </span>
