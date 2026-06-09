@@ -44,6 +44,9 @@ export function CardFrame({ card, locked = false, progress, size = 'sm', classNa
               alt={card.name}
               fill
               draggable={false}
+              // Slight top-anchored zoom crops the bottom edge, where the model
+              // sometimes paints a fake signature / thin border.
+              style={{ transform: 'scale(1.08)', transformOrigin: 'top center' }}
               className={cn('object-cover select-none', locked && 'grayscale brightness-[0.35]')}
               sizes={lg ? '244px' : '200px'}
             />

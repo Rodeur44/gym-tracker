@@ -1,4 +1,6 @@
-// Generate collectible-card illustrations via the Leonardo.ai REST API.
+// Generate collectible-card illustrations via the Leonardo.ai REST API,
+// using the GymLog polar-bear mascot as a Character Reference so the SAME
+// bear appears on every card.
 //
 // Usage:
 //   node scripts/generate-cards.mjs <id>      # one card (test), e.g. squat_140
@@ -13,9 +15,10 @@ import { dirname, join } from 'node:path'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const OUT_DIR = join(ROOT, 'public', 'cards')
+const MASCOT = join(ROOT, 'public', 'mascot', 'hero-1.png')
+const CHARREF_CACHE = join(ROOT, 'public', 'mascot', '.charref-id')
 const API = 'https://cloud.leonardo.ai/api/rest/v1'
 
-// ── API key ──────────────────────────────────────────────────────────────────
 function loadKey() {
   if (process.env.LEONARDO_API_KEY) return process.env.LEONARDO_API_KEY
   const env = readFileSync(join(ROOT, '.env.local'), 'utf8')
@@ -30,65 +33,87 @@ const headers = {
   authorization: `Bearer ${KEY}`,
 }
 
-// ── Style anchor — kept identical for every card so the set stays consistent ──
+// ── Style anchor — identical for every card ──────────────────────────────────
 const STYLE =
-  'dark moody background, dramatic violet and purple rim lighting, premium ' +
-  'collectible trading card art, painterly, highly detailed, cinematic, ' +
-  'centered composition, slight top headroom'
+  'clean simple dark studio background, soft purple haze, glowing violet ring ' +
+  'of light behind, dramatic violet and purple rim lighting, premium ' +
+  'collectible trading card character art, painterly, highly detailed, ' +
+  'cinematic, centered full-body composition, slight top headroom'
 const NEGATIVE =
-  'text, words, letters, watermark, logo, border, frame, ui, low quality, ' +
-  'blurry, deformed, extra limbs'
+  'text, words, letters, watermark, signature, logo, border, frame, ui, low ' +
+  'quality, blurry, deformed, extra limbs, human, person, man, woman'
 
-// Leonardo Phoenix model (from the official getting-started example) + a generic style.
 const MODEL_ID = '7b592283-e8a7-4c5a-9ba6-d18c31f258b9'
 const STYLE_UUID = '111dc692-d470-4eec-b791-3475abac4c46'
 const WIDTH = 832
 const HEIGHT = 1248 // 2:3
 
+// Each card = the mascot performing the action.
+// Single-subject actions only — no busy environments (keeps the clean look).
 const SUBJECTS = {
-  first_session: 'a motivated beginner athlete starting their very first workout',
-  sessions_10: 'a regular gym-goer with a gym bag, a calendar of crossed-off days',
-  sessions_50: 'a seasoned lifter standing like a marble pillar of the gym',
-  sessions_100: 'a roman centurion warrior athlete with a glowing medal',
-  sessions_250: 'a living-legend veteran powerlifter with a golden trophy aura',
-  streak_7: 'an athlete sprinting with a small trailing flame, momentum',
-  streak_30: 'a disciplined athlete breaking iron chains, steady fire',
-  streak_100: 'an unstoppable athlete engulfed in roaring flames',
-  squat_60: 'a young athlete squatting a moderate barbell, focused',
-  squat_100: 'a strong athlete squatting a heavy loaded barbell',
-  squat_140: 'a colossal titan squatting an enormous barbell, mountain backdrop',
-  bench_40: 'an athlete performing their first bench press',
-  bench_60: 'a determined athlete bench pressing with intensity',
-  bench_80: 'a king-like athlete bench pressing, crown of energy',
-  bench_100: 'an elite athlete bench pressing glowing heavy plates, royal crown',
-  dead_80: 'an athlete deadlifting a barbell from the floor',
-  dead_120: 'a powerful brutal deadlift releasing an energy shockwave',
-  dead_180: 'a giant deadlift cracking the ground, earth-shattering power',
-  ohp_40: 'an athlete doing an overhead press, steel shoulders, shield motif',
-  ohp_60: 'a soldier-like athlete performing a strict military press',
-  big_three: 'three crossed barbells forming a trinity emblem, swords motif',
-  elite_total: 'an elite powerlifter on a podium with a glowing golden crown',
-  vol_chest: 'a sculptor chiseling a massive marble-like chest, dust and light',
-  vol_back: 'a muscular back spread wide like dragon wings',
-  vol_arms: 'gigantic flexed titan arms, veins and power',
-  vol_legs: 'a legend on the leg press with enormous powerful legs',
-  vol_total: 'a towering mountain of weight plates, diamond aura',
-  dips_session_50: 'an explosive athlete on parallel dip bars',
-  pullups_session_50: 'a machine-like athlete doing pull-ups, motion blur of reps',
-  pullups_total_1000: 'endless rows of pull-up bars stretching into the distance',
-  pushups_total_1000: 'an athlete amid an endless field of push-ups',
-  reps_total_10000: 'a marathon of iron, an endurance runner carrying weights',
-  variety_20: 'an explorer athlete among many gym machines, compass motif',
-  variety_40: 'a versatile athlete surrounded by varied training equipment',
-  all_muscles: 'a perfectly balanced symmetrical physique, harmony motif',
-  cardio_10: 'a runner with a glowing radiant heart, cardio energy',
-  legday_25: 'a devoted leg-day athlete in a squat rack, powerful legs',
-  cardio_legend: 'a legendary endurance runner with an infinite-stamina aura',
+  first_session: 'a muscular white polar bear mascot flexing proudly, motivated beginner',
+  sessions_10: 'a muscular white polar bear mascot holding a gym bag, confident',
+  sessions_50: 'a muscular white polar bear mascot standing proud, arms crossed',
+  sessions_100: 'a muscular white polar bear mascot wearing a glowing medal',
+  sessions_250: 'a muscular white polar bear mascot holding a golden trophy',
+  streak_7: 'a muscular white polar bear mascot with a small flame aura, dynamic',
+  streak_30: 'a muscular white polar bear mascot breaking an iron chain, fiery aura',
+  streak_100: 'a muscular white polar bear mascot engulfed in roaring flames',
+  squat_60: 'a muscular white polar bear mascot squatting a barbell, focused',
+  squat_100: 'a muscular white polar bear mascot squatting a heavy barbell',
+  squat_140: 'a muscular white polar bear mascot squatting an enormous barbell',
+  bench_40: 'a muscular white polar bear mascot performing a bench press',
+  bench_60: 'a muscular white polar bear mascot bench pressing with intensity',
+  bench_80: 'a muscular white polar bear mascot bench pressing, crown of energy',
+  bench_100: 'a muscular white polar bear mascot lifting a barbell, golden crown',
+  dead_80: 'a muscular white polar bear mascot deadlifting a barbell',
+  dead_120: 'a muscular white polar bear mascot deadlifting a heavy barbell, energy aura',
+  dead_180: 'a muscular white polar bear mascot deadlifting a colossal barbell',
+  ohp_40: 'a muscular white polar bear mascot doing an overhead barbell press',
+  ohp_60: 'a muscular white polar bear mascot doing a strict overhead press',
+  big_three: 'a muscular white polar bear mascot holding three crossed barbells',
+  elite_total: 'a muscular white polar bear mascot wearing a golden crown, elite champion',
+  vol_chest: 'a muscular white polar bear mascot flexing a massive chest',
+  vol_back: 'a muscular white polar bear mascot flexing a huge back, arms wide',
+  vol_arms: 'a muscular white polar bear mascot flexing gigantic biceps',
+  vol_legs: 'a muscular white polar bear mascot showing enormous powerful legs',
+  vol_total: 'a muscular white polar bear mascot lifting a glowing diamond barbell',
+  dips_session_50: 'a muscular white polar bear mascot doing dips on parallel bars',
+  pullups_session_50: 'a muscular white polar bear mascot doing a pull-up on a bar',
+  pullups_total_1000: 'a muscular white polar bear mascot hanging from a pull-up bar, strong',
+  pushups_total_1000: 'a muscular white polar bear mascot doing a push-up',
+  reps_total_10000: 'a muscular white polar bear mascot mid-run carrying a dumbbell',
+  variety_20: 'a muscular white polar bear mascot holding a kettlebell, versatile',
+  variety_40: 'a muscular white polar bear mascot juggling dumbbell and kettlebell',
+  all_muscles: 'a muscular white polar bear mascot in a balanced symmetrical flex',
+  cardio_10: 'a muscular white polar bear mascot running, glowing heart',
+  legday_25: 'a muscular white polar bear mascot with powerful legs, holding a barbell',
+  cardio_legend: 'a muscular white polar bear mascot mid-sprint, energetic aura',
 }
 
 const sleep = ms => new Promise(r => setTimeout(r, ms))
 
-async function createGeneration(prompt) {
+// ── Character reference: upload the mascot once, reuse its id ─────────────────
+async function getCharRefId() {
+  if (existsSync(CHARREF_CACHE)) return readFileSync(CHARREF_CACHE, 'utf8').trim()
+  const res = await fetch(`${API}/init-image`, {
+    method: 'POST', headers, body: JSON.stringify({ extension: 'png' }),
+  })
+  const json = await res.json()
+  const u = json?.uploadInitImage
+  if (!u) throw new Error(`init-image: ${JSON.stringify(json)}`)
+  const fields = JSON.parse(u.fields)
+  const form = new FormData()
+  for (const [k, v] of Object.entries(fields)) form.append(k, v)
+  form.append('file', new Blob([readFileSync(MASCOT)], { type: 'image/png' }), 'mascot.png')
+  const up = await fetch(u.url, { method: 'POST', body: form }) // S3: no auth header
+  if (!up.ok) throw new Error(`upload mascotte S3 ${up.status}`)
+  writeFileSync(CHARREF_CACHE, u.id)
+  console.log(`🐻 mascotte uploadée (charRef id ${u.id})`)
+  return u.id
+}
+
+async function createGeneration(prompt, charRefId) {
   const res = await fetch(`${API}/generations`, {
     method: 'POST',
     headers,
@@ -103,6 +128,9 @@ async function createGeneration(prompt) {
       alchemy: false,
       ultra: false,
       contrast: 3.5,
+      // Character Reference (controlnets) isn't supported by this model; the
+      // bear stays consistent via identical model + style + detailed prompt.
+      ...(charRefId ? {} : {}),
     }),
   })
   const json = await res.json()
@@ -131,11 +159,10 @@ async function waitForImage(id, { tries = 40, delay = 3000 } = {}) {
 async function download(url, dest) {
   const res = await fetch(url)
   if (!res.ok) throw new Error(`Download ${res.status}`)
-  const buf = Buffer.from(await res.arrayBuffer())
-  writeFileSync(dest, buf)
+  writeFileSync(dest, Buffer.from(await res.arrayBuffer()))
 }
 
-async function genOne(id, force) {
+async function genOne(id, charRefId, force) {
   const subject = SUBJECTS[id]
   if (!subject) throw new Error(`Sujet inconnu: ${id}`)
   const dest = join(OUT_DIR, `${id}.png`)
@@ -144,7 +171,7 @@ async function genOne(id, force) {
     return
   }
   process.stdout.write(`🎨 ${id} … `)
-  const genId = await createGeneration(subject)
+  const genId = await createGeneration(subject, charRefId)
   const url = await waitForImage(genId)
   await download(url, dest)
   console.log('✓')
@@ -160,10 +187,12 @@ async function main() {
     console.log('Usage: node scripts/generate-cards.mjs <id> | --all  [--force]')
     process.exit(1)
   }
+  const charRefId = null // Character Reference unsupported by this model — see note above
+  void getCharRefId // kept for reference; not used
   console.log(`Génération de ${ids.length} carte(s)…\n`)
   for (const id of ids) {
     try {
-      await genOne(id, force)
+      await genOne(id, charRefId, force)
     } catch (e) {
       console.log(`✗ ${id}: ${e.message}`)
     }
