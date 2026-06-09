@@ -94,14 +94,14 @@ export default function ExerciseInfoSheet({ exerciseName, muscleType, onClose }:
           className="overflow-y-auto flex-1 px-4 flex flex-col gap-4"
           style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom, 24px))' }}
         >
-          {/* Demo photo (free-exercise-db) */}
+          {/* Demo photo (free-exercise-db) — full movement visible, centered, capped width */}
           {demo && (
             <div
-              className="relative w-full rounded-2xl overflow-hidden"
-              style={{ height: 200, border: '1px solid rgba(255,255,255,0.06)', background: '#0a0a0a' }}
+              className="relative w-full max-w-[420px] mx-auto rounded-2xl overflow-hidden"
+              style={{ aspectRatio: '4 / 3', border: '1px solid rgba(255,255,255,0.06)', background: 'radial-gradient(ellipse at center, #15151a, #0a0a0a)' }}
             >
-              <Image src={demo} alt={`Démonstration : ${exerciseName}`} fill className="object-cover" sizes="430px" />
-              <span className="absolute top-2.5 left-2.5 text-[10px] font-bold uppercase tracking-[1.2px] px-2 py-0.5 rounded-full bg-black/60 text-zinc-200 backdrop-blur-sm">
+              <Image src={demo} alt={`Démonstration : ${exerciseName}`} fill className="object-contain" sizes="420px" />
+              <span className="absolute top-2.5 left-2.5 z-10 text-[10px] font-bold uppercase tracking-[1.2px] px-2 py-0.5 rounded-full bg-black/60 text-zinc-200 backdrop-blur-sm">
                 Démonstration
               </span>
             </div>
