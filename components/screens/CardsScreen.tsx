@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import Image from 'next/image'
 import { useApp } from '@/context/AppContext'
 import { CARDS, RARITY_STYLE, deriveStats, cardProgress } from '@/lib/cards'
 import type { GymCard, Rarity } from '@/types'
@@ -219,8 +220,14 @@ function FeaturedBanner({ card, onClick }: { card: GymCard; onClick: () => void 
         className="relative w-20 h-20 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden"
         style={{ background: r.grad }}
       >
-        <div aria-hidden className="absolute inset-0" style={{ background: `radial-gradient(circle at 50% 45%, ${r.glow}, transparent 65%)` }} />
-        <Icon size={40} strokeWidth={1.6} className="relative z-10 text-white" style={{ filter: `drop-shadow(0 0 12px ${r.glow})` }} />
+        {card.art ? (
+          <Image src={card.art} alt={card.name} fill draggable={false} className="object-cover select-none" sizes="80px" />
+        ) : (
+          <>
+            <div aria-hidden className="absolute inset-0" style={{ background: `radial-gradient(circle at 50% 45%, ${r.glow}, transparent 65%)` }} />
+            <Icon size={40} strokeWidth={1.6} className="relative z-10 text-white" style={{ filter: `drop-shadow(0 0 12px ${r.glow})` }} />
+          </>
+        )}
       </div>
       <div className="min-w-0">
         <span
