@@ -97,7 +97,7 @@ export default function ExerciseInfoSheet({ exerciseName, muscleType, onClose }:
           {/* Demo photo (free-exercise-db) — full-bleed thumbnail */}
           {demo && (
             <div
-              className="relative w-full rounded-2xl overflow-hidden"
+              className="relative w-full flex-shrink-0 rounded-2xl overflow-hidden"
               style={{ height: 240, border: '1px solid rgba(255,255,255,0.06)', background: '#0a0a0a' }}
             >
               <Image src={demo} alt={`Démonstration : ${exerciseName}`} fill className="object-cover" sizes="480px" />
@@ -110,7 +110,7 @@ export default function ExerciseInfoSheet({ exerciseName, muscleType, onClose }:
 
           {/* Muscle map */}
           <div
-            className="w-full rounded-2xl flex items-center justify-center"
+            className="w-full flex-shrink-0 rounded-2xl flex items-center justify-center"
             style={{
               height: 240,
               background: 'radial-gradient(ellipse at center, rgba(109,40,217,0.08) 0%, rgba(0,0,0,0) 70%)',
