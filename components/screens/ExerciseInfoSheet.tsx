@@ -41,7 +41,7 @@ export default function ExerciseInfoSheet({ exerciseName, muscleType, onClose }:
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
-      className="fixed inset-0 z-[80] bg-black/75 backdrop-blur-sm flex items-end"
+      className="fixed inset-0 z-[80] bg-black/75 backdrop-blur-sm flex items-end justify-center"
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
     >
       <motion.div
@@ -50,7 +50,7 @@ export default function ExerciseInfoSheet({ exerciseName, muscleType, onClose }:
         animate="visible"
         exit="exit"
         transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
-        className="w-full flex flex-col rounded-t-[28px]"
+        className="w-full max-w-[480px] flex flex-col rounded-t-[28px]"
         style={{
           background: '#111111',
           border: '1px solid rgba(255,255,255,0.07)',
@@ -97,8 +97,8 @@ export default function ExerciseInfoSheet({ exerciseName, muscleType, onClose }:
           {/* Demo photo (free-exercise-db) — full movement visible, centered, capped width */}
           {demo && (
             <div
-              className="relative w-full max-w-[420px] mx-auto rounded-2xl overflow-hidden"
-              style={{ aspectRatio: '4 / 3', border: '1px solid rgba(255,255,255,0.06)', background: 'radial-gradient(ellipse at center, #15151a, #0a0a0a)' }}
+              className="relative w-full rounded-2xl overflow-hidden"
+              style={{ aspectRatio: '3 / 2', border: '1px solid rgba(255,255,255,0.06)', background: 'radial-gradient(ellipse at center, #15151a, #0a0a0a)' }}
             >
               <Image src={demo} alt={`Démonstration : ${exerciseName}`} fill className="object-contain" sizes="420px" />
               <span className="absolute top-2.5 left-2.5 z-10 text-[10px] font-bold uppercase tracking-[1.2px] px-2 py-0.5 rounded-full bg-black/60 text-zinc-200 backdrop-blur-sm">
