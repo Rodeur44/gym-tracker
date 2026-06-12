@@ -85,3 +85,41 @@ export function bestForExercise(sessions: { exos: ExoLike[] }[], name: string): 
   }
   return best
 }
+
+// ── Progression ───────────────────────────────────────────────────
+
+export interface LastPerf {
+  weight: number
+  reps: number
+  date: string
+}
+
+/** Meilleure série (au poids) de la séance la plus récente contenant l'exercice. */
+export function lastPerformance(
+  sessions: { date: string; exos: ExoLike[] }[],
+  name: string,
+): LastPerf | null {
+  const target = name.trim().toLowerCase()
+  let best: LastPerf | null = null
+  for (const s of sessions) {
+    if (best && s.date <= best.date) continue
+    for (const e of s.exos) {
+      if ((e.name ?? '').trim().toLowerCase() !== target || !e.sets.length) continue
+      const top = e.sets.reduce((m, st) => ((st.weight || 0) > (m.weight || 0) ? st : m), e.sets[0])
+      best = { weight: top.weight || 0, reps: top.reps || 0, date: s.date }
+    }
+  }
+  return best
+}
+
+/**
+ * Suggestion de surcharge progressive simple :
+ * - poids du corps → +1 rep
+ * - ≥ 8 reps réussies → +2,5 kg (en redescendant un peu les reps)
+ * - sinon → même poids, +1 rep
+ */
+export function suggestNextTarget(last: LastPerf): { weight: number; reps: number } {
+  if (last.weight <= 0) return { weight: 0, reps: last.reps + 1 }
+  if (last.reps >= 8) return { weight: last.weight + 2.5, reps: Math.max(6, last.reps - 2) }
+  return { weight: last.weight, reps: last.reps + 1 }
+}

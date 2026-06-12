@@ -8,6 +8,7 @@ import { useApp } from '@/context/AppContext'
 import { TYPE_LBL, TAG_CLR, TAG_BG, EXO_BY_TYPE, WORKOUT_TEMPLATES } from '@/lib/constants'
 import type { WorkoutTemplate } from '@/lib/constants'
 import type { MuscleGroup, Exercise } from '@/types'
+import { lastPerformance, suggestNextTarget, type LastPerf } from '@/lib/stats'
 import AISessionSheet from '@/components/screens/AISessionSheet'
 import StretchingScreen from '@/components/screens/StretchingScreen'
 import ExerciseInfoSheet from '@/components/screens/ExerciseInfoSheet'
@@ -310,10 +311,11 @@ function SetRow({ set, idx, accent, onWeightChange, onRepsChange, onDelete, slid
 }
 
 // ── Exo Card ──────────────────────────────────────────────────────
-function ExoCard({ exo, idx, getBest, onChange, onDelete, onDuplicate, onInfo, type }: {
+function ExoCard({ exo, idx, getBest, getLastPerf, onChange, onDelete, onDuplicate, onInfo, type }: {
   exo: Exercise
   idx: number
   getBest: (n: string) => number
+  getLastPerf: (n: string) => LastPerf | null
   onChange: (updated: Exercise) => void
   onDelete: () => void
   onDuplicate: () => void
@@ -327,6 +329,8 @@ function ExoCard({ exo, idx, getBest, onChange, onDelete, onDuplicate, onInfo, t
   const pr = getBest(exo.name)
   const maxW = Math.max(0, ...exo.sets.map(s => s.weight || 0))
   const isRecord = pr > 0 && maxW > pr
+  const last = getLastPerf(exo.name)
+  const target = last ? suggestNextTarget(last) : null
   const [renaming, setRenaming] = useState(false)
   const [nameVal, setNameVal] = useState(exo.name)
 
@@ -386,8 +390,14 @@ function ExoCard({ exo, idx, getBest, onChange, onDelete, onDuplicate, onInfo, t
                 style={{ background: 'rgba(139,92,246,0.15)', color: '#A78BFA' }}>
                 🏆 NOUVEAU RECORD
               </span>
+            ) : last && target ? (
+              <span className="text-[11px] text-zinc-500">
+                Dernière fois · <span className="text-zinc-300 font-semibold font-mono">{last.weight > 0 ? `${last.weight} kg × ${last.reps}` : `${last.reps} reps`}</span>
+                <span className="mx-1 text-zinc-600">→</span>
+                vise <span className="font-semibold font-mono" style={{ color: accent }}>{target.weight > 0 ? `${target.weight} kg × ${target.reps}` : `${target.reps} reps`}</span>
+              </span>
             ) : pr > 0 ? (
-              <span className="text-[11px] text-zinc-600">Record · <span className="text-zinc-300 font-semibold font-mono">{pr} kg</span></span>
+              <span className="text-[11px] text-zinc-500">Record · <span className="text-zinc-300 font-semibold font-mono">{pr} kg</span></span>
             ) : (
               <span className="text-[10px] text-zinc-500">Touche le nom pour renommer</span>
             )}
@@ -577,6 +587,12 @@ export default function LogScreen() {
   const allPrev = [...new Set(sessions.flatMap(s => (s.exos || []).map(e => e.name)))]
   const accent = TAG_CLR[logType]
 
+  // En mode édition, la séance en cours d'édition ne compte pas comme "dernière fois".
+  const getLastPerf = useCallback((name: string) => {
+    const past = editMode ? sessions.filter(s => s.id !== editSessionId) : sessions
+    return lastPerformance(past, name)
+  }, [sessions, editMode, editSessionId])
+
   const updateExo = useCallback((idx: number, updated: Exercise) => {
     setCurrentExos(currentExos.map((e, i) => i === idx ? updated : e))
   }, [currentExos, setCurrentExos])
@@ -713,6 +729,7 @@ export default function LogScreen() {
                 idx={i}
                 type={logType}
                 getBest={getBest}
+                getLastPerf={getLastPerf}
                 onChange={updated => updateExo(i, updated)}
                 onDelete={() => removeExo(i)}
                 onDuplicate={() => duplicateExo(i)}

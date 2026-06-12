@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computeStreak, exosVolume, personalBests, bestForExercise, sessionMuscleGroups, type ExoLike } from '@/lib/stats'
+import { computeStreak, exosVolume, personalBests, bestForExercise, sessionMuscleGroups, lastPerformance, suggestNextTarget, type ExoLike } from '@/lib/stats'
 
 // Fixed reference date so streak tests are deterministic.
 const NOW = new Date('2026-06-01T12:00:00.000Z')
@@ -102,5 +102,40 @@ describe('sessionMuscleGroups', () => {
   it('retombe sur le type de séance pour les anciennes données sans type par exo', () => {
     const s = { type: 'pec', exos: [{ name: 'Développé', sets: [] }] }
     expect(sessionMuscleGroups(s)).toEqual(['pec'])
+  })
+})
+
+describe('lastPerformance', () => {
+  const sessions = [
+    { date: '2026-06-01', exos: [{ name: 'Bench', sets: [{ weight: 60, reps: 8 }, { weight: 65, reps: 5 }] }] },
+    { date: '2026-06-10', exos: [{ name: 'Bench', sets: [{ weight: 70, reps: 6 }] }] },
+    { date: '2026-06-05', exos: [{ name: 'Squat', sets: [{ weight: 100, reps: 5 }] }] },
+  ]
+
+  it('retourne la meilleure série de la séance la plus récente', () => {
+    expect(lastPerformance(sessions, 'Bench')).toEqual({ weight: 70, reps: 6, date: '2026-06-10' })
+  })
+
+  it('insensible à la casse et aux espaces', () => {
+    expect(lastPerformance(sessions, '  bench ')).toEqual({ weight: 70, reps: 6, date: '2026-06-10' })
+  })
+
+  it('null pour un exercice jamais fait', () => {
+    expect(lastPerformance(sessions, 'Curl')).toBeNull()
+  })
+})
+
+describe('suggestNextTarget', () => {
+  it('≥8 reps → +2,5 kg, reps réduites (min 6)', () => {
+    expect(suggestNextTarget({ weight: 60, reps: 8, date: '2026-06-10' })).toEqual({ weight: 62.5, reps: 6 })
+    expect(suggestNextTarget({ weight: 60, reps: 12, date: '2026-06-10' })).toEqual({ weight: 62.5, reps: 10 })
+  })
+
+  it('<8 reps → même poids, +1 rep', () => {
+    expect(suggestNextTarget({ weight: 80, reps: 5, date: '2026-06-10' })).toEqual({ weight: 80, reps: 6 })
+  })
+
+  it('poids du corps → +1 rep', () => {
+    expect(suggestNextTarget({ weight: 0, reps: 15, date: '2026-06-10' })).toEqual({ weight: 0, reps: 16 })
   })
 })
