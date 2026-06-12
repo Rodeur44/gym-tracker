@@ -617,8 +617,13 @@ export default function LogScreen() {
   }
 
   function pickExo(name: string) {
-    const pr = getBest(name)
-    setCurrentExos([...currentExos, { name, type: logType, sets: [{ weight: pr, reps: 10 }] }])
+    // Pré-remplit avec la cible de progression (dernière perf + surcharge),
+    // sinon retombe sur le record, sinon départ vierge.
+    const last = getLastPerf(name)
+    const init = last
+      ? suggestNextTarget(last)
+      : { weight: getBest(name), reps: 10 }
+    setCurrentExos([...currentExos, { name, type: logType, sets: [{ weight: init.weight, reps: init.reps }] }])
     setPickerOpen(false)
   }
 
