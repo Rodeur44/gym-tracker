@@ -328,9 +328,13 @@ function ExoCard({ exo, idx, getBest, getLastPerf, onChange, onDelete, onDuplica
   const sliderMax = exoType === 'jambes' ? 500 : 250
   const pr = getBest(exo.name)
   const maxW = Math.max(0, ...exo.sets.map(s => s.weight || 0))
-  const isRecord = pr > 0 && maxW > pr
   const last = getLastPerf(exo.name)
   const target = last ? suggestNextTarget(last) : null
+  // Le pré-remplissage peut dépasser le record : ne pas afficher « NOUVEAU
+  // RECORD » tant que la série suggérée n'a pas été touchée par l'utilisateur.
+  const untouchedPrefill = target !== null && exo.sets.length === 1
+    && (exo.sets[0].weight || 0) === target.weight && (exo.sets[0].reps || 0) === target.reps
+  const isRecord = pr > 0 && maxW > pr && !untouchedPrefill
   const [renaming, setRenaming] = useState(false)
   const [nameVal, setNameVal] = useState(exo.name)
 
