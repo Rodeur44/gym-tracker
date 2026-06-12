@@ -28,6 +28,13 @@ export function rateLimit(
 ): RateLimitResult {
   const now = Date.now()
   const windowMs = windowSec * 1000
+
+  // Purge opportuniste : évite que la Map grossisse indéfiniment
+  // (une entrée par utilisateur, jamais nettoyée sinon).
+  if (buckets.size > 1000) {
+    for (const [k, b] of buckets) if (b.resetAt <= now) buckets.delete(k)
+  }
+
   const existing = buckets.get(key)
 
   if (!existing || existing.resetAt <= now) {
