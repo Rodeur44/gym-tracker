@@ -3,7 +3,7 @@ import { streamText, Output } from 'ai'
 import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import type { Session } from '@/types'
 import { getRequestUser } from '@/lib/supabase/server'
-import { rateLimit } from '@/lib/rate-limit'
+import { rateLimitPersistent } from '@/lib/rate-limit'
 import { personalBests } from '@/lib/stats'
 import { sessionSchema } from '@/lib/ai-schemas'
 
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Cap AI generations per user to protect the Gemini budget.
-  const rl = rateLimit(`ai-session:${user.id}`, { limit: 20, windowSec: 3600 })
+  const rl = await rateLimitPersistent(`ai-session:${user.id}`, { limit: 20, windowSec: 3600 })
   if (!rl.ok) {
     return NextResponse.json(
       { error: 'Limite de générations atteinte. Réessaie plus tard.' },

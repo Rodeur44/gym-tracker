@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getRequestUser } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { validatePromo } from '@/lib/promo'
-import { rateLimit } from '@/lib/rate-limit'
+import { rateLimitPersistent } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
 
@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Cap redeem attempts so invite codes can't be brute-forced.
-  const rl = rateLimit(`pro-redeem:${user.id}`, { limit: 10, windowSec: 60 })
+  const rl = await rateLimitPersistent(`pro-redeem:${user.id}`, { limit: 10, windowSec: 60 })
   if (!rl.ok) {
     return NextResponse.json(
       { error: 'Trop de tentatives. Réessaie dans une minute.' },

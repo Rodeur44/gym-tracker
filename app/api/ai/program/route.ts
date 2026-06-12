@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { streamText, Output } from 'ai'
 import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import { getRequestUser } from '@/lib/supabase/server'
-import { rateLimit } from '@/lib/rate-limit'
+import { rateLimitPersistent } from '@/lib/rate-limit'
 import { programSchema } from '@/lib/ai-schemas'
 
 export const runtime = 'nodejs'
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Cap AI generations per user to protect the Gemini budget.
-  const rl = rateLimit(`ai-program:${user.id}`, { limit: 20, windowSec: 3600 })
+  const rl = await rateLimitPersistent(`ai-program:${user.id}`, { limit: 20, windowSec: 3600 })
   if (!rl.ok) {
     return NextResponse.json(
       { error: 'Limite de générations atteinte. Réessaie plus tard.' },

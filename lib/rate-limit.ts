@@ -1,8 +1,13 @@
-// Lightweight in-memory rate limiter (token-per-window) keyed by an arbitrary
-// identifier (e.g. a user id). Best-effort only: state lives per serverless
-// instance, so under heavy fan-out a determined caller could exceed the limit.
-// It's enough to stop casual abuse; for hard guarantees back this with a shared
-// store (Upstash Redis via the Vercel Marketplace).
+import { createAdminClient } from '@/lib/supabase/admin'
+
+// Rate limiter à deux niveaux :
+// 1. `rateLimitPersistent` (recommandé) — compteur partagé dans Supabase via la
+//    fonction SQL `consume_rate_limit` (voir scripts/rate-limits.sql). Survit
+//    aux cold starts et est partagé entre toutes les instances serverless.
+// 2. `rateLimit` (fallback) — compteur in-memory par instance. Utilisé
+//    automatiquement si Supabase est indisponible (env manquante en local,
+//    migration non exécutée, erreur réseau) : on ne bloque jamais une requête
+//    légitime à cause d'un échec d'infrastructure.
 
 interface Bucket {
   count: number
@@ -36,4 +41,31 @@ export function rateLimit(
 
   existing.count++
   return { ok: true, remaining: limit - existing.count, retryAfter: 0 }
+}
+
+interface ConsumeRateLimitRow {
+  ok: boolean
+  remaining: number
+  retry_after: number
+}
+
+export async function rateLimitPersistent(
+  key: string,
+  opts: { limit: number; windowSec: number },
+): Promise<RateLimitResult> {
+  try {
+    const admin = createAdminClient()
+    const { data, error } = await admin.rpc('consume_rate_limit', {
+      p_key: key,
+      p_limit: opts.limit,
+      p_window_sec: opts.windowSec,
+    })
+    if (error) throw error
+    const row = (Array.isArray(data) ? data[0] : data) as ConsumeRateLimitRow | undefined
+    if (!row || typeof row.ok !== 'boolean') throw new Error('Réponse RPC inattendue')
+    return { ok: row.ok, remaining: row.remaining, retryAfter: row.retry_after }
+  } catch {
+    // Supabase indisponible ou migration non exécutée → fallback in-memory.
+    return rateLimit(key, opts)
+  }
 }
