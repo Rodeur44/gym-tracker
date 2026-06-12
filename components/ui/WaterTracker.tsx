@@ -210,10 +210,11 @@ export default function WaterTracker() {
             <button
               onClick={reset}
               aria-label="Réinitialiser"
-              className="w-7 h-7 flex items-center justify-center rounded-full active:opacity-60 transition-opacity"
-              style={{ background: 'rgba(255,255,255,0.05)' }}
+              className="min-w-11 min-h-11 -m-2 flex items-center justify-center active:opacity-60 transition-opacity"
             >
-              <RotateCcw size={12} strokeWidth={1.8} className="text-zinc-500" />
+              <span className="w-7 h-7 flex items-center justify-center rounded-full" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                <RotateCcw size={12} strokeWidth={1.8} className="text-zinc-500" />
+              </span>
             </button>
           )}
         </div>
@@ -267,7 +268,7 @@ export default function WaterTracker() {
           whileTap={{ scale: 0.9 }}
           transition={{ type: 'spring', stiffness: 400, damping: 25 }}
           aria-label="Diminuer"
-          className="w-9 h-9 flex items-center justify-center rounded-xl flex-shrink-0"
+          className="relative after:absolute after:-inset-1 w-9 h-9 flex items-center justify-center rounded-xl flex-shrink-0"
           style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
         >
           <Minus size={13} strokeWidth={2} className="text-zinc-400" />
@@ -286,7 +287,7 @@ export default function WaterTracker() {
           whileTap={{ scale: 0.9 }}
           transition={{ type: 'spring', stiffness: 400, damping: 25 }}
           aria-label="Augmenter"
-          className="w-9 h-9 flex items-center justify-center rounded-xl flex-shrink-0"
+          className="relative after:absolute after:-inset-1 w-9 h-9 flex items-center justify-center rounded-xl flex-shrink-0"
           style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
         >
           <Plus size={13} strokeWidth={2} className="text-zinc-400" />

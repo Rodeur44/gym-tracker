@@ -41,10 +41,11 @@ function ExoPicker({ type, onPick, onClose, getBest, allPrev }: {
     const pr = getBest(name)
     return (
       <div className="flex items-center border-b border-white/[0.04] last:border-none">
-        <motion.div
+        <motion.button
+          type="button"
           whileTap={{ scale: 0.98, opacity: 0.6 }}
           onClick={() => onPick(name)}
-          className="flex items-center gap-3 px-2 py-3.5 rounded-xl cursor-pointer hover:bg-white/[0.04] transition-all group flex-1 min-w-0"
+          className="flex items-center gap-3 px-2 py-3.5 rounded-xl cursor-pointer hover:bg-white/[0.04] transition-all group flex-1 min-w-0 text-left"
         >
           <div className="w-[3px] h-7 rounded-full flex-shrink-0 opacity-50 group-hover:opacity-100 group-hover:h-8 transition-all" style={{ background: clr }} />
           <span className="flex-1 text-sm text-zinc-200 tracking-tight truncate">{name}</span>
@@ -55,16 +56,18 @@ function ExoPicker({ type, onPick, onClose, getBest, allPrev }: {
             </span>
           )}
           <ChevronRight size={14} strokeWidth={1.8} className="text-zinc-600 flex-shrink-0" />
-        </motion.div>
+        </motion.button>
         <motion.button
           onClick={e => { e.stopPropagation(); setPickerInfo(name) }}
           whileTap={{ scale: 0.88 }}
           transition={{ type: 'spring', stiffness: 400, damping: 25 }}
           aria-label={`Infos sur ${name}`}
-          className="w-8 h-8 flex items-center justify-center rounded-full flex-shrink-0 ml-1 mr-1 active:opacity-70 transition-opacity"
-          style={{ background: 'rgba(167,139,250,0.12)', border: '1px solid rgba(167,139,250,0.25)' }}
+          className="min-w-11 min-h-11 flex items-center justify-center flex-shrink-0 active:opacity-70 transition-opacity"
         >
-          <Info size={13} strokeWidth={1.8} style={{ color: '#A78BFA' }} />
+          <span className="w-8 h-8 flex items-center justify-center rounded-full"
+            style={{ background: 'rgba(167,139,250,0.12)', border: '1px solid rgba(167,139,250,0.25)' }}>
+            <Info size={13} strokeWidth={1.8} style={{ color: '#A78BFA' }} />
+          </span>
         </motion.button>
       </div>
     )
@@ -99,25 +102,27 @@ function ExoPicker({ type, onPick, onClose, getBest, allPrev }: {
             <>
               {filtered.map(n => <ExoRow key={n} name={n} />)}
               {!filtered.some(n => n.toLowerCase() === q.toLowerCase()) && (
-                <motion.div
+                <motion.button
+                  type="button"
                   whileTap={{ scale: 0.98 }}
                   onClick={() => onPick(q)}
-                  className="flex items-center gap-3 px-2 py-3.5 rounded-xl cursor-pointer hover:bg-white/[0.04] transition-all"
+                  className="flex items-center gap-3 px-2 py-3.5 rounded-xl cursor-pointer hover:bg-white/[0.04] transition-all w-full text-left"
                 >
                   <div className="w-[3px] h-7 rounded-full flex-shrink-0 opacity-40" style={{ background: clr }} />
                   <span className="text-sm text-zinc-500">+ Ajouter &ldquo;<strong className="text-zinc-200">{q}</strong>&rdquo;</span>
-                </motion.div>
+                </motion.button>
               )}
             </>
           ) : (
             <>
               {/* Accès rapide */}
               <div className="text-[11px] font-bold uppercase tracking-[1.8px] text-zinc-500 mb-3 pt-1">Accès rapide</div>
-              <motion.div
+              <motion.button
+                type="button"
                 whileTap={{ scale: 0.97 }}
                 transition={{ type: 'spring', stiffness: 400, damping: 25 }}
                 onClick={() => onPick('Machine')}
-                className="flex items-center gap-3 px-4 py-3.5 rounded-2xl cursor-pointer card-glass border border-white/[0.06] min-h-[56px] group"
+                className="flex items-center gap-3 px-4 py-3.5 rounded-2xl cursor-pointer card-glass border border-white/[0.06] min-h-[56px] group w-full text-left"
               >
                 <div
                   className="w-10 h-10 rounded-[12px] flex items-center justify-center flex-shrink-0"
@@ -130,7 +135,7 @@ function ExoPicker({ type, onPick, onClose, getBest, allPrev }: {
                   <span className="text-[11px] text-zinc-500">Renomme l&apos;exercice après</span>
                 </div>
                 <ChevronRight size={16} strokeWidth={1.8} className="text-zinc-600 flex-shrink-0 group-hover:text-zinc-400 transition-colors" />
-              </motion.div>
+              </motion.button>
 
               {/* Récents */}
               {recent.length > 0 && (
@@ -286,13 +291,13 @@ function SetRow({ set, idx, accent, onWeightChange, onRepsChange, onDelete, slid
         <button
           onClick={() => startRest()}
           aria-label="Marquer fait et démarrer le repos"
-          className="w-[30px] h-[30px] rounded-full bg-[#1C1C1C] border border-white/[0.06] flex items-center justify-center text-zinc-500 flex-shrink-0 hover:text-[#A78BFA] hover:border-[#A78BFA]/40 active:bg-[#7C3AED] active:text-white active:scale-90 transition-all duration-200"
+          className="relative after:absolute after:-inset-2 w-[30px] h-[30px] rounded-full bg-[#1C1C1C] border border-white/[0.06] flex items-center justify-center text-zinc-500 flex-shrink-0 hover:text-[#A78BFA] hover:border-[#A78BFA]/40 active:bg-[#7C3AED] active:text-white active:scale-90 transition-all duration-200"
         >
           <Check size={14} strokeWidth={2.2} />
         </button>
         {/* Delete */}
         <button onClick={onDelete} aria-label="Supprimer la série"
-          className="w-[30px] h-[30px] rounded-full bg-[#1C1C1C] border border-white/[0.06] flex items-center justify-center text-zinc-500 flex-shrink-0 hover:text-red-400 hover:border-red-400/30 active:bg-red-500 active:text-white active:rotate-90 transition-all duration-200">
+          className="relative after:absolute after:-inset-2 w-[30px] h-[30px] rounded-full bg-[#1C1C1C] border border-white/[0.06] flex items-center justify-center text-zinc-500 flex-shrink-0 hover:text-red-400 hover:border-red-400/30 active:bg-red-500 active:text-white active:rotate-90 transition-all duration-200">
           <X size={14} strokeWidth={1.8} />
         </button>
       </div>
@@ -384,7 +389,7 @@ function ExoCard({ exo, idx, getBest, onChange, onDelete, onDuplicate, onInfo, t
             ) : pr > 0 ? (
               <span className="text-[11px] text-zinc-600">Record · <span className="text-zinc-300 font-semibold font-mono">{pr} kg</span></span>
             ) : (
-              <span className="text-[10px] text-zinc-700">Touche le nom pour renommer</span>
+              <span className="text-[10px] text-zinc-500">Touche le nom pour renommer</span>
             )}
           </div>
         </div>
@@ -394,10 +399,12 @@ function ExoCard({ exo, idx, getBest, onChange, onDelete, onDuplicate, onInfo, t
             whileTap={{ scale: 0.9 }}
             transition={{ type: 'spring', stiffness: 400, damping: 25 }}
             aria-label="Informations sur l'exercice"
-            className="w-8 h-8 flex items-center justify-center rounded-full active:opacity-70 transition-opacity flex-shrink-0"
-            style={{ background: 'rgba(167,139,250,0.12)', border: '1px solid rgba(167,139,250,0.25)' }}
+            className="min-w-11 min-h-11 flex items-center justify-center active:opacity-70 transition-opacity flex-shrink-0"
           >
-            <Info size={14} strokeWidth={1.8} style={{ color: '#A78BFA' }} />
+            <span className="w-8 h-8 flex items-center justify-center rounded-full"
+              style={{ background: 'rgba(167,139,250,0.12)', border: '1px solid rgba(167,139,250,0.25)' }}>
+              <Info size={14} strokeWidth={1.8} style={{ color: '#A78BFA' }} />
+            </span>
           </motion.button>
           <motion.button
             onClick={onDuplicate}

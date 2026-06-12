@@ -239,7 +239,7 @@ export default function HomeScreen() {
               )
             })}
             {(last.exos || []).length > 4 && (
-              <p className="text-xs text-zinc-600 pt-2">+{last.exos.length - 4} exercices…</p>
+              <p className="text-xs text-zinc-500 pt-2">+{last.exos.length - 4} exercices…</p>
             )}
           </div>
         </motion.div>
@@ -421,7 +421,7 @@ export default function HomeScreen() {
         <div className="card-glass rounded-2xl p-4">
           <div className="flex items-start justify-between mb-3">
             <div>
-              <div className="text-[10px] font-bold text-zinc-600 uppercase tracking-[1.2px] mb-0.5">Muscle le plus reposé</div>
+              <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-[1.2px] mb-0.5">Muscle le plus reposé</div>
               <div className="text-sm font-semibold text-zinc-200">{TYPE_LBL[aiSuggestion.type]}</div>
             </div>
             <span className="text-[11px] font-mono text-zinc-500 bg-[#1C1C1C] border border-white/[0.06] px-2.5 py-1 rounded-lg">
@@ -437,7 +437,7 @@ export default function HomeScreen() {
                     Vise {e.target}kg
                   </span>
                 ) : (
-                  <span className="text-[11px] text-zinc-600 flex-shrink-0">poids libre</span>
+                  <span className="text-[11px] text-zinc-500 flex-shrink-0">poids libre</span>
                 )}
               </div>
             ))}

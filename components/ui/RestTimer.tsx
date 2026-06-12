@@ -98,30 +98,36 @@ export function RestTimer() {
         style={{ bottom: 'calc(82px + env(safe-area-inset-bottom, 16px))' }}
       >
         {!restActive ? (
-          <motion.button
+          <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            whileTap={{ scale: 0.95 }}
             transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-            onClick={() => startRest()}
-            onContextMenu={e => { e.preventDefault(); setPicker(true) }}
-            className="h-12 px-4 rounded-full flex items-center gap-2 text-[13px] font-semibold text-white"
+            className="h-12 rounded-full flex items-center text-[13px] font-semibold text-white"
             style={{
               background: 'linear-gradient(135deg,#6D28D9,#7C3AED)',
               boxShadow: '0 8px 24px -6px rgba(109,40,217,0.5),inset 0 1px 0 rgba(255,255,255,0.18)',
             }}
-            aria-label="Démarrer un repos"
           >
-            <Timer size={16} strokeWidth={1.8} />
-            Repos · {restDuration}s
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => startRest()}
+              onContextMenu={e => { e.preventDefault(); setPicker(true) }}
+              className="h-12 pl-4 pr-1 rounded-l-full flex items-center gap-2"
+              aria-label="Démarrer un repos"
+            >
+              <Timer size={16} strokeWidth={1.8} />
+              Repos · {restDuration}s
+            </motion.button>
             <button
-              onClick={e => { e.stopPropagation(); setPicker(true) }}
-              className="ml-1 -mr-1 w-7 h-7 rounded-full flex items-center justify-center hover:bg-white/15 active:bg-white/25"
+              onClick={() => setPicker(true)}
+              className="h-12 min-w-11 pr-2 rounded-r-full flex items-center justify-center"
               aria-label="Régler la durée"
             >
-              <Settings2 size={13} strokeWidth={1.8} />
+              <span className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-white/15 active:bg-white/25">
+                <Settings2 size={13} strokeWidth={1.8} />
+              </span>
             </button>
-          </motion.button>
+          </motion.div>
         ) : (
           <motion.button
             initial={{ scale: 0.9, opacity: 0 }}
@@ -182,9 +188,11 @@ export function RestTimer() {
               <button
                 onClick={() => setExpanded(false)}
                 aria-label="Fermer"
-                className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/[0.06] border border-white/[0.08] flex items-center justify-center text-zinc-400 active:scale-95 transition-transform"
+                className="absolute top-2 right-2 min-w-11 min-h-11 flex items-center justify-center text-zinc-400 active:scale-95 transition-transform"
               >
-                <X size={16} strokeWidth={1.8} />
+                <span className="w-9 h-9 rounded-full bg-white/[0.06] border border-white/[0.08] flex items-center justify-center">
+                  <X size={16} strokeWidth={1.8} />
+                </span>
               </button>
 
               <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-[1.6px] text-center">Repos en cours</p>

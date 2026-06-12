@@ -140,8 +140,10 @@ export default function AISessionSheet({ defaultType, onClose, onUse }: Props) {
             </div>
           </div>
           <button onClick={onClose} aria-label="Fermer"
-            className="w-9 h-9 rounded-full bg-[#1C1C1C] border border-white/[0.06] flex items-center justify-center text-zinc-500 hover:text-white transition-colors">
-            <X size={16} strokeWidth={1.8} />
+            className="min-w-11 min-h-11 flex items-center justify-center text-zinc-500 hover:text-white transition-colors">
+            <span className="w-9 h-9 rounded-full bg-[#1C1C1C] border border-white/[0.06] flex items-center justify-center">
+              <X size={16} strokeWidth={1.8} />
+            </span>
           </button>
         </div>
 

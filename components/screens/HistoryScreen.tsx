@@ -223,14 +223,15 @@ export default function HistoryScreen() {
                   const seriesCount = s.exos.reduce((acc, e) => acc + e.sets.length, 0)
                   const vol = fmtVol(calcVolume(s))
                   return (
-                    <motion.div
+                    <motion.button
+                      type="button"
                       key={s.id}
                       initial={{ opacity: 0, x: -8 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: gi * 0.06 + i * 0.04, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
                       whileTap={{ scale: 0.985 }}
                       onClick={() => setSelected(s)}
-                      className="flex items-center gap-3 px-4 py-3.5 border-b border-white/[0.04] last:border-none cursor-pointer hover:bg-white/[0.02] active:bg-white/[0.04] transition-all"
+                      className="flex items-center gap-3 px-4 py-3.5 border-b border-white/[0.04] last:border-none cursor-pointer hover:bg-white/[0.02] active:bg-white/[0.04] transition-all w-full text-left"
                     >
                       {/* Color stripe — dégradé des groupes de la séance */}
                       <div
@@ -277,7 +278,7 @@ export default function HistoryScreen() {
                           />
                         ))}
                       </div>
-                    </motion.div>
+                    </motion.button>
                   )
                 })}
               </div>
