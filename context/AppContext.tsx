@@ -29,6 +29,8 @@ interface AppContextValue {
   repeatPending: boolean
   repeatSession: (session: Session) => void
   clearRepeat: () => void
+  // Début de la séance en cours (premier exercice ajouté), null sinon
+  sessionStartedAt: number | null
   // Actions
   saveSession: (payload: Omit<Session, 'id' | 'user_id' | 'created_at'>) => Promise<boolean>
   deleteSession: (id: string) => Promise<boolean>
@@ -80,6 +82,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [proOpen, setProOpen] = useState(false)
   const [restEndsAt, setRestEndsAt] = useState<number | null>(null)
   const [restDuration, setRestDuration] = useState(90)
+
+  // ── Chrono de séance ──────────────────────────────────────────
+  // Démarre au premier exercice ajouté, s'arrête quand la séance se vide
+  // (enregistrée ou annulée). Persisté en localStorage pour survivre à un
+  // rechargement de la PWA en pleine séance ; un départ vieux de plus de
+  // 6 h est considéré comme périmé (app fermée en cours de route).
+  const [sessionStartedAt, setSessionStartedAt] = useState<number | null>(null)
+  const hasExos = currentExos.length > 0
+  useEffect(() => {
+    const KEY = 'gymlog_session_start'
+    if (hasExos) {
+      setSessionStartedAt(prev => {
+        if (prev) return prev
+        let start = Number(localStorage.getItem(KEY)) || Date.now()
+        if (Date.now() - start > 6 * 3600 * 1000) start = Date.now()
+        localStorage.setItem(KEY, String(start))
+        return start
+      })
+    } else {
+      localStorage.removeItem(KEY)
+      setSessionStartedAt(null)
+    }
+  }, [hasExos])
 
   const openPro = useCallback(() => setProOpen(true), [])
   const closePro = useCallback(() => setProOpen(false), [])
@@ -396,7 +421,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     <AppContext.Provider value={{
       user, sessions, unlockedCards, loading,
       revealQueue, dismissReveal,
-      currentExos, setCurrentExos, logType, setLogType,
+      currentExos, setCurrentExos, logType, setLogType, sessionStartedAt,
       editMode, editSessionId, startEdit, cancelEdit,
       repeatPending, repeatSession, clearRepeat,
       saveSession, deleteSession, signOut, reload,

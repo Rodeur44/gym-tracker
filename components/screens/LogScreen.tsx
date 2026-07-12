@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, X, ChevronRight, AlertCircle, Camera, Copy, CopyPlus, LayoutGrid, Check, Sparkles, Lock, Info } from 'lucide-react'
+import { Plus, X, ChevronRight, AlertCircle, Camera, Copy, CopyPlus, LayoutGrid, Check, Sparkles, Lock, Info, Trophy } from 'lucide-react'
 import { useApp } from '@/context/AppContext'
 import { TYPE_LBL, TAG_CLR, TAG_BG, EXO_BY_TYPE, WORKOUT_TEMPLATES } from '@/lib/constants'
 import type { WorkoutTemplate } from '@/lib/constants'
@@ -219,12 +219,13 @@ function WeightSlider({ value, onChange, trackStyle, max = 250 }: {
 }
 
 // ── Set Row ───────────────────────────────────────────────────────
-function SetRow({ set, idx, accent, onWeightChange, onRepsChange, onDelete, sliderMax }: {
-  set: { weight: number; reps: number }
+function SetRow({ set, idx, accent, onWeightChange, onRepsChange, onToggleDone, onDelete, sliderMax }: {
+  set: { weight: number; reps: number; done?: boolean }
   idx: number
   accent: string
   onWeightChange: (v: number) => void
   onRepsChange: (delta: number) => void
+  onToggleDone: () => void
   sliderMax: number
   onDelete: () => void
 }) {
@@ -250,7 +251,12 @@ function SetRow({ set, idx, accent, onWeightChange, onRepsChange, onDelete, slid
     >
       <div className="flex items-center gap-2.5 mb-3">
         {/* Badge numéro */}
-        <div className="w-[26px] h-[26px] rounded-[8px] bg-[#1C1C1C] border border-white/[0.06] flex items-center justify-center text-[11px] font-bold text-zinc-500 font-mono flex-shrink-0">
+        <div
+          className="w-[26px] h-[26px] rounded-[8px] flex items-center justify-center text-[11px] font-bold font-mono flex-shrink-0 border transition-colors"
+          style={set.done
+            ? { background: 'rgba(139,92,246,0.15)', borderColor: 'rgba(139,92,246,0.35)', color: '#A78BFA' }
+            : { background: '#1C1C1C', borderColor: 'rgba(255,255,255,0.06)', color: '#737373' }}
+        >
           {idx + 1}
         </div>
         {/* Poids — tap pour saisir manuellement */}
@@ -288,11 +294,14 @@ function SetRow({ set, idx, accent, onWeightChange, onRepsChange, onDelete, slid
           </div>
           <button onClick={() => onRepsChange(1)} className="w-10 h-11 flex items-center justify-center text-xl font-light text-white hover:bg-[rgba(139,92,246,0.08)] active:bg-[rgba(139,92,246,0.18)] active:scale-90 transition-all">+</button>
         </div>
-        {/* Done & rest */}
+        {/* Série faite + repos */}
         <button
-          onClick={() => startRest()}
-          aria-label="Marquer fait et démarrer le repos"
-          className="relative after:absolute after:-inset-2 w-[30px] h-[30px] rounded-full bg-[#1C1C1C] border border-white/[0.06] flex items-center justify-center text-zinc-500 flex-shrink-0 hover:text-[#A78BFA] hover:border-[#A78BFA]/40 active:bg-[#7C3AED] active:text-white active:scale-90 transition-all duration-200"
+          onClick={() => { if (!set.done) startRest(); onToggleDone() }}
+          aria-label={set.done ? 'Série faite — toucher pour annuler' : 'Marquer la série faite et démarrer le repos'}
+          className="relative after:absolute after:-inset-2 w-[30px] h-[30px] rounded-full flex items-center justify-center flex-shrink-0 active:scale-90 transition-all duration-200"
+          style={set.done
+            ? { background: 'linear-gradient(135deg,#6D28D9,#7C3AED)', border: '1px solid rgba(139,92,246,0.5)', color: '#fff', boxShadow: '0 0 12px rgba(139,92,246,0.4)' }
+            : { background: '#1C1C1C', border: '1px solid rgba(255,255,255,0.06)', color: '#737373' }}
         >
           <Check size={14} strokeWidth={2.2} />
         </button>
@@ -345,7 +354,12 @@ function ExoCard({ exo, idx, getBest, getLastPerf, onChange, onDelete, onDuplica
 
   function addSet() {
     const last = exo.sets[exo.sets.length - 1] || { weight: 0, reps: 10 }
-    onChange({ ...exo, sets: [...exo.sets, { ...last }] })
+    onChange({ ...exo, sets: [...exo.sets, { ...last, done: false }] })
+  }
+
+  function toggleDone(si: number) {
+    const sets = exo.sets.map((s, i) => i === si ? { ...s, done: !s.done } : s)
+    onChange({ ...exo, sets })
   }
 
   function removeSet(si: number) {
@@ -392,7 +406,7 @@ function ExoCard({ exo, idx, getBest, getLastPerf, onChange, onDelete, onDuplica
             {isRecord ? (
               <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-lg"
                 style={{ background: 'rgba(139,92,246,0.15)', color: '#A78BFA' }}>
-                🏆 NOUVEAU RECORD
+                <Trophy size={11} strokeWidth={2} /> NOUVEAU RECORD
               </span>
             ) : last && target ? (
               <span className="text-[11px] text-zinc-500">
@@ -448,6 +462,7 @@ function ExoCard({ exo, idx, getBest, getLastPerf, onChange, onDelete, onDuplica
               sliderMax={sliderMax}
               onWeightChange={v => updateSet(si, 'weight', v)}
               onRepsChange={delta => updateSet(si, 'reps', (set.reps || 1) + delta)}
+              onToggleDone={() => toggleDone(si)}
               onDelete={() => removeSet(si)}
             />
           ))}

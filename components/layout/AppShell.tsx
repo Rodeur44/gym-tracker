@@ -15,6 +15,7 @@ import CardReveal from '@/components/screens/CardReveal'
 import ProScreen from '@/components/screens/ProScreen'
 import AdminScreen from '@/components/screens/AdminScreen'
 import { RestTimer } from '@/components/ui/RestTimer'
+import SessionPulse from '@/components/ui/SessionPulse'
 import { registerSW, getNotifPermission, subscribePush, unsubscribePush, serializeSubscription } from '@/lib/push'
 
 const ADMIN_EMAIL = 'enbordigoni@gmail.com'
@@ -334,9 +335,7 @@ export default function AppShell() {
           )}
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-[11px] text-zinc-500 font-mono">
-            {new Date().toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'long' })}
-          </span>
+          <SessionPulse />
           <div ref={profileRef} className="relative">
             <button
               onClick={() => setProfileOpen(o => !o)}
@@ -400,7 +399,7 @@ export default function AppShell() {
                     <button
                       onClick={toggleStretch}
                       aria-label="Activer ou désactiver les étirements"
-                      className="relative w-10 h-6 rounded-full transition-colors flex-shrink-0"
+                      className="relative after:absolute after:-inset-2.5 w-10 h-6 rounded-full transition-colors flex-shrink-0"
                       style={{ background: stretchEnabled ? '#7C3AED' : 'rgba(255,255,255,0.12)' }}
                     >
                       <div
@@ -418,7 +417,7 @@ export default function AppShell() {
                       <button
                         onClick={toggleNotifications}
                         aria-label="Activer ou désactiver les notifications"
-                        className="relative w-10 h-6 rounded-full transition-colors flex-shrink-0"
+                        className="relative after:absolute after:-inset-2.5 w-10 h-6 rounded-full transition-colors flex-shrink-0"
                         style={{ background: notifEnabled ? '#7C3AED' : 'rgba(255,255,255,0.12)' }}
                       >
                         <div
@@ -595,7 +594,7 @@ export default function AppShell() {
                 className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4"
                 style={{ background: 'linear-gradient(135deg,rgba(109,40,217,0.25),rgba(139,92,246,0.15))', border: '1px solid rgba(139,92,246,0.25)' }}
               >
-                <span className="text-2xl">👤</span>
+                <Pencil size={22} strokeWidth={1.8} className="text-[#A78BFA]" />
               </div>
               <h2 className="text-[17px] font-semibold text-white text-center tracking-tight mb-1">Choisis ton pseudo</h2>
               <p className="text-sm text-zinc-500 text-center mb-5 leading-relaxed">

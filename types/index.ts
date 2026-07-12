@@ -3,6 +3,9 @@ export type MuscleGroup = 'pec' | 'dos' | 'bras' | 'jambes' | 'cardio'
 export interface ExoSet {
   weight: number
   reps: number
+  // Série accomplie pendant la séance en cours (coche ✓). Optionnel :
+  // les anciennes séances n'ont pas ce champ.
+  done?: boolean
 }
 
 export interface Exercise {

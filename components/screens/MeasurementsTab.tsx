@@ -409,7 +409,7 @@ function NumField({ field, value, onChange, helpText }: {
             type="button"
             onClick={() => setShowHelp(s => !s)}
             aria-label="Aide"
-            className="w-4 h-4 rounded-full flex items-center justify-center text-zinc-600 hover:text-[#A78BFA] active:scale-90 transition-all"
+            className="relative after:absolute after:-inset-3.5 w-4 h-4 rounded-full flex items-center justify-center text-zinc-500 hover:text-[#A78BFA] active:scale-90 transition-all"
           >
             <Info size={12} strokeWidth={1.8} />
           </button>
@@ -551,7 +551,7 @@ export default function MeasurementsTab() {
                   </div>
                   {d !== null && d !== 0 && (
                     <div className={`text-[10px] font-mono font-semibold flex items-center gap-0.5 ${d > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                      {d > 0 ? <TrendingUp size={10} strokeWidth={2.4} /> : <TrendingDown size={10} strokeWidth={2.4} />}
+                      {d > 0 ? <TrendingUp size={10} strokeWidth={2} /> : <TrendingDown size={10} strokeWidth={2} />}
                       {d > 0 ? '+' : ''}{d}
                     </div>
                   )}
@@ -573,7 +573,7 @@ export default function MeasurementsTab() {
             whileTap={{ scale: 0.95 }}
             transition={{ type: 'spring', stiffness: 400, damping: 25 }}
             onClick={() => setSheet({ open: true, edit: null })}
-            className="h-9 px-3 rounded-xl text-[12px] font-semibold text-white flex items-center gap-1.5"
+            className="h-11 px-4 rounded-xl text-[12px] font-semibold text-white flex items-center gap-1.5"
             style={{
               background: 'linear-gradient(135deg,#6D28D9,#7C3AED)',
               boxShadow: '0 6px 18px -6px rgba(109,40,217,0.5),inset 0 1px 0 rgba(255,255,255,0.18)',
@@ -653,7 +653,7 @@ function SummaryCard({ label, value, delta, unit, invertDelta }: {
         <span className="text-[11px] text-zinc-500 tracking-wide">{label}</span>
         {delta !== null && delta !== 0 && (
           <span className={`text-[10px] font-mono font-semibold flex items-center gap-0.5 ${color}`}>
-            {delta > 0 ? <TrendingUp size={10} strokeWidth={2.4} /> : <TrendingDown size={10} strokeWidth={2.4} />}
+            {delta > 0 ? <TrendingUp size={10} strokeWidth={2} /> : <TrendingDown size={10} strokeWidth={2} />}
             {delta > 0 ? '+' : ''}{delta}{unit}
           </span>
         )}

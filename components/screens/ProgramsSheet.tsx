@@ -173,8 +173,8 @@ export default function ProgramsSheet({ onClose }: Props) {
                                 className="flex items-center gap-3 px-3 rounded-xl"
                                 style={{ minHeight: 44, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}
                               >
-                                <Coffee size={14} strokeWidth={1.8} className="text-zinc-600 flex-shrink-0" />
-                                <span className="text-sm text-zinc-600">{day.label}</span>
+                                <Coffee size={14} strokeWidth={1.8} className="text-zinc-500 flex-shrink-0" />
+                                <span className="text-sm text-zinc-500">{day.label}</span>
                               </div>
                             )
                           }
@@ -201,7 +201,7 @@ export default function ProgramsSheet({ onClose }: Props) {
                                   aria-label={`Démarrer ${day.label}`}
                                   className="flex-shrink-0 flex items-center gap-1.5 px-3 rounded-xl text-[12px] font-semibold"
                                   style={{
-                                    minHeight: 36,
+                                    minHeight: 44,
                                     minWidth: 44,
                                     ...(locked
                                       ? { background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.2)', color: '#FBBF24' }
@@ -232,7 +232,7 @@ export default function ProgramsSheet({ onClose }: Props) {
                                   ))}
                                   {day.exos.length > 5 && (
                                     <div className="px-3 py-2 border-t border-white/[0.04]">
-                                      <span className="text-[12px] text-zinc-600">+{day.exos.length - 5} exercices</span>
+                                      <span className="text-[12px] text-zinc-400">+{day.exos.length - 5} exercices</span>
                                     </div>
                                   )}
                                 </div>

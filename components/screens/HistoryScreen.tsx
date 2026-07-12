@@ -39,6 +39,8 @@ function DetailModal({ session, onClose, onEdit, onDelete, onRepeat }: {
   onRepeat: () => void
 }) {
   const groups = sessionMuscleGroups(session) as MuscleGroup[]
+  // Suppression en deux temps : jamais de perte de données sur un seul tap.
+  const [confirming, setConfirming] = useState(false)
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -101,34 +103,67 @@ function DetailModal({ session, onClose, onEdit, onDelete, onRepeat }: {
         </div>
 
         <div className="flex-shrink-0 px-6 pt-3 pb-6 border-t border-white/[0.05] flex flex-col gap-2">
-          <motion.button
-            whileTap={{ scale: 0.97 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-            onClick={onRepeat}
-            className="w-full h-12 rounded-2xl text-sm font-semibold text-white flex items-center justify-center gap-2"
-            style={{ background: 'linear-gradient(135deg,#6D28D9,#7C3AED)', boxShadow: '0 8px 24px -8px rgba(109,40,217,0.5)' }}
-          >
-            <RotateCcw size={16} strokeWidth={1.8} /> Reprendre cette séance
-          </motion.button>
-          <div className="flex gap-2">
-            <motion.button
-              whileTap={{ scale: 0.94 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-              onClick={onDelete}
-              aria-label="Supprimer la séance"
-              className="w-12 h-12 rounded-2xl flex items-center justify-center text-red-400 bg-red-500/5 border border-red-500/15 active:bg-red-500/15 transition-colors"
+          {confirming ? (
+            <motion.div
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col gap-2"
             >
-              <Trash2 size={18} strokeWidth={1.8} />
-            </motion.button>
-            <motion.button
-              whileTap={{ scale: 0.97 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-              onClick={onEdit}
-              className="flex-1 h-12 rounded-2xl text-sm font-semibold text-zinc-300 flex items-center justify-center gap-2 bg-white/[0.04] border border-white/[0.06]"
-            >
-              <Pencil size={16} strokeWidth={1.8} /> Modifier
-            </motion.button>
-          </div>
+              <p className="text-sm text-zinc-300 text-center py-1">
+                Supprimer la séance du <span className="font-semibold text-white">{fmtDate(session.date)}</span> ?
+                <span className="block text-[12px] text-red-400 mt-0.5">Cette action est définitive.</span>
+              </p>
+              <div className="flex gap-2">
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                  onClick={() => setConfirming(false)}
+                  className="flex-1 h-12 rounded-2xl text-sm font-semibold text-zinc-300 bg-white/[0.04] border border-white/[0.06]"
+                >
+                  Annuler
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                  onClick={onDelete}
+                  className="flex-1 h-12 rounded-2xl text-sm font-semibold text-white bg-red-500/85 border border-red-400/30 flex items-center justify-center gap-2"
+                >
+                  <Trash2 size={16} strokeWidth={1.8} /> Supprimer
+                </motion.button>
+              </div>
+            </motion.div>
+          ) : (
+            <>
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                onClick={onRepeat}
+                className="w-full h-12 rounded-2xl text-sm font-semibold text-white flex items-center justify-center gap-2"
+                style={{ background: 'linear-gradient(135deg,#6D28D9,#7C3AED)', boxShadow: '0 8px 24px -8px rgba(109,40,217,0.5)' }}
+              >
+                <RotateCcw size={16} strokeWidth={1.8} /> Reprendre cette séance
+              </motion.button>
+              <div className="flex gap-2">
+                <motion.button
+                  whileTap={{ scale: 0.94 }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                  onClick={() => setConfirming(true)}
+                  aria-label="Supprimer la séance"
+                  className="w-12 h-12 rounded-2xl flex items-center justify-center text-red-400 bg-red-500/5 border border-red-500/15 active:bg-red-500/15 transition-colors"
+                >
+                  <Trash2 size={18} strokeWidth={1.8} />
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                  onClick={onEdit}
+                  className="flex-1 h-12 rounded-2xl text-sm font-semibold text-zinc-300 flex items-center justify-center gap-2 bg-white/[0.04] border border-white/[0.06]"
+                >
+                  <Pencil size={16} strokeWidth={1.8} /> Modifier
+                </motion.button>
+              </div>
+            </>
+          )}
         </div>
       </motion.div>
     </motion.div>
@@ -188,7 +223,7 @@ export default function HistoryScreen() {
             <span className="w-[3px] h-[11px] rounded-full bg-[#A78BFA] shadow-[0_0_8px_rgba(139,92,246,0.5)] inline-block" />
             {sessions.length} séance{sessions.length > 1 ? 's' : ''}
           </p>
-          <span className="text-[11px] font-mono text-zinc-600">{totalVol} soulevés</span>
+          <span className="text-[11px] font-mono text-zinc-400">{totalVol} soulevés</span>
         </div>
 
         {/* Month groups */}
@@ -212,7 +247,7 @@ export default function HistoryScreen() {
                     {monthSessions.length} séance{monthSessions.length > 1 ? 's' : ''}
                   </span>
                 </div>
-                <span className="text-[11px] font-mono text-zinc-600">Vol. {monthVol}</span>
+                <span className="text-[11px] font-mono text-zinc-400">Vol. {monthVol}</span>
               </div>
 
               {/* Sessions */}
@@ -246,7 +281,7 @@ export default function HistoryScreen() {
 
                       {/* Date column */}
                       <div className="flex flex-col items-center w-8 flex-shrink-0">
-                        <span className="text-[9px] font-bold text-zinc-600 uppercase tracking-wide">{fmtWeekday(s.date)}</span>
+                        <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wide">{fmtWeekday(s.date)}</span>
                         <span className="text-[18px] font-bold font-mono text-zinc-200 leading-tight">{fmtDay(s.date)}</span>
                       </div>
 
@@ -256,13 +291,13 @@ export default function HistoryScreen() {
                           {groups.map(g => TYPE_LBL[g].split(' ')[0]).join(' · ')}
                         </div>
                         <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className="text-[11px] text-zinc-600">{(s.exos || []).length} ex</span>
-                          <span className="text-[11px] text-zinc-700">·</span>
-                          <span className="text-[11px] text-zinc-600">{seriesCount} séries</span>
+                          <span className="text-[11px] text-zinc-400">{(s.exos || []).length} ex</span>
+                          <span className="text-[11px] text-zinc-600">·</span>
+                          <span className="text-[11px] text-zinc-400">{seriesCount} séries</span>
                           {calcVolume(s) > 0 && (
                             <>
-                              <span className="text-[11px] text-zinc-700">·</span>
-                              <span className="text-[11px] font-mono text-zinc-500">{vol}</span>
+                              <span className="text-[11px] text-zinc-600">·</span>
+                              <span className="text-[11px] font-mono text-zinc-400">{vol}</span>
                             </>
                           )}
                         </div>

@@ -97,7 +97,7 @@ function MiniBar({ value, max, color = '#A78BFA' }: { value: number; max: number
 function ExoProgressChart({ data }: { data: { date: string; weight: number }[] }) {
   if (data.length < 2) {
     return (
-      <div className="h-20 flex items-center justify-center text-xs text-zinc-600">
+      <div className="h-20 flex items-center justify-center text-xs text-zinc-500">
         {data.length === 0 ? 'Aucune donnée' : 'Fais encore une séance pour voir la courbe'}
       </div>
     )
@@ -205,7 +205,7 @@ function WeeklyVolumeChart({ sessions }: { sessions: Session[] }) {
               boxShadow: w.vol > 0 ? '0 0 8px rgba(139,92,246,0.3)' : 'none',
             }}
           />
-          <span className="text-[8px] text-zinc-600 font-mono">{w.label}</span>
+          <span className="text-[8px] text-zinc-400 font-mono">{w.label}</span>
         </div>
       ))}
     </div>
@@ -273,14 +273,14 @@ export default function ProgressScreen() {
       <div className="flex gap-1 p-1 rounded-2xl bg-[#0F0F0F] border border-white/[0.06]">
         <button
           onClick={() => setTab('exos')}
-          className={`flex-1 h-10 rounded-xl text-[12px] font-semibold flex items-center justify-center gap-1.5 transition-all ${tab === 'exos' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+          className={`flex-1 h-11 rounded-xl text-[12px] font-semibold flex items-center justify-center gap-1.5 transition-all ${tab === 'exos' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
           style={tab === 'exos' ? { background: 'linear-gradient(135deg,#6D28D9,#7C3AED)', boxShadow: '0 4px 16px -4px rgba(109,40,217,0.5),inset 0 1px 0 rgba(255,255,255,0.18)' } : undefined}
         >
           <Dumbbell size={13} strokeWidth={1.8} /> Exercices
         </button>
         <button
           onClick={() => setTab('body')}
-          className={`flex-1 h-10 rounded-xl text-[12px] font-semibold flex items-center justify-center gap-1.5 transition-all ${tab === 'body' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+          className={`flex-1 h-11 rounded-xl text-[12px] font-semibold flex items-center justify-center gap-1.5 transition-all ${tab === 'body' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
           style={tab === 'body' ? { background: 'linear-gradient(135deg,#6D28D9,#7C3AED)', boxShadow: '0 4px 16px -4px rgba(109,40,217,0.5),inset 0 1px 0 rgba(255,255,255,0.18)' } : undefined}
         >
           <Ruler size={13} strokeWidth={1.8} /> Mensurations
@@ -349,7 +349,7 @@ export default function ProgressScreen() {
                     <TrendingUp size={10} strokeWidth={2} />
                     {volDeltaStr}
                   </span>
-                  <span className="text-[10px] text-zinc-600">vs. mois précédent</span>
+                  <span className="text-[10px] text-zinc-400">vs. mois précédent</span>
                 </div>
               )}
             </div>
@@ -409,7 +409,7 @@ export default function ProgressScreen() {
             </div>
             <div className="flex items-baseline gap-0.5 mb-1">
               <Counter end={groupsTrained} fontSize={26} className="text-white" />
-              <span className="text-[14px] text-zinc-600">/5</span>
+              <span className="text-[14px] text-zinc-400">/5</span>
             </div>
             <div className="text-[10px] text-zinc-500 uppercase tracking-wide">Groupes entraînés</div>
           </div>
@@ -447,7 +447,7 @@ export default function ProgressScreen() {
                   key={name}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setSelectedExo(name)}
-                  className="flex-shrink-0 px-3 py-1.5 rounded-full border text-[11px] font-semibold transition-all"
+                  className="relative after:absolute after:inset-x-0 after:-inset-y-2 flex-shrink-0 px-3 py-1.5 rounded-full border text-[11px] font-semibold transition-all"
                   style={name === activeExo
                     ? { borderColor: '#A78BFA', background: 'rgba(167,139,250,0.12)', color: '#A78BFA' }
                     : { borderColor: 'rgba(255,255,255,0.06)', background: '#1C1C1C', color: '#737373' }}

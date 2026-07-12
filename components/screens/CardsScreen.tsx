@@ -72,7 +72,7 @@ export default function CardsScreen() {
             <span className="w-[3px] h-[11px] rounded-full bg-[#A78BFA] shadow-[0_0_8px_rgba(139,92,246,0.5)] inline-block" />
             Ma collection
           </p>
-          <span className="text-xs text-zinc-600 font-mono">{unlockedCount}/{CARDS.length}</span>
+          <span className="text-xs text-zinc-400 font-mono">{unlockedCount}/{CARDS.length}</span>
         </div>
 
         {/* Progress bar */}
@@ -87,9 +87,9 @@ export default function CardsScreen() {
             />
           </div>
           <div className="flex justify-between items-center mt-1.5">
-            <span className="text-[10px] text-zinc-600">{pct}% complétée</span>
+            <span className="text-[10px] text-zinc-400">{pct}% complétée</span>
             {nextGoal && (
-              <span className="text-[10px] text-zinc-600">
+              <span className="text-[10px] text-zinc-400">
                 Prochaine : {nextGoal.c.name} · {nextGoal.p.pct}%
               </span>
             )}
@@ -103,7 +103,7 @@ export default function CardsScreen() {
               key={key}
               whileTap={{ scale: 0.94 }}
               onClick={() => setFilter(key)}
-              className="flex-shrink-0 px-3.5 py-1.5 rounded-full border text-[11px] font-semibold transition-all"
+              className="relative after:absolute after:inset-x-0 after:-inset-y-2 flex-shrink-0 px-3.5 py-1.5 rounded-full border text-[11px] font-semibold transition-all"
               style={filter === key
                 ? { borderColor: '#A78BFA', background: 'rgba(167,139,250,0.12)', color: '#A78BFA' }
                 : { borderColor: 'rgba(255,255,255,0.06)', background: '#1C1C1C', color: '#737373' }}
@@ -123,7 +123,7 @@ export default function CardsScreen() {
               transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
               className="mb-5"
             >
-              <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-[1.4px] mb-2 flex items-center gap-1.5">
+              <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-[1.4px] mb-2 flex items-center gap-1.5">
                 <span className="w-[3px] h-[9px] rounded-full bg-amber-400/60 inline-block" />
                 À l&apos;honneur
               </p>
