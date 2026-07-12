@@ -34,20 +34,30 @@ const DIRECTIONS = [
     accent: '#FF8A3D',
     text: '#F4EAD9',
   },
+  {
+    href: '/design/v4',
+    tag: 'V4',
+    name: 'Le Studio',
+    pitch: 'La seule direction en mode clair : ivoire, terracotta, sauge, cartes crème aux coins généreux. Le calme d\'un studio boutique haut de gamme — rupture totale avec le dark.',
+    chips: ['Bricolage Grotesque', 'Mode clair', 'Terracotta + sauge', 'Ombres douces'],
+    bg: '#F4EFE6',
+    accent: '#C4562F',
+    text: '#211B14',
+  },
 ]
 
 export default function DesignIndex() {
   return (
     <div className="min-h-screen px-5 pt-8 pb-16" style={{ background: '#0A0A0A', color: '#F5F5F4' }}>
       <p className="text-[11px] font-bold uppercase tracking-[1.8px] text-zinc-500 mb-2">Redesign GymLog — 12 juillet 2026</p>
-      <h1 className="text-2xl font-semibold tracking-tight mb-3">Trois directions à comparer</h1>
+      <h1 className="text-2xl font-semibold tracking-tight mb-3">Quatre directions à comparer</h1>
       <p className="text-sm text-zinc-400 leading-relaxed mb-4">
         Chaque direction maquette les deux écrans clés — <strong className="text-zinc-200">Accueil</strong> et{' '}
         <strong className="text-zinc-200">Séance</strong> — avec de vraies données de démo.
         Dans chaque maquette, touche « Démarrer » ou l'onglet Séance pour passer d'un écran à l'autre.
       </p>
       <p className="text-sm text-zinc-400 leading-relaxed mb-8">
-        Les trois embarquent les mêmes corrections UX issues de l'audit : démarrage de séance en un tap,{' '}
+        Les quatre embarquent les mêmes corrections UX issues de l'audit : démarrage de séance en un tap,{' '}
         <strong className="text-zinc-200">séries cochables</strong> avec repos, barre de session (durée + volume),
         accueil recentré sur l'entraînement. Ce qui change, c'est la personnalité.
       </p>

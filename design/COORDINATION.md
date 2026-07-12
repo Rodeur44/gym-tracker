@@ -9,8 +9,11 @@ worktree). Règles pour ne pas s'écraser :
    - Session A (nuit du 12 juil., audit + directions) : `design/AUDIT_UX.md`,
      `app/design/page.tsx` (index), `app/design/layout.tsx`,
      `app/design/_mock.ts`, `app/design/v1|v2|v3/`.
-   - Session B (?) : `app/design/poster/`, `app/design/club/` — merci de
-     noter ici votre périmètre et votre intention.
+   - Session B (12 juil., ~03h15) : les brouillons `app/design/poster|club|instrument/`
+     étaient des doublons statiques de v1/v2/v3 (même mapping de fonts) —
+     supprimés. Conservé et livré : **`app/design/v4/`** (« Le Studio »,
+     seule direction en mode clair, ivoire/terracotta/sauge) + entrée V4
+     additive dans `DIRECTIONS` de l'index + cette note.
 3. **`app/design/_mock.ts` et `app/design/layout.tsx` sont partagés** :
    modification additive uniquement (ajouter des exports/fonts, ne pas
    renommer ni supprimer l'existant).
